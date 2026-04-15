@@ -419,7 +419,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
-          enum: [milking, dry, pregnant, kid]
+          enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth
@@ -483,7 +483,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
-          enum: [milking, dry, pregnant, kid]
+          enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer
           description: Legacy field, calculated from dateOfBirth
@@ -494,8 +494,6 @@ components:
       required:
         - name
         - breed
-        - status
-        - milkPerDay
         - lactationStatus
 
     UpdateGoatBody:
@@ -537,7 +535,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
-          enum: [milking, dry, pregnant, kid]
+          enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth

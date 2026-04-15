@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Loader2, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
@@ -26,9 +25,7 @@ const formSchema = z.object({
   paternalGranddamName: z.string().optional(),
   paternalGrandsireName: z.string().optional(),
   breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
-  status: z.enum(["healthy", "watch", "treatment", "dry"]),
-  milkPerDay: z.number().min(0).max(10),
-  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid"]),
+  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
 });
@@ -70,9 +67,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       paternalGranddamName: defaultValues?.paternalGranddamName || "",
       paternalGrandsireName: defaultValues?.paternalGrandsireName || "",
       breed: defaultValues?.breed || "mixed",
-      status: defaultValues?.status || "healthy",
-      milkPerDay: defaultValues?.milkPerDay ?? 2.5,
-      lactationStatus: defaultValues?.lactationStatus || "milking",
+      lactationStatus: (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
     },
@@ -229,30 +224,6 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
           <FormField
             control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Health Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="healthy">Healthy</SelectItem>
-                    <SelectItem value="watch">Watch</SelectItem>
-                    <SelectItem value="treatment">Treatment</SelectItem>
-                    <SelectItem value="dry">Dry</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="lactationStatus"
             render={({ field }) => (
               <FormItem>
@@ -268,6 +239,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     <SelectItem value="dry">Dry</SelectItem>
                     <SelectItem value="pregnant">Pregnant</SelectItem>
                     <SelectItem value="kid">Kid</SelectItem>
+                    <SelectItem value="retired">Retired</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -330,33 +302,6 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="milkPerDay"
-          render={({ field }) => (
-            <FormItem className="bg-card/50 p-4 rounded-xl border border-border">
-              <FormLabel className="flex justify-between">
-                <span>Milk Production</span>
-                <span className="text-primary font-bold">{field.value} qt/day</span>
-              </FormLabel>
-              <FormControl>
-                <div className="pt-4 pb-2">
-                  <Slider
-                    min={0}
-                    max={10}
-                    step={0.1}
-                    value={[field.value]}
-                    onValueChange={(vals) => field.onChange(vals[0])}
-                    className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5"
-                  />
-                </div>
-              </FormControl>
-              <FormDescription>Daily milk production in quarts.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="rounded-xl border border-border bg-card/50 p-4">
           <div className="flex items-center justify-between gap-4">

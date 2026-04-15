@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, ShieldAlert, Stethoscope, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, ShieldAlert, Trash2 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -123,14 +122,6 @@ export default function GoatDetails() {
     );
   }
 
-  const statusColors = {
-    healthy: "bg-chart-1 text-primary-foreground",
-    watch: "bg-secondary text-secondary-foreground",
-    treatment: "bg-destructive text-destructive-foreground",
-    dry: "bg-muted text-muted-foreground",
-  };
-
-  const milkProgress = Math.min(100, (goat.milkPerDay / 10) * 100);
   const pedigreeRows = [
     { label: "Dam", value: goat.damName },
     { label: "Sire", value: goat.sireName },
@@ -204,9 +195,6 @@ export default function GoatDetails() {
                       <span className="text-sm font-medium text-primary/50 uppercase tracking-widest">No Photo</span>
                     </div>
                   )}
-                  <div className="absolute top-4 right-4">
-                    <Badge className={`${statusColors[goat.status]} shadow-md px-3 py-1 text-sm capitalize`}>{goat.status}</Badge>
-                  </div>
                 </div>
                 <CardContent className="p-6">
                   <h1 className="text-3xl font-serif font-bold text-foreground mb-1">{goat.name}</h1>
@@ -246,33 +234,6 @@ export default function GoatDetails() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <Card className="border-primary/10 shadow-md">
-                <CardHeader>
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5 text-primary" /> Production Record
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <div className="flex justify-between items-end mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">Daily Milk Production</span>
-                      <span className="text-2xl font-serif font-bold text-primary">{goat.milkPerDay} <span className="text-sm text-muted-foreground font-sans font-normal">qt/day</span></span>
-                    </div>
-                    <Progress value={milkProgress} className="h-3 bg-primary/10" />
-                  </div>
-
-                  <div className="bg-card/50 p-4 rounded-xl border border-border">
-                    <h4 className="text-sm font-medium text-foreground mb-2">Production Assessment</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {goat.milkPerDay < 1 && "Low current production. This may be expected for dry, young, or recovering goats."}
-                      {goat.milkPerDay >= 1 && goat.milkPerDay < 3 && "Moderate production. Keep feed, minerals, and milking routine consistent."}
-                      {goat.milkPerDay >= 3 && goat.milkPerDay < 5 && "Strong production. Monitor body condition and hydration during peak output."}
-                      {goat.milkPerDay >= 5 && "High production. Prioritize nutrition, udder checks, and careful production tracking."}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
               <Card className="border-primary/10 shadow-md">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg">Breeding Information</CardTitle>

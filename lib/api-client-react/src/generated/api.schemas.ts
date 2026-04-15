@@ -47,6 +47,7 @@ export const GoatLactationStatus = {
   dry: "dry",
   pregnant: "pregnant",
   kid: "kid",
+  retired: "retired",
 } as const;
 
 export interface Goat {
@@ -119,6 +120,7 @@ export const CreateGoatBodyLactationStatus = {
   dry: "dry",
   pregnant: "pregnant",
   kid: "kid",
+  retired: "retired",
 } as const;
 
 export interface CreateGoatBody {
@@ -134,12 +136,12 @@ export interface CreateGoatBody {
   dateOfBirth?: string;
   sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
-  status: CreateGoatBodyStatus;
+  status?: CreateGoatBodyStatus;
   /**
    * @minimum 0
    * @maximum 10
    */
-  milkPerDay: number;
+  milkPerDay?: number;
   lactationStatus: CreateGoatBodyLactationStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
@@ -188,6 +190,7 @@ export const UpdateGoatBodyLactationStatus = {
   dry: "dry",
   pregnant: "pregnant",
   kid: "kid",
+  retired: "retired",
 } as const;
 
 export interface UpdateGoatBody {

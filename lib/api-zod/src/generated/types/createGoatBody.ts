@@ -23,12 +23,12 @@ export interface CreateGoatBody {
   dateOfBirth?: Date;
   sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
-  status: CreateGoatBodyStatus;
+  status?: CreateGoatBodyStatus;
   /**
    * @minimum 0
    * @maximum 10
    */
-  milkPerDay: number;
+  milkPerDay?: number;
   lactationStatus: CreateGoatBodyLactationStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
