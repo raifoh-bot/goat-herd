@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Fairy Goat Herd Manager"
+version = "1.0.0"
+id = "artifacts/fairy-goat-herd"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21276
+
+[services.development]
+run = "pnpm --filter @workspace/fairy-goat-herd run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fairy-goat-herd", "run", "build" ]
+publicDir = "artifacts/fairy-goat-herd/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21276"
+BASE_PATH = "/"

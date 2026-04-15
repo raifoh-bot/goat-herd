@@ -3,13 +3,18 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Fairy Goat Herd Management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: goats
+    description: Fairy goat management
+  - name: dashboard
+    description: Herd dashboard and stats
+
 paths:
   /healthz:
     get:
@@ -24,6 +29,154 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /goats:
+    get:
+      operationId: listGoats
+      tags: [goats]
+      summary: List all fairy goats
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [healthy, sick, resting, enchanted]
+        - name: element
+          in: query
+          schema:
+            type: string
+            enum: [fire, water, earth, air, light, shadow]
+      responses:
+        "200":
+          description: List of fairy goats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goat"
+    post:
+      operationId: createGoat
+      tags: [goats]
+      summary: Add a new fairy goat to the herd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoatBody"
+      responses:
+        "201":
+          description: Created goat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goat"
+
+  /goats/{id}:
+    get:
+      operationId: getGoat
+      tags: [goats]
+      summary: Get a single fairy goat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A fairy goat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goat"
+        "404":
+          description: Goat not found
+    put:
+      operationId: updateGoat
+      tags: [goats]
+      summary: Update a fairy goat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGoatBody"
+      responses:
+        "200":
+          description: Updated goat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goat"
+        "404":
+          description: Goat not found
+    delete:
+      operationId: deleteGoat
+      tags: [goats]
+      summary: Remove a fairy goat from the herd
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Goat removed
+        "404":
+          description: Goat not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get herd dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary with counts and stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/element-breakdown:
+    get:
+      operationId: getElementBreakdown
+      tags: [dashboard]
+      summary: Get goat counts by magical element
+      responses:
+        "200":
+          description: Element breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ElementCount"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recently added or updated goats
+      responses:
+        "200":
+          description: Recent goat activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goat"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +187,124 @@ components:
       required:
         - status
 
+    Goat:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        element:
+          type: string
+          enum: [fire, water, earth, air, light, shadow]
+        status:
+          type: string
+          enum: [healthy, sick, resting, enchanted]
+        magicLevel:
+          type: integer
+          minimum: 1
+          maximum: 100
+        wingType:
+          type: string
+          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+        age:
+          type: integer
+        description:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - element
+        - status
+        - magicLevel
+        - wingType
+        - age
+        - createdAt
+        - updatedAt
+
+    CreateGoatBody:
+      type: object
+      properties:
+        name:
+          type: string
+        element:
+          type: string
+          enum: [fire, water, earth, air, light, shadow]
+        status:
+          type: string
+          enum: [healthy, sick, resting, enchanted]
+        magicLevel:
+          type: integer
+          minimum: 1
+          maximum: 100
+        wingType:
+          type: string
+          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+        age:
+          type: integer
+        description:
+          type: string
+        imageUrl:
+          type: string
+      required:
+        - name
+        - element
+        - status
+        - magicLevel
+        - wingType
+        - age
+
+    UpdateGoatBody:
+      type: object
+      properties:
+        name:
+          type: string
+        element:
+          type: string
+          enum: [fire, water, earth, air, light, shadow]
+        status:
+          type: string
+          enum: [healthy, sick, resting, enchanted]
+        magicLevel:
+          type: integer
+          minimum: 1
+          maximum: 100
+        wingType:
+          type: string
+          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+        age:
+          type: integer
+        description:
+          type: string
+        imageUrl:
+          type: string
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalGoats:
+          type: integer
+        healthyCount:
+          type: integer
+        sickCount:
+          type: integer
+        enchantedCount:
+          type: integer
+        averageMagicLevel:
+          type: number
+        highestMagicGoat:
+          $ref: "#/components/schemas/Goat"
+      required:
+        - totalGoats
+        - healthyCount
+        - sickCount
+        - enchantedCount
+        - averageMagicLevel
