@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { formatAge } from "@/lib/age";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
+import { useUpload } from "@workspace/object-storage-web";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
@@ -29,7 +30,7 @@ const formSchema = z.object({
   milkPerDay: z.number().min(0).max(10),
   lactationStatus: z.enum(["milking", "dry", "pregnant", "kid"]),
   description: z.string().optional(),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,6 +42,19 @@ interface GoatFormProps {
 }
 
 export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (response) => {
+      form.setValue("imageUrl", `/api/storage${response.objectPath}`);
+    },
+  });
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -266,10 +280,51 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Photo Link (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://..." {...field} className="bg-background/50" />
-                </FormControl>
+                <FormLabel>Photo (Optional)</FormLabel>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input placeholder="https://... or upload a file below" {...field} className="bg-background/50 flex-1" />
+                    </FormControl>
+                    {field.value && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => field.onChange("")}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="gap-2"
+                    >
+                      {isUploading ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Uploading {progress}%</>
+                      ) : (
+                        <><Upload className="h-4 w-4" /> Upload Image</>
+                      )}
+                    </Button>
+                    {field.value?.startsWith("/api/storage") && (
+                      <img src={field.value} alt="Preview" className="h-10 w-10 rounded-md object-cover border border-border" />
+                    )}
+                  </div>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
