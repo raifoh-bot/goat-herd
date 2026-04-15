@@ -6,21 +6,33 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./addKidsBody";
 export * from "./breedCount";
 export * from "./breedCountBreed";
+export * from "./breeding";
+export * from "./breedingDetail";
+export * from "./breedingStatus";
+export * from "./breedingWithDoe";
+export * from "./createBreedingBody";
 export * from "./createGoatBody";
 export * from "./createGoatBodyBreed";
 export * from "./createGoatBodyLactationStatus";
 export * from "./createGoatBodyStatus";
+export * from "./createKidBody";
+export * from "./createKidBodySex";
 export * from "./dashboardSummary";
 export * from "./goat";
 export * from "./goatBreed";
 export * from "./goatLactationStatus";
 export * from "./goatStatus";
 export * from "./healthStatus";
+export * from "./kid";
+export * from "./kidSex";
 export * from "./listGoatsBreed";
 export * from "./listGoatsParams";
 export * from "./listGoatsStatus";
+export * from "./updateBreedingBody";
+export * from "./updateBreedingBodyStatus";
 export * from "./updateGoatBody";
 export * from "./updateGoatBodyBreed";
 export * from "./updateGoatBodyLactationStatus";

@@ -7,6 +7,9 @@ import Dashboard from "@/pages/dashboard";
 import GoatsList from "@/pages/goats/index";
 import GoatNew from "@/pages/goats/new";
 import GoatDetails from "@/pages/goats/[id]";
+import BreedingsList from "@/pages/breedings/index";
+import BreedingNew from "@/pages/breedings/new";
+import BreedingDetail from "@/pages/breedings/[id]";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +20,9 @@ function Router() {
       <Route path="/goats" component={GoatsList} />
       <Route path="/goats/new" component={GoatNew} />
       <Route path="/goats/:id" component={GoatDetails} />
+      <Route path="/breedings" component={BreedingsList} />
+      <Route path="/breedings/new" component={BreedingNew} />
+      <Route path="/breedings/:id" component={BreedingDetail} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -11,6 +11,8 @@ tags:
     description: Health operations
   - name: goats
     description: Dairy goat management
+  - name: breedings
+    description: Breeding and kidding records
   - name: dashboard
     description: Herd dashboard and stats
 
@@ -132,6 +134,113 @@ paths:
           description: Goat removed
         "404":
           description: Goat not found
+
+  /breedings:
+    get:
+      operationId: listBreedings
+      tags: [breedings]
+      summary: List all breeding records
+      responses:
+        "200":
+          description: List of breeding records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BreedingWithDoe"
+    post:
+      operationId: createBreeding
+      tags: [breedings]
+      summary: Record a new breeding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBreedingBody"
+      responses:
+        "201":
+          description: Created breeding record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Breeding"
+
+  /breedings/{id}:
+    get:
+      operationId: getBreeding
+      tags: [breedings]
+      summary: Get a breeding record with kids
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Breeding record with doe and kids
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreedingDetail"
+        "404":
+          description: Breeding not found
+    put:
+      operationId: updateBreeding
+      tags: [breedings]
+      summary: Update a breeding record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBreedingBody"
+      responses:
+        "200":
+          description: Updated breeding record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Breeding"
+        "404":
+          description: Breeding not found
+
+  /breedings/{id}/kids:
+    post:
+      operationId: addKids
+      tags: [breedings]
+      summary: Record kids from a kidding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddKidsBody"
+      responses:
+        "201":
+          description: Kids recorded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Kid"
+        "404":
+          description: Breeding not found
 
   /dashboard/summary:
     get:
@@ -333,6 +442,161 @@ components:
           type: string
         imageUrl:
           type: string
+
+    Breeding:
+      type: object
+      properties:
+        id:
+          type: integer
+        doeId:
+          type: integer
+        sireName:
+          type: string
+        breedingDate:
+          type: string
+          format: date-time
+        expectedKiddingDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [bred, confirmed-pregnant, kidded, open]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - doeId
+        - sireName
+        - breedingDate
+        - status
+        - createdAt
+        - updatedAt
+
+    BreedingWithDoe:
+      allOf:
+        - $ref: "#/components/schemas/Breeding"
+        - type: object
+          properties:
+            doe:
+              $ref: "#/components/schemas/Goat"
+
+    BreedingDetail:
+      allOf:
+        - $ref: "#/components/schemas/Breeding"
+        - type: object
+          properties:
+            doe:
+              $ref: "#/components/schemas/Goat"
+            kids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Kid"
+
+    CreateBreedingBody:
+      type: object
+      properties:
+        doeId:
+          type: integer
+        sireName:
+          type: string
+        breedingDate:
+          type: string
+          format: date-time
+        expectedKiddingDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+      required:
+        - doeId
+        - sireName
+        - breedingDate
+
+    UpdateBreedingBody:
+      type: object
+      properties:
+        sireName:
+          type: string
+        breedingDate:
+          type: string
+          format: date-time
+        expectedKiddingDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [bred, confirmed-pregnant, kidded, open]
+        notes:
+          type: string
+
+    Kid:
+      type: object
+      properties:
+        id:
+          type: integer
+        breedingId:
+          type: integer
+        name:
+          type: string
+        sex:
+          type: string
+          enum: [doe, buck, doa]
+        birthDate:
+          type: string
+          format: date-time
+        birthWeight:
+          type: number
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - breedingId
+        - sex
+        - createdAt
+        - updatedAt
+
+    CreateKidBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sex:
+          type: string
+          enum: [doe, buck, doa]
+        birthDate:
+          type: string
+          format: date-time
+        birthWeight:
+          type: number
+        notes:
+          type: string
+      required:
+        - sex
+
+    AddKidsBody:
+      type: object
+      properties:
+        birthDate:
+          type: string
+          format: date-time
+        kids:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateKidBody"
+      required:
+        - kids
 
     DashboardSummary:
       type: object

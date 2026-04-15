@@ -246,6 +246,204 @@ export const DeleteGoatParams = zod.object({
 });
 
 /**
+ * @summary List all breeding records
+ */
+export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;
+export const listBreedingsResponseTwoDoeMilkPerDayMax = 10;
+
+export const ListBreedingsResponseItem = zod
+  .object({
+    id: zod.number(),
+    doeId: zod.number(),
+    sireName: zod.string(),
+    breedingDate: zod.coerce.date(),
+    expectedKiddingDate: zod.coerce.date().optional(),
+    status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
+    notes: zod.string().optional(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      doe: zod
+        .object({
+          id: zod.number(),
+          name: zod.string(),
+          damName: zod.string().optional(),
+          sireName: zod.string().optional(),
+          maternalGranddamName: zod.string().optional(),
+          maternalGrandsireName: zod.string().optional(),
+          paternalGranddamName: zod.string().optional(),
+          paternalGrandsireName: zod.string().optional(),
+          dateOfBirth: zod.coerce.date().optional(),
+          breed: zod.enum([
+            "alpine",
+            "nubian",
+            "saanen",
+            "lamancha",
+            "toggenburg",
+            "boer",
+            "nigerian-dwarf",
+            "oberhasli",
+            "mixed",
+          ]),
+          status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+          milkPerDay: zod
+            .number()
+            .min(listBreedingsResponseTwoDoeMilkPerDayMin)
+            .max(listBreedingsResponseTwoDoeMilkPerDayMax),
+          lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
+          age: zod
+            .number()
+            .describe("Calculated age in years from dateOfBirth"),
+          description: zod.string().optional(),
+          imageUrl: zod.string().optional(),
+          createdAt: zod.coerce.date(),
+          updatedAt: zod.coerce.date(),
+        })
+        .optional(),
+    }),
+  );
+export const ListBreedingsResponse = zod.array(ListBreedingsResponseItem);
+
+/**
+ * @summary Record a new breeding
+ */
+export const CreateBreedingBody = zod.object({
+  doeId: zod.number(),
+  sireName: zod.string(),
+  breedingDate: zod.coerce.date(),
+  expectedKiddingDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a breeding record with kids
+ */
+export const GetBreedingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const getBreedingResponseTwoDoeMilkPerDayMin = 0;
+export const getBreedingResponseTwoDoeMilkPerDayMax = 10;
+
+export const GetBreedingResponse = zod
+  .object({
+    id: zod.number(),
+    doeId: zod.number(),
+    sireName: zod.string(),
+    breedingDate: zod.coerce.date(),
+    expectedKiddingDate: zod.coerce.date().optional(),
+    status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
+    notes: zod.string().optional(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      doe: zod
+        .object({
+          id: zod.number(),
+          name: zod.string(),
+          damName: zod.string().optional(),
+          sireName: zod.string().optional(),
+          maternalGranddamName: zod.string().optional(),
+          maternalGrandsireName: zod.string().optional(),
+          paternalGranddamName: zod.string().optional(),
+          paternalGrandsireName: zod.string().optional(),
+          dateOfBirth: zod.coerce.date().optional(),
+          breed: zod.enum([
+            "alpine",
+            "nubian",
+            "saanen",
+            "lamancha",
+            "toggenburg",
+            "boer",
+            "nigerian-dwarf",
+            "oberhasli",
+            "mixed",
+          ]),
+          status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+          milkPerDay: zod
+            .number()
+            .min(getBreedingResponseTwoDoeMilkPerDayMin)
+            .max(getBreedingResponseTwoDoeMilkPerDayMax),
+          lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
+          age: zod
+            .number()
+            .describe("Calculated age in years from dateOfBirth"),
+          description: zod.string().optional(),
+          imageUrl: zod.string().optional(),
+          createdAt: zod.coerce.date(),
+          updatedAt: zod.coerce.date(),
+        })
+        .optional(),
+      kids: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            breedingId: zod.number(),
+            name: zod.string().optional(),
+            sex: zod.enum(["doe", "buck", "doa"]),
+            birthDate: zod.coerce.date().optional(),
+            birthWeight: zod.number().optional(),
+            notes: zod.string().optional(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
+    }),
+  );
+
+/**
+ * @summary Update a breeding record
+ */
+export const UpdateBreedingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateBreedingBody = zod.object({
+  sireName: zod.string().optional(),
+  breedingDate: zod.coerce.date().optional(),
+  expectedKiddingDate: zod.coerce.date().optional(),
+  status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]).optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateBreedingResponse = zod.object({
+  id: zod.number(),
+  doeId: zod.number(),
+  sireName: zod.string(),
+  breedingDate: zod.coerce.date(),
+  expectedKiddingDate: zod.coerce.date().optional(),
+  status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Record kids from a kidding
+ */
+export const AddKidsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddKidsBody = zod.object({
+  birthDate: zod.coerce.date().optional(),
+  kids: zod.array(
+    zod.object({
+      name: zod.string().optional(),
+      sex: zod.enum(["doe", "buck", "doa"]),
+      birthDate: zod.coerce.date().optional(),
+      birthWeight: zod.number().optional(),
+      notes: zod.string().optional(),
+    }),
+  ),
+});
+
+/**
  * @summary Get herd dashboard summary
  */
 export const getDashboardSummaryResponseTopProducerMilkPerDayMin = 0;

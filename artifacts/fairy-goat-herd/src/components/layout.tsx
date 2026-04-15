@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, List, Milk, Sprout } from "lucide-react";
+import { ClipboardList, Heart, List, Milk, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -11,9 +11,10 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: ClipboardList },
-    { href: "/goats", label: "The Herd", icon: List },
-    { href: "/goats/new", label: "Add Goat", icon: Milk },
+    { href: "/", label: "Dashboard", icon: ClipboardList, exact: true },
+    { href: "/goats", label: "The Herd", icon: List, exact: false },
+    { href: "/breedings", label: "Breedings", icon: Heart, exact: false },
+    { href: "/goats/new", label: "Add Goat", icon: Milk, exact: true },
   ];
 
   return (
@@ -33,7 +34,9 @@ export function Layout({ children }: LayoutProps) {
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+              const isActive = item.exact
+                ? location === item.href
+                : location === item.href || location.startsWith(item.href + "/");
 
               return (
                 <Link

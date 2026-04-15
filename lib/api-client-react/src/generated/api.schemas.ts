@@ -184,6 +184,105 @@ export interface UpdateGoatBody {
   imageUrl?: string;
 }
 
+export type BreedingStatus =
+  (typeof BreedingStatus)[keyof typeof BreedingStatus];
+
+export const BreedingStatus = {
+  bred: "bred",
+  "confirmed-pregnant": "confirmed-pregnant",
+  kidded: "kidded",
+  open: "open",
+} as const;
+
+export interface Breeding {
+  id: number;
+  doeId: number;
+  sireName: string;
+  breedingDate: string;
+  expectedKiddingDate?: string;
+  status: BreedingStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BreedingWithDoe = Breeding & {
+  doe?: Goat;
+};
+
+export type KidSex = (typeof KidSex)[keyof typeof KidSex];
+
+export const KidSex = {
+  doe: "doe",
+  buck: "buck",
+  doa: "doa",
+} as const;
+
+export interface Kid {
+  id: number;
+  breedingId: number;
+  name?: string;
+  sex: KidSex;
+  birthDate?: string;
+  birthWeight?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BreedingDetail = Breeding & {
+  doe?: Goat;
+  kids?: Kid[];
+};
+
+export interface CreateBreedingBody {
+  doeId: number;
+  sireName: string;
+  breedingDate: string;
+  expectedKiddingDate?: string;
+  notes?: string;
+}
+
+export type UpdateBreedingBodyStatus =
+  (typeof UpdateBreedingBodyStatus)[keyof typeof UpdateBreedingBodyStatus];
+
+export const UpdateBreedingBodyStatus = {
+  bred: "bred",
+  "confirmed-pregnant": "confirmed-pregnant",
+  kidded: "kidded",
+  open: "open",
+} as const;
+
+export interface UpdateBreedingBody {
+  sireName?: string;
+  breedingDate?: string;
+  expectedKiddingDate?: string;
+  status?: UpdateBreedingBodyStatus;
+  notes?: string;
+}
+
+export type CreateKidBodySex =
+  (typeof CreateKidBodySex)[keyof typeof CreateKidBodySex];
+
+export const CreateKidBodySex = {
+  doe: "doe",
+  buck: "buck",
+  doa: "doa",
+} as const;
+
+export interface CreateKidBody {
+  name?: string;
+  sex: CreateKidBodySex;
+  birthDate?: string;
+  birthWeight?: number;
+  notes?: string;
+}
+
+export interface AddKidsBody {
+  birthDate?: string;
+  kids: CreateKidBody[];
+}
+
 export interface DashboardSummary {
   totalGoats: number;
   healthyCount: number;

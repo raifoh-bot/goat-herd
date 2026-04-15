@@ -17,12 +17,19 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddKidsBody,
   BreedCount,
+  Breeding,
+  BreedingDetail,
+  BreedingWithDoe,
+  CreateBreedingBody,
   CreateGoatBody,
   DashboardSummary,
   Goat,
   HealthStatus,
+  Kid,
   ListGoatsParams,
+  UpdateBreedingBody,
   UpdateGoatBody,
 } from "./api.schemas";
 
@@ -537,6 +544,428 @@ export const useDeleteGoat = <
   TContext
 > => {
   return useMutation(getDeleteGoatMutationOptions(options));
+};
+
+/**
+ * @summary List all breeding records
+ */
+export const getListBreedingsUrl = () => {
+  return `/api/breedings`;
+};
+
+export const listBreedings = async (
+  options?: RequestInit,
+): Promise<BreedingWithDoe[]> => {
+  return customFetch<BreedingWithDoe[]>(getListBreedingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBreedingsQueryKey = () => {
+  return [`/api/breedings`] as const;
+};
+
+export const getListBreedingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBreedings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBreedings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListBreedingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBreedings>>> = ({
+    signal,
+  }) => listBreedings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBreedings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBreedingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBreedings>>
+>;
+export type ListBreedingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all breeding records
+ */
+
+export function useListBreedings<
+  TData = Awaited<ReturnType<typeof listBreedings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBreedings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBreedingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a new breeding
+ */
+export const getCreateBreedingUrl = () => {
+  return `/api/breedings`;
+};
+
+export const createBreeding = async (
+  createBreedingBody: CreateBreedingBody,
+  options?: RequestInit,
+): Promise<Breeding> => {
+  return customFetch<Breeding>(getCreateBreedingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBreedingBody),
+  });
+};
+
+export const getCreateBreedingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBreeding>>,
+    TError,
+    { data: BodyType<CreateBreedingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBreeding>>,
+  TError,
+  { data: BodyType<CreateBreedingBody> },
+  TContext
+> => {
+  const mutationKey = ["createBreeding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBreeding>>,
+    { data: BodyType<CreateBreedingBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBreeding(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBreedingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBreeding>>
+>;
+export type CreateBreedingMutationBody = BodyType<CreateBreedingBody>;
+export type CreateBreedingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record a new breeding
+ */
+export const useCreateBreeding = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBreeding>>,
+    TError,
+    { data: BodyType<CreateBreedingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBreeding>>,
+  TError,
+  { data: BodyType<CreateBreedingBody> },
+  TContext
+> => {
+  return useMutation(getCreateBreedingMutationOptions(options));
+};
+
+/**
+ * @summary Get a breeding record with kids
+ */
+export const getGetBreedingUrl = (id: number) => {
+  return `/api/breedings/${id}`;
+};
+
+export const getBreeding = async (
+  id: number,
+  options?: RequestInit,
+): Promise<BreedingDetail> => {
+  return customFetch<BreedingDetail>(getGetBreedingUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBreedingQueryKey = (id: number) => {
+  return [`/api/breedings/${id}`] as const;
+};
+
+export const getGetBreedingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBreeding>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBreeding>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBreedingQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBreeding>>> = ({
+    signal,
+  }) => getBreeding(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBreeding>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBreedingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBreeding>>
+>;
+export type GetBreedingQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a breeding record with kids
+ */
+
+export function useGetBreeding<
+  TData = Awaited<ReturnType<typeof getBreeding>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBreeding>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBreedingQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a breeding record
+ */
+export const getUpdateBreedingUrl = (id: number) => {
+  return `/api/breedings/${id}`;
+};
+
+export const updateBreeding = async (
+  id: number,
+  updateBreedingBody: UpdateBreedingBody,
+  options?: RequestInit,
+): Promise<Breeding> => {
+  return customFetch<Breeding>(getUpdateBreedingUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBreedingBody),
+  });
+};
+
+export const getUpdateBreedingMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBreeding>>,
+    TError,
+    { id: number; data: BodyType<UpdateBreedingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBreeding>>,
+  TError,
+  { id: number; data: BodyType<UpdateBreedingBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBreeding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBreeding>>,
+    { id: number; data: BodyType<UpdateBreedingBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBreeding(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBreedingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBreeding>>
+>;
+export type UpdateBreedingMutationBody = BodyType<UpdateBreedingBody>;
+export type UpdateBreedingMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a breeding record
+ */
+export const useUpdateBreeding = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBreeding>>,
+    TError,
+    { id: number; data: BodyType<UpdateBreedingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBreeding>>,
+  TError,
+  { id: number; data: BodyType<UpdateBreedingBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBreedingMutationOptions(options));
+};
+
+/**
+ * @summary Record kids from a kidding
+ */
+export const getAddKidsUrl = (id: number) => {
+  return `/api/breedings/${id}/kids`;
+};
+
+export const addKids = async (
+  id: number,
+  addKidsBody: AddKidsBody,
+  options?: RequestInit,
+): Promise<Kid[]> => {
+  return customFetch<Kid[]>(getAddKidsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addKidsBody),
+  });
+};
+
+export const getAddKidsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addKids>>,
+    TError,
+    { id: number; data: BodyType<AddKidsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addKids>>,
+  TError,
+  { id: number; data: BodyType<AddKidsBody> },
+  TContext
+> => {
+  const mutationKey = ["addKids"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addKids>>,
+    { id: number; data: BodyType<AddKidsBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addKids(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddKidsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addKids>>
+>;
+export type AddKidsMutationBody = BodyType<AddKidsBody>;
+export type AddKidsMutationError = ErrorType<void>;
+
+/**
+ * @summary Record kids from a kidding
+ */
+export const useAddKids = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addKids>>,
+    TError,
+    { id: number; data: BodyType<AddKidsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addKids>>,
+  TError,
+  { id: number; data: BodyType<AddKidsBody> },
+  TContext
+> => {
+  return useMutation(getAddKidsMutationOptions(options));
 };
 
 /**
