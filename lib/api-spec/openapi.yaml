@@ -397,7 +397,7 @@ components:
           enum: [milking, dry, pregnant, kid]
         age:
           type: integer
-          description: Calculated age in years from dateOfBirth
+          description: Legacy field, calculated from dateOfBirth
         description:
           type: string
         imageUrl:
@@ -408,7 +408,6 @@ components:
         - status
         - milkPerDay
         - lactationStatus
-        - age
 
     UpdateGoatBody:
       type: object

@@ -28,8 +28,8 @@ export interface CreateGoatBody {
    */
   milkPerDay: number;
   lactationStatus: CreateGoatBodyLactationStatus;
-  /** Calculated age in years from dateOfBirth */
-  age: number;
+  /** Legacy field, calculated from dateOfBirth */
+  age?: number;
   description?: string;
   imageUrl?: string;
 }

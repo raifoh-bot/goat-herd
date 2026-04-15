@@ -109,7 +109,10 @@ export const CreateGoatBody = zod.object({
     .min(createGoatBodyMilkPerDayMin)
     .max(createGoatBodyMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number().describe("Calculated age in years from dateOfBirth"),
+  age: zod
+    .number()
+    .optional()
+    .describe("Legacy field, calculated from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
 });
