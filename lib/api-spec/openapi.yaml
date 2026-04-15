@@ -1,9 +1,8 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Fairy Goat Herd Management API
+  description: Dairy Goat Herd Management API
 servers:
   - url: /api
     description: Base API path
@@ -11,7 +10,7 @@ tags:
   - name: health
     description: Health operations
   - name: goats
-    description: Fairy goat management
+    description: Dairy goat management
   - name: dashboard
     description: Herd dashboard and stats
 
@@ -34,21 +33,21 @@ paths:
     get:
       operationId: listGoats
       tags: [goats]
-      summary: List all fairy goats
+      summary: List all dairy goats
       parameters:
         - name: status
           in: query
           schema:
             type: string
-            enum: [healthy, sick, resting, enchanted]
-        - name: element
+            enum: [healthy, watch, treatment, dry]
+        - name: breed
           in: query
           schema:
             type: string
-            enum: [fire, water, earth, air, light, shadow]
+            enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
       responses:
         "200":
-          description: List of fairy goats
+          description: List of dairy goats
           content:
             application/json:
               schema:
@@ -58,7 +57,7 @@ paths:
     post:
       operationId: createGoat
       tags: [goats]
-      summary: Add a new fairy goat to the herd
+      summary: Add a new dairy goat to the herd
       requestBody:
         required: true
         content:
@@ -77,7 +76,7 @@ paths:
     get:
       operationId: getGoat
       tags: [goats]
-      summary: Get a single fairy goat
+      summary: Get a single dairy goat
       parameters:
         - name: id
           in: path
@@ -86,7 +85,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: A fairy goat
+          description: A dairy goat
           content:
             application/json:
               schema:
@@ -96,7 +95,7 @@ paths:
     put:
       operationId: updateGoat
       tags: [goats]
-      summary: Update a fairy goat
+      summary: Update a dairy goat
       parameters:
         - name: id
           in: path
@@ -121,7 +120,7 @@ paths:
     delete:
       operationId: deleteGoat
       tags: [goats]
-      summary: Remove a fairy goat from the herd
+      summary: Remove a dairy goat from the herd
       parameters:
         - name: id
           in: path
@@ -141,26 +140,26 @@ paths:
       summary: Get herd dashboard summary
       responses:
         "200":
-          description: Dashboard summary with counts and stats
+          description: Dashboard summary with counts and production stats
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
-  /dashboard/element-breakdown:
+  /dashboard/breed-breakdown:
     get:
-      operationId: getElementBreakdown
+      operationId: getBreedBreakdown
       tags: [dashboard]
-      summary: Get goat counts by magical element
+      summary: Get goat counts by breed
       responses:
         "200":
-          description: Element breakdown
+          description: Breed breakdown
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ElementCount"
+                  $ref: "#/components/schemas/BreedCount"
 
   /dashboard/recent-activity:
     get:
@@ -194,19 +193,19 @@ components:
           type: integer
         name:
           type: string
-        element:
+        breed:
           type: string
-          enum: [fire, water, earth, air, light, shadow]
+          enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
         status:
           type: string
-          enum: [healthy, sick, resting, enchanted]
-        magicLevel:
-          type: integer
-          minimum: 1
-          maximum: 100
-        wingType:
+          enum: [healthy, watch, treatment, dry]
+        milkPerDay:
+          type: number
+          minimum: 0
+          maximum: 10
+        lactationStatus:
           type: string
-          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+          enum: [milking, dry, pregnant, kid]
         age:
           type: integer
         description:
@@ -222,10 +221,10 @@ components:
       required:
         - id
         - name
-        - element
+        - breed
         - status
-        - magicLevel
-        - wingType
+        - milkPerDay
+        - lactationStatus
         - age
         - createdAt
         - updatedAt
@@ -235,19 +234,19 @@ components:
       properties:
         name:
           type: string
-        element:
+        breed:
           type: string
-          enum: [fire, water, earth, air, light, shadow]
+          enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
         status:
           type: string
-          enum: [healthy, sick, resting, enchanted]
-        magicLevel:
-          type: integer
-          minimum: 1
-          maximum: 100
-        wingType:
+          enum: [healthy, watch, treatment, dry]
+        milkPerDay:
+          type: number
+          minimum: 0
+          maximum: 10
+        lactationStatus:
           type: string
-          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+          enum: [milking, dry, pregnant, kid]
         age:
           type: integer
         description:
@@ -256,10 +255,10 @@ components:
           type: string
       required:
         - name
-        - element
+        - breed
         - status
-        - magicLevel
-        - wingType
+        - milkPerDay
+        - lactationStatus
         - age
 
     UpdateGoatBody:
@@ -267,19 +266,19 @@ components:
       properties:
         name:
           type: string
-        element:
+        breed:
           type: string
-          enum: [fire, water, earth, air, light, shadow]
+          enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
         status:
           type: string
-          enum: [healthy, sick, resting, enchanted]
-        magicLevel:
-          type: integer
-          minimum: 1
-          maximum: 100
-        wingType:
+          enum: [healthy, watch, treatment, dry]
+        milkPerDay:
+          type: number
+          minimum: 0
+          maximum: 10
+        lactationStatus:
           type: string
-          enum: [butterfly, dragonfly, moth, feathered, crystal, none]
+          enum: [milking, dry, pregnant, kid]
         age:
           type: integer
         description:
@@ -294,17 +293,32 @@ components:
           type: integer
         healthyCount:
           type: integer
-        sickCount:
+        treatmentCount:
           type: integer
-        enchantedCount:
+        milkingCount:
           type: integer
-        averageMagicLevel:
+        dryCount:
+          type: integer
+        averageMilkPerDay:
           type: number
-        highestMagicGoat:
+        topProducer:
           $ref: "#/components/schemas/Goat"
       required:
         - totalGoats
         - healthyCount
-        - sickCount
-        - enchantedCount
-        - averageMagicLevel
+        - treatmentCount
+        - milkingCount
+        - dryCount
+        - averageMilkPerDay
+
+    BreedCount:
+      type: object
+      properties:
+        breed:
+          type: string
+          enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
+        count:
+          type: integer
+      required:
+        - breed
+        - count

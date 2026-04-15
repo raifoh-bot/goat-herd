@@ -5,7 +5,9 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { BreedCountBreed } from "./breedCountBreed";
 
-export interface HealthStatus {
-  status: string;
+export interface BreedCount {
+  breed: BreedCountBreed;
+  count: number;
 }

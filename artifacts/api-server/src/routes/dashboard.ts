@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, sql, eq, count } from "drizzle-orm";
+import { count, desc } from "drizzle-orm";
 import { db, goatsTable } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -9,39 +9,39 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const totalGoats = allGoats.length;
 
   const healthyCount = allGoats.filter((g) => g.status === "healthy").length;
-  const sickCount = allGoats.filter((g) => g.status === "sick").length;
-  const enchantedCount = allGoats.filter((g) => g.status === "enchanted").length;
+  const treatmentCount = allGoats.filter((g) => g.status === "treatment").length;
+  const dryCount = allGoats.filter((g) => g.status === "dry").length;
+  const milkingCount = allGoats.filter((g) => g.lactationStatus === "milking").length;
 
-  const averageMagicLevel =
+  const averageMilkPerDay =
     totalGoats > 0
-      ? allGoats.reduce((sum, g) => sum + g.magicLevel, 0) / totalGoats
+      ? allGoats.reduce((sum, g) => sum + g.milkPerDay, 0) / totalGoats
       : 0;
 
-  const highestMagicGoat =
+  const topProducer =
     totalGoats > 0
-      ? allGoats.reduce((best, g) =>
-          g.magicLevel > best.magicLevel ? g : best
-        )
+      ? allGoats.reduce((best, g) => (g.milkPerDay > best.milkPerDay ? g : best))
       : null;
 
   res.json({
     totalGoats,
     healthyCount,
-    sickCount,
-    enchantedCount,
-    averageMagicLevel: Math.round(averageMagicLevel * 10) / 10,
-    highestMagicGoat,
+    treatmentCount,
+    milkingCount,
+    dryCount,
+    averageMilkPerDay: Math.round(averageMilkPerDay * 10) / 10,
+    topProducer,
   });
 });
 
-router.get("/dashboard/element-breakdown", async (_req, res): Promise<void> => {
+router.get("/dashboard/breed-breakdown", async (_req, res): Promise<void> => {
   const breakdown = await db
     .select({
-      element: goatsTable.element,
+      breed: goatsTable.breed,
       count: count(),
     })
     .from(goatsTable)
-    .groupBy(goatsTable.element);
+    .groupBy(goatsTable.breed);
 
   res.json(breakdown);
 });

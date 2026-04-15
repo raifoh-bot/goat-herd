@@ -1,13 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db, goatsTable } from "@workspace/db";
 import {
   CreateGoatBody,
-  UpdateGoatBody,
-  GetGoatParams,
-  UpdateGoatParams,
   DeleteGoatParams,
+  GetGoatParams,
   ListGoatsQueryParams,
+  UpdateGoatBody,
+  UpdateGoatParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -23,8 +23,8 @@ router.get("/goats", async (req, res): Promise<void> => {
   if (params.data.status) {
     conditions.push(eq(goatsTable.status, params.data.status));
   }
-  if (params.data.element) {
-    conditions.push(eq(goatsTable.element, params.data.element));
+  if (params.data.breed) {
+    conditions.push(eq(goatsTable.breed, params.data.breed));
   }
 
   const goats = await db

@@ -12,11 +12,11 @@ import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
-  element: z.enum(["fire", "water", "earth", "air", "light", "shadow"]),
-  status: z.enum(["healthy", "sick", "resting", "enchanted"]),
-  magicLevel: z.number().min(1).max(100),
-  wingType: z.enum(["butterfly", "dragonfly", "moth", "feathered", "crystal", "none"]),
-  age: z.coerce.number().min(0, "Age must be positive").max(1000, "Goats don't live that long"),
+  breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
+  status: z.enum(["healthy", "watch", "treatment", "dry"]),
+  milkPerDay: z.number().min(0).max(10),
+  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid"]),
+  age: z.coerce.number().min(0, "Age must be positive").max(25, "Age should be realistic for a dairy goat"),
   description: z.string().optional(),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
@@ -34,11 +34,11 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultValues?.name || "",
-      element: defaultValues?.element || "earth",
+      breed: defaultValues?.breed || "mixed",
       status: defaultValues?.status || "healthy",
-      magicLevel: defaultValues?.magicLevel || 10,
-      wingType: defaultValues?.wingType || "none",
-      age: defaultValues?.age || 1,
+      milkPerDay: defaultValues?.milkPerDay ?? 2.5,
+      lactationStatus: defaultValues?.lactationStatus || "milking",
+      age: defaultValues?.age || 2,
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
     },
@@ -53,9 +53,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>True Name</FormLabel>
+                <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="E.g., Bramble, Lumina, Cinder" {...field} className="bg-background/50" />
+                  <Input placeholder="E.g., Clover, Hazel, Juniper" {...field} className="bg-background/50" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -67,9 +67,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             name="age"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Age (Moons)</FormLabel>
+                <FormLabel>Age (Years)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} className="bg-background/50" />
+                  <Input type="number" step="0.1" {...field} className="bg-background/50" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,23 +78,26 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
           <FormField
             control={form.control}
-            name="element"
+            name="breed"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Elemental Alignment</FormLabel>
+                <FormLabel>Breed</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select element" />
+                      <SelectValue placeholder="Select breed" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="earth">Earth</SelectItem>
-                    <SelectItem value="water">Water</SelectItem>
-                    <SelectItem value="air">Air</SelectItem>
-                    <SelectItem value="fire">Fire</SelectItem>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="shadow">Shadow</SelectItem>
+                    <SelectItem value="alpine">Alpine</SelectItem>
+                    <SelectItem value="nubian">Nubian</SelectItem>
+                    <SelectItem value="saanen">Saanen</SelectItem>
+                    <SelectItem value="lamancha">LaMancha</SelectItem>
+                    <SelectItem value="toggenburg">Toggenburg</SelectItem>
+                    <SelectItem value="boer">Boer</SelectItem>
+                    <SelectItem value="nigerian-dwarf">Nigerian Dwarf</SelectItem>
+                    <SelectItem value="oberhasli">Oberhasli</SelectItem>
+                    <SelectItem value="mixed">Mixed</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -107,7 +110,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Current Status</FormLabel>
+                <FormLabel>Health Status</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger className="bg-background/50">
@@ -116,9 +119,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="healthy">Healthy</SelectItem>
-                    <SelectItem value="resting">Resting</SelectItem>
-                    <SelectItem value="enchanted">Enchanted</SelectItem>
-                    <SelectItem value="sick">Sick</SelectItem>
+                    <SelectItem value="watch">Watch</SelectItem>
+                    <SelectItem value="treatment">Treatment</SelectItem>
+                    <SelectItem value="dry">Dry</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -128,23 +131,21 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
           <FormField
             control={form.control}
-            name="wingType"
+            name="lactationStatus"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Wing Morphology</FormLabel>
+                <FormLabel>Lactation Status</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select wings" />
+                      <SelectValue placeholder="Select lactation status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">None (Wingless)</SelectItem>
-                    <SelectItem value="butterfly">Butterfly</SelectItem>
-                    <SelectItem value="dragonfly">Dragonfly</SelectItem>
-                    <SelectItem value="moth">Moth</SelectItem>
-                    <SelectItem value="feathered">Feathered</SelectItem>
-                    <SelectItem value="crystal">Crystal</SelectItem>
+                    <SelectItem value="milking">Milking</SelectItem>
+                    <SelectItem value="dry">Dry</SelectItem>
+                    <SelectItem value="pregnant">Pregnant</SelectItem>
+                    <SelectItem value="kid">Kid</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -157,7 +158,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Portrait Link (Optional)</FormLabel>
+                <FormLabel>Photo Link (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="https://..." {...field} className="bg-background/50" />
                 </FormControl>
@@ -169,28 +170,26 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
         <FormField
           control={form.control}
-          name="magicLevel"
+          name="milkPerDay"
           render={({ field }) => (
             <FormItem className="bg-card/50 p-4 rounded-xl border border-border">
               <FormLabel className="flex justify-between">
-                <span>Innate Magic Resonance</span>
-                <span className="text-primary font-bold">{field.value} / 100</span>
+                <span>Milk Production</span>
+                <span className="text-primary font-bold">{field.value} qt/day</span>
               </FormLabel>
               <FormControl>
                 <div className="pt-4 pb-2">
                   <Slider
-                    min={1}
-                    max={100}
-                    step={1}
+                    min={0}
+                    max={10}
+                    step={0.1}
                     value={[field.value]}
                     onValueChange={(vals) => field.onChange(vals[0])}
                     className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5"
                   />
                 </div>
               </FormControl>
-              <FormDescription>
-                Higher magic levels require specialized care routines.
-              </FormDescription>
+              <FormDescription>Daily milk production in quarts.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -201,13 +200,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Keeper's Notes</FormLabel>
+              <FormLabel>Herd Notes</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Temperament, favorite snacks, notable magical outbursts..." 
-                  className="resize-none min-h-[120px] bg-background/50" 
-                  {...field} 
-                />
+                <Textarea placeholder="Temperament, kidding history, feed needs, health notes..." className="resize-none min-h-[120px] bg-background/50" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -217,7 +212,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={isSubmitting} size="lg" className="w-full sm:w-auto min-w-[200px] shadow-md">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {defaultValues ? "Update Records" : "Welcome to the Herd"}
+            {defaultValues ? "Update Record" : "Add to Herd"}
           </Button>
         </div>
       </form>

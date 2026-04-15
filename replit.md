@@ -1,8 +1,8 @@
-# Fairy Goat Herd Manager
+# Dairy Goat Herd Manager
 
 ## Overview
 
-A whimsical fairy goat herd management application. Users can track their enchanted fairy goats, manage individual goats with magical attributes (elemental alignment, wing type, magic level), and monitor herd health and stats via a dashboard.
+A practical dairy goat herd management application. Users can track goats, manage individual records with breed, health status, lactation status, milk production, age, notes, and monitor herd health and production stats via a dashboard.
 
 ## Stack
 
@@ -19,17 +19,17 @@ A whimsical fairy goat herd management application. Users can track their enchan
 
 ## Data Model
 
-- **Goats**: id, name, element (fire/water/earth/air/light/shadow), status (healthy/sick/resting/enchanted), magicLevel (1-100), wingType (butterfly/dragonfly/moth/feathered/crystal/none), age, description, imageUrl, createdAt, updatedAt
+- **Goats**: id, name, breed, status (healthy/watch/treatment/dry), milkPerDay, lactationStatus (milking/dry/pregnant/kid), age, description, imageUrl, createdAt, updatedAt
 
 ## API Endpoints
 
-- `GET /api/goats` — list goats with optional status/element filters
-- `POST /api/goats` — create a new fairy goat
+- `GET /api/goats` — list goats with optional status/breed filters
+- `POST /api/goats` — create a new dairy goat
 - `GET /api/goats/:id` — get single goat
 - `PUT /api/goats/:id` — update a goat
 - `DELETE /api/goats/:id` — delete a goat
-- `GET /api/dashboard/summary` — herd totals, status counts, avg magic level
-- `GET /api/dashboard/element-breakdown` — goat counts by element
+- `GET /api/dashboard/summary` — herd totals, health counts, lactation counts, avg milk production
+- `GET /api/dashboard/breed-breakdown` — goat counts by breed
 - `GET /api/dashboard/recent-activity` — recently updated goats
 
 ## Key Commands
