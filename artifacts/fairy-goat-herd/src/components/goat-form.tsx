@@ -17,6 +17,7 @@ const formSchema = z.object({
   registeredName: z.string().optional(),
   adgaId: z.string().optional(),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
+  sex: z.enum(["doe", "buck"]).optional(),
   damName: z.string().optional(),
   sireName: z.string().optional(),
   maternalGranddamName: z.string().optional(),
@@ -47,6 +48,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       registeredName: defaultValues?.registeredName || "",
       adgaId: defaultValues?.adgaId || "",
       dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth).toISOString().slice(0, 10) : "",
+      sex: (defaultValues?.sex as "doe" | "buck" | undefined) || undefined,
       damName: defaultValues?.damName || "",
       sireName: defaultValues?.sireName || "",
       maternalGranddamName: defaultValues?.maternalGranddamName || "",
@@ -151,6 +153,29 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                   <FormControl>
                     <Input type="date" {...field} className="bg-background/50" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="sex"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sex</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-background/50">
+                        <SelectValue placeholder="Select sex" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="doe">Doe (Female)</SelectItem>
+                      <SelectItem value="buck">Buck (Male)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>Whether this goat is a doe or a buck.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -7,6 +7,7 @@
  */
 import type { CreateGoatBodyBreed } from "./createGoatBodyBreed";
 import type { CreateGoatBodyLactationStatus } from "./createGoatBodyLactationStatus";
+import type { CreateGoatBodySex } from "./createGoatBodySex";
 import type { CreateGoatBodyStatus } from "./createGoatBodyStatus";
 
 export interface CreateGoatBody {
@@ -20,6 +21,7 @@ export interface CreateGoatBody {
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
   dateOfBirth?: Date;
+  sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
   status: CreateGoatBodyStatus;
   /**

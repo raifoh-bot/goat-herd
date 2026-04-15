@@ -50,6 +50,7 @@ export const ListGoatsResponseItem = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -92,6 +93,7 @@ export const CreateGoatBody = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -139,6 +141,7 @@ export const GetGoatResponse = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -184,6 +187,7 @@ export const UpdateGoatBody = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod
     .enum([
       "alpine",
@@ -227,6 +231,7 @@ export const UpdateGoatResponse = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -291,6 +296,7 @@ export const ListBreedingsResponseItem = zod
           paternalGranddamName: zod.string().optional(),
           paternalGrandsireName: zod.string().optional(),
           dateOfBirth: zod.coerce.date().optional(),
+          sex: zod.enum(["doe", "buck"]).optional(),
           breed: zod.enum([
             "alpine",
             "nubian",
@@ -369,6 +375,7 @@ export const GetBreedingResponse = zod
           paternalGranddamName: zod.string().optional(),
           paternalGrandsireName: zod.string().optional(),
           dateOfBirth: zod.coerce.date().optional(),
+          sex: zod.enum(["doe", "buck"]).optional(),
           breed: zod.enum([
             "alpine",
             "nubian",
@@ -486,6 +493,7 @@ export const GetDashboardSummaryResponse = zod.object({
       paternalGranddamName: zod.string().optional(),
       paternalGrandsireName: zod.string().optional(),
       dateOfBirth: zod.coerce.date().optional(),
+      sex: zod.enum(["doe", "buck"]).optional(),
       breed: zod.enum([
         "alpine",
         "nubian",
@@ -551,6 +559,7 @@ export const GetRecentActivityResponseItem = zod.object({
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
   dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
   breed: zod.enum([
     "alpine",
     "nubian",

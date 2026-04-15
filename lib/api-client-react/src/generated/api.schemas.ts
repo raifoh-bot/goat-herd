@@ -9,6 +9,13 @@ export interface HealthStatus {
   status: string;
 }
 
+export type GoatSex = (typeof GoatSex)[keyof typeof GoatSex];
+
+export const GoatSex = {
+  doe: "doe",
+  buck: "buck",
+} as const;
+
 export type GoatBreed = (typeof GoatBreed)[keyof typeof GoatBreed];
 
 export const GoatBreed = {
@@ -54,6 +61,7 @@ export interface Goat {
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
   dateOfBirth?: string;
+  sex?: GoatSex;
   breed: GoatBreed;
   status: GoatStatus;
   /**
@@ -69,6 +77,14 @@ export interface Goat {
   createdAt: string;
   updatedAt: string;
 }
+
+export type CreateGoatBodySex =
+  (typeof CreateGoatBodySex)[keyof typeof CreateGoatBodySex];
+
+export const CreateGoatBodySex = {
+  doe: "doe",
+  buck: "buck",
+} as const;
 
 export type CreateGoatBodyBreed =
   (typeof CreateGoatBodyBreed)[keyof typeof CreateGoatBodyBreed];
@@ -116,6 +132,7 @@ export interface CreateGoatBody {
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
   dateOfBirth?: string;
+  sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
   status: CreateGoatBodyStatus;
   /**
@@ -129,6 +146,14 @@ export interface CreateGoatBody {
   description?: string;
   imageUrl?: string;
 }
+
+export type UpdateGoatBodySex =
+  (typeof UpdateGoatBodySex)[keyof typeof UpdateGoatBodySex];
+
+export const UpdateGoatBodySex = {
+  doe: "doe",
+  buck: "buck",
+} as const;
 
 export type UpdateGoatBodyBreed =
   (typeof UpdateGoatBodyBreed)[keyof typeof UpdateGoatBodyBreed];
@@ -176,6 +201,7 @@ export interface UpdateGoatBody {
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
   dateOfBirth?: string;
+  sex?: UpdateGoatBodySex;
   breed?: UpdateGoatBodyBreed;
   status?: UpdateGoatBodyStatus;
   /**

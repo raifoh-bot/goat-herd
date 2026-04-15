@@ -50,10 +50,16 @@ export function GoatCard({ goat }: GoatCardProps) {
           {goat.registeredName && (
             <p className="text-xs text-muted-foreground/80 mt-0.5 line-clamp-1 italic">{goat.registeredName}</p>
           )}
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
             <span>{formatAge(goat.dateOfBirth)} old</span>
             <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
             <span className="capitalize">{goat.lactationStatus}</span>
+            {goat.sex && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                <span className="capitalize">{goat.sex === "doe" ? "Doe ♀" : "Buck ♂"}</span>
+              </>
+            )}
           </p>
           {goat.adgaId && (
             <p className="text-xs text-muted-foreground/70 mt-1 font-mono">ADGA #{goat.adgaId}</p>

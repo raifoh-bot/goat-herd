@@ -321,6 +321,9 @@ components:
         dateOfBirth:
           type: string
           format: date-time
+        sex:
+          type: string
+          enum: [doe, buck]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -382,6 +385,9 @@ components:
         dateOfBirth:
           type: string
           format: date-time
+        sex:
+          type: string
+          enum: [doe, buck]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -433,6 +439,9 @@ components:
         dateOfBirth:
           type: string
           format: date-time
+        sex:
+          type: string
+          enum: [doe, buck]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]

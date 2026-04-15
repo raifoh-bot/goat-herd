@@ -7,6 +7,7 @@
  */
 import type { GoatBreed } from "./goatBreed";
 import type { GoatLactationStatus } from "./goatLactationStatus";
+import type { GoatSex } from "./goatSex";
 import type { GoatStatus } from "./goatStatus";
 
 export interface Goat {
@@ -21,6 +22,7 @@ export interface Goat {
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
   dateOfBirth?: Date;
+  sex?: GoatSex;
   breed: GoatBreed;
   status: GoatStatus;
   /**
