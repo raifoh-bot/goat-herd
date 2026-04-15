@@ -171,8 +171,8 @@ export default function BreedingDetail() {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Breeding Not Found</h2>
-          <Button onClick={() => setLocation("/breedings")}>Return to Breedings</Button>
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Record Not Found</h2>
+          <Button onClick={() => setLocation("/breedings")}>Return to Kiddings</Button>
         </div>
       </Layout>
     );
@@ -200,7 +200,7 @@ export default function BreedingDetail() {
       <div className="space-y-6 animate-in fade-in duration-500 max-w-3xl mx-auto">
         <div className="flex items-center justify-between gap-4">
           <Button variant="ghost" size="sm" onClick={() => setLocation("/breedings")} className="text-muted-foreground hover:text-foreground -ml-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Breedings
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kiddings
           </Button>
           <div className="flex items-center gap-2">
             {!isEditingStatus && breeding.status !== "kidded" && (
@@ -268,7 +268,7 @@ export default function BreedingDetail() {
                                 name={`kids.${idx}.sex`}
                                 render={({ field: f }) => (
                                   <FormItem>
-                                    <FormLabel className="text-xs">Outcome</FormLabel>
+                                    <FormLabel className="text-xs">Sex</FormLabel>
                                     <Select onValueChange={f.onChange} value={f.value}>
                                       <FormControl>
                                         <SelectTrigger className="h-8">
@@ -371,12 +371,6 @@ export default function BreedingDetail() {
                   <div className="font-medium text-foreground capitalize">{breeding.doe.breed}</div>
                 </div>
               )}
-              {breeding.doe && (
-                <div className="rounded-xl border border-border bg-card/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Doe Health</div>
-                  <div className="font-medium text-foreground capitalize">{breeding.doe.status}</div>
-                </div>
-              )}
             </div>
 
             {breeding.notes && (
@@ -391,7 +385,7 @@ export default function BreedingDetail() {
         {isEditingStatus && (
           <Card className="border-primary/10 shadow-md">
             <CardHeader>
-              <CardTitle className="font-serif text-lg">Update Breeding Status</CardTitle>
+              <CardTitle className="font-serif text-lg">Update Status</CardTitle>
             </CardHeader>
             <CardContent>
               <Form {...updateForm}>

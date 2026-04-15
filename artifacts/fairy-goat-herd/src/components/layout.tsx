@@ -13,7 +13,7 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { href: "/", label: "Dashboard", icon: ClipboardList, exact: true },
     { href: "/goats", label: "The Herd", icon: List, exact: false },
-    { href: "/breedings", label: "Breedings", icon: Heart, exact: false },
+    { href: "/breedings", label: "Kiddings", icon: Heart, exact: false },
     { href: "/goats/new", label: "Add Goat", icon: Milk, exact: true },
   ];
 

@@ -88,7 +88,7 @@ export default function BreedingsList() {
       <div className="space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Breeding Records</h2>
+            <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Kidding Records</h2>
             <p className="text-muted-foreground">Track breedings, confirm pregnancies, and record kidding outcomes.</p>
           </div>
           <Link href="/breedings/new">
@@ -116,8 +116,8 @@ export default function BreedingsList() {
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Heart className="h-8 w-8 text-primary/60" />
             </div>
-            <h3 className="text-xl font-serif font-medium text-foreground mb-2">No breeding records yet</h3>
-            <p className="text-muted-foreground max-w-md mb-6">Record a breeding when you breed a doe to a buck to start tracking pregnancies and kidding outcomes.</p>
+            <h3 className="text-xl font-serif font-medium text-foreground mb-2">No kidding records yet</h3>
+            <p className="text-muted-foreground max-w-md mb-6">Record a breeding when you breed a doe to start tracking pregnancies and kidding outcomes.</p>
             <Link href="/breedings/new">
               <Button>Record First Breeding</Button>
             </Link>
@@ -140,7 +140,7 @@ export default function BreedingsList() {
               <section>
                 <h3 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Baby className="h-4 w-4 text-muted-foreground" />
-                  Past Breedings ({past.length})
+                  Past Kiddings ({past.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {past.map((b) => <BreedingCard key={b.id} breeding={b} />)}

@@ -92,7 +92,7 @@ export default function BreedingNew() {
     <Layout>
       <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
         <Button variant="ghost" size="sm" onClick={() => setLocation("/breedings")} className="text-muted-foreground hover:text-foreground -ml-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Breedings
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kiddings
         </Button>
 
         <div>
