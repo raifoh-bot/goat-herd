@@ -21,6 +21,7 @@ import {
   useUpdateGoat,
 } from "@workspace/api-client-react";
 import { breedLabels } from "@/pages/goats/index";
+import { formatAge } from "@/lib/age";
 
 export default function GoatDetails() {
   const params = useParams();
@@ -208,7 +209,14 @@ export default function GoatDetails() {
                   </div>
                 </div>
                 <CardContent className="p-6">
-                  <h1 className="text-3xl font-serif font-bold text-foreground mb-4">{goat.name}</h1>
+                  <h1 className="text-3xl font-serif font-bold text-foreground mb-1">{goat.name}</h1>
+                  {goat.registeredName && (
+                    <p className="text-sm text-muted-foreground italic mb-1">{goat.registeredName}</p>
+                  )}
+                  {goat.adgaId && (
+                    <p className="text-xs font-mono text-muted-foreground/70 mb-4">ADGA #{goat.adgaId}</p>
+                  )}
+                  {!goat.registeredName && !goat.adgaId && <div className="mb-4" />}
 
                   <div className="space-y-4">
                     <div className="flex justify-between items-center pb-3 border-b border-border">
@@ -223,7 +231,7 @@ export default function GoatDetails() {
 
                     <div className="flex justify-between items-center pb-3 border-b border-border">
                       <span className="text-muted-foreground flex items-center gap-2 text-sm"><Calendar className="h-4 w-4" /> Age</span>
-                      <span className="font-medium text-foreground">{goat.age} years</span>
+                      <span className="font-medium text-foreground">{goat.dateOfBirth ? formatAge(goat.dateOfBirth) : `${goat.age} yr`}</span>
                     </div>
                   </div>
                 </CardContent>

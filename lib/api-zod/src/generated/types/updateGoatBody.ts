@@ -11,6 +11,8 @@ import type { UpdateGoatBodyStatus } from "./updateGoatBodyStatus";
 
 export interface UpdateGoatBody {
   name?: string;
+  registeredName?: string;
+  adgaId?: string;
   damName?: string;
   sireName?: string;
   maternalGranddamName?: string;

@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 export const goatsTable = pgTable("goats", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  registeredName: text("registered_name"),
+  adgaId: text("adga_id"),
   damName: text("dam_name").default("").notNull(),
   sireName: text("sire_name").default("").notNull(),
   maternalGranddamName: text("maternal_granddam_name").default("").notNull(),

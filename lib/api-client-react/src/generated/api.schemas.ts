@@ -45,6 +45,8 @@ export const GoatLactationStatus = {
 export interface Goat {
   id: number;
   name: string;
+  registeredName?: string;
+  adgaId?: string;
   damName?: string;
   sireName?: string;
   maternalGranddamName?: string;
@@ -105,6 +107,8 @@ export const CreateGoatBodyLactationStatus = {
 
 export interface CreateGoatBody {
   name: string;
+  registeredName?: string;
+  adgaId?: string;
   damName?: string;
   sireName?: string;
   maternalGranddamName?: string;
@@ -163,6 +167,8 @@ export const UpdateGoatBodyLactationStatus = {
 
 export interface UpdateGoatBody {
   name?: string;
+  registeredName?: string;
+  adgaId?: string;
   damName?: string;
   sireName?: string;
   maternalGranddamName?: string;

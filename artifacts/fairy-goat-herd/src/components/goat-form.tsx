@@ -14,6 +14,8 @@ import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
+  registeredName: z.string().optional(),
+  adgaId: z.string().optional(),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   damName: z.string().optional(),
   sireName: z.string().optional(),
@@ -42,6 +44,8 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultValues?.name || "",
+      registeredName: defaultValues?.registeredName || "",
+      adgaId: defaultValues?.adgaId || "",
       dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth).toISOString().slice(0, 10) : "",
       damName: defaultValues?.damName || "",
       sireName: defaultValues?.sireName || "",
@@ -87,35 +91,74 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-4 rounded-xl border border-border bg-card/50 p-4">
+          <div>
+            <h3 className="font-serif text-lg font-semibold text-foreground">Identity</h3>
+            <p className="text-sm text-muted-foreground">Barn name, registered name, and ADGA registration number.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Barn Name <span className="text-destructive">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., Clover, Hazel, Juniper" {...field} className="bg-background/50" />
+                  </FormControl>
+                  <FormDescription>The everyday name used in the barn.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="registeredName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Registered Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., Maple Hill Clover's Star" {...field} className="bg-background/50" />
+                  </FormControl>
+                  <FormDescription>Full registered name on ADGA papers.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="adgaId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ADGA Registration #</FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., AN1234567" {...field} className="bg-background/50" />
+                  </FormControl>
+                  <FormDescription>American Dairy Goat Association registration ID.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of Birth <span className="text-destructive">*</span></FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} className="bg-background/50" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="E.g., Clover, Hazel, Juniper" {...field} className="bg-background/50" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="dateOfBirth"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date of Birth</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} className="bg-background/50" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <FormField
             control={form.control}
             name="breed"

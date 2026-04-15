@@ -47,17 +47,16 @@ export function GoatCard({ goat }: GoatCardProps) {
 
         <CardHeader className="pb-2 pt-4 px-4 flex-none">
           <h3 className="font-serif text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{goat.name}</h3>
+          {goat.registeredName && (
+            <p className="text-xs text-muted-foreground/80 mt-0.5 line-clamp-1 italic">{goat.registeredName}</p>
+          )}
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
             <span>{formatAge(goat.dateOfBirth)} old</span>
             <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
             <span className="capitalize">{goat.lactationStatus}</span>
           </p>
-          {(goat.damName || goat.sireName) && (
-            <p className="text-xs text-muted-foreground mt-2 line-clamp-1">
-              {goat.damName && <>Dam: {goat.damName}</>}
-              {goat.damName && goat.sireName && <span> • </span>}
-              {goat.sireName && <>Sire: {goat.sireName}</>}
-            </p>
+          {goat.adgaId && (
+            <p className="text-xs text-muted-foreground/70 mt-1 font-mono">ADGA #{goat.adgaId}</p>
           )}
         </CardHeader>
 

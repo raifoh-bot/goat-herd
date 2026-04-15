@@ -41,6 +41,8 @@ export const listGoatsResponseMilkPerDayMax = 10;
 export const ListGoatsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),
@@ -81,6 +83,8 @@ export const createGoatBodyMilkPerDayMax = 10;
 
 export const CreateGoatBody = zod.object({
   name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),
@@ -123,6 +127,8 @@ export const getGoatResponseMilkPerDayMax = 10;
 export const GetGoatResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),
@@ -166,6 +172,8 @@ export const updateGoatBodyMilkPerDayMax = 10;
 
 export const UpdateGoatBody = zod.object({
   name: zod.string().optional(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),
@@ -207,6 +215,8 @@ export const updateGoatResponseMilkPerDayMax = 10;
 export const UpdateGoatResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),
@@ -269,6 +279,8 @@ export const ListBreedingsResponseItem = zod
         .object({
           id: zod.number(),
           name: zod.string(),
+          registeredName: zod.string().optional(),
+          adgaId: zod.string().optional(),
           damName: zod.string().optional(),
           sireName: zod.string().optional(),
           maternalGranddamName: zod.string().optional(),
@@ -345,6 +357,8 @@ export const GetBreedingResponse = zod
         .object({
           id: zod.number(),
           name: zod.string(),
+          registeredName: zod.string().optional(),
+          adgaId: zod.string().optional(),
           damName: zod.string().optional(),
           sireName: zod.string().optional(),
           maternalGranddamName: zod.string().optional(),
@@ -460,6 +474,8 @@ export const GetDashboardSummaryResponse = zod.object({
     .object({
       id: zod.number(),
       name: zod.string(),
+      registeredName: zod.string().optional(),
+      adgaId: zod.string().optional(),
       damName: zod.string().optional(),
       sireName: zod.string().optional(),
       maternalGranddamName: zod.string().optional(),
@@ -523,6 +539,8 @@ export const getRecentActivityResponseMilkPerDayMax = 10;
 export const GetRecentActivityResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
   damName: zod.string().optional(),
   sireName: zod.string().optional(),
   maternalGranddamName: zod.string().optional(),

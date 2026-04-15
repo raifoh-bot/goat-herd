@@ -12,6 +12,8 @@ import type { GoatStatus } from "./goatStatus";
 export interface Goat {
   id: number;
   name: string;
+  registeredName?: string;
+  adgaId?: string;
   damName?: string;
   sireName?: string;
   maternalGranddamName?: string;

@@ -302,6 +302,10 @@ components:
           type: integer
         name:
           type: string
+        registeredName:
+          type: string
+        adgaId:
+          type: string
         damName:
           type: string
         sireName:
@@ -359,6 +363,10 @@ components:
       properties:
         name:
           type: string
+        registeredName:
+          type: string
+        adgaId:
+          type: string
         damName:
           type: string
         sireName:
@@ -406,6 +414,10 @@ components:
       type: object
       properties:
         name:
+          type: string
+        registeredName:
+          type: string
+        adgaId:
           type: string
         damName:
           type: string
