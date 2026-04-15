@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -71,6 +72,30 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
   });
 
   const dateOfBirth = form.watch("dateOfBirth");
+  const damName = form.watch("damName");
+  const sireName = form.watch("sireName");
+
+  useEffect(() => {
+    if (!defaultValues) {
+      return;
+    }
+
+    if (damName && defaultValues.maternalGranddamName && !form.getValues("maternalGranddamName")) {
+      form.setValue("maternalGranddamName", defaultValues.maternalGranddamName);
+    }
+
+    if (damName && defaultValues.maternalGrandsireName && !form.getValues("maternalGrandsireName")) {
+      form.setValue("maternalGrandsireName", defaultValues.maternalGrandsireName);
+    }
+
+    if (sireName && defaultValues.paternalGranddamName && !form.getValues("paternalGranddamName")) {
+      form.setValue("paternalGranddamName", defaultValues.paternalGranddamName);
+    }
+
+    if (sireName && defaultValues.paternalGrandsireName && !form.getValues("paternalGrandsireName")) {
+      form.setValue("paternalGrandsireName", defaultValues.paternalGrandsireName);
+    }
+  }, [damName, sireName, defaultValues, form]);
 
   return (
     <Form {...form}>
