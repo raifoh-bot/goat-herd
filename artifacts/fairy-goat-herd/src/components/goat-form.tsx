@@ -12,6 +12,7 @@ import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
   damName: z.string().optional(),
   sireName: z.string().optional(),
   maternalGranddamName: z.string().optional(),
@@ -22,7 +23,6 @@ const formSchema = z.object({
   status: z.enum(["healthy", "watch", "treatment", "dry"]),
   milkPerDay: z.number().min(0).max(10),
   lactationStatus: z.enum(["milking", "dry", "pregnant", "kid"]),
-  age: z.coerce.number().min(0, "Age must be positive").max(25, "Age should be realistic for a dairy goat"),
   description: z.string().optional(),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
@@ -36,10 +36,25 @@ interface GoatFormProps {
 }
 
 export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
+  const calculateAge = (dateOfBirth: string) => {
+    const dob = new Date(dateOfBirth);
+    if (Number.isNaN(dob.getTime())) {
+      return 0;
+    }
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age -= 1;
+    }
+    return Math.max(0, age);
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultValues?.name || "",
+      dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth).toISOString().slice(0, 10) : "",
       damName: defaultValues?.damName || "",
       sireName: defaultValues?.sireName || "",
       maternalGranddamName: defaultValues?.maternalGranddamName || "",
@@ -50,11 +65,12 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       status: defaultValues?.status || "healthy",
       milkPerDay: defaultValues?.milkPerDay ?? 2.5,
       lactationStatus: defaultValues?.lactationStatus || "milking",
-      age: defaultValues?.age || 2,
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
     },
   });
+
+  const dateOfBirth = form.watch("dateOfBirth");
 
   return (
     <Form {...form}>
@@ -76,12 +92,12 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
           <FormField
             control={form.control}
-            name="age"
+            name="dateOfBirth"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Age (Years)</FormLabel>
+                <FormLabel>Date of Birth</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.1" {...field} className="bg-background/50" />
+                  <Input type="date" {...field} className="bg-background/50" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -206,6 +222,18 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             </FormItem>
           )}
         />
+
+        <div className="rounded-xl border border-border bg-card/50 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-foreground">Calculated Age</h3>
+              <p className="text-sm text-muted-foreground">Age is derived automatically from the date of birth.</p>
+            </div>
+            <div className="text-2xl font-serif font-bold text-primary">
+              {dateOfBirth ? `${calculateAge(dateOfBirth)} years` : "—"}
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-4 rounded-xl border border-border bg-card/50 p-4">
           <div>

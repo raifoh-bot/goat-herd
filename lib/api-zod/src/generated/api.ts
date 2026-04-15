@@ -47,6 +47,7 @@ export const ListGoatsResponseItem = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -64,7 +65,7 @@ export const ListGoatsResponseItem = zod.object({
     .min(listGoatsResponseMilkPerDayMin)
     .max(listGoatsResponseMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   createdAt: zod.coerce.date(),
@@ -86,6 +87,7 @@ export const CreateGoatBody = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -103,7 +105,7 @@ export const CreateGoatBody = zod.object({
     .min(createGoatBodyMilkPerDayMin)
     .max(createGoatBodyMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
 });
@@ -127,6 +129,7 @@ export const GetGoatResponse = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -144,7 +147,7 @@ export const GetGoatResponse = zod.object({
     .min(getGoatResponseMilkPerDayMin)
     .max(getGoatResponseMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   createdAt: zod.coerce.date(),
@@ -169,6 +172,7 @@ export const UpdateGoatBody = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod
     .enum([
       "alpine",
@@ -189,7 +193,10 @@ export const UpdateGoatBody = zod.object({
     .max(updateGoatBodyMilkPerDayMax)
     .optional(),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]).optional(),
-  age: zod.number().optional(),
+  age: zod
+    .number()
+    .optional()
+    .describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
 });
@@ -206,6 +213,7 @@ export const UpdateGoatResponse = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -223,7 +231,7 @@ export const UpdateGoatResponse = zod.object({
     .min(updateGoatResponseMilkPerDayMin)
     .max(updateGoatResponseMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   createdAt: zod.coerce.date(),
@@ -260,6 +268,7 @@ export const GetDashboardSummaryResponse = zod.object({
       maternalGrandsireName: zod.string().optional(),
       paternalGranddamName: zod.string().optional(),
       paternalGrandsireName: zod.string().optional(),
+      dateOfBirth: zod.coerce.date().optional(),
       breed: zod.enum([
         "alpine",
         "nubian",
@@ -277,7 +286,7 @@ export const GetDashboardSummaryResponse = zod.object({
         .min(getDashboardSummaryResponseTopProducerMilkPerDayMin)
         .max(getDashboardSummaryResponseTopProducerMilkPerDayMax),
       lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-      age: zod.number(),
+      age: zod.number().describe("Calculated age in years from dateOfBirth"),
       description: zod.string().optional(),
       imageUrl: zod.string().optional(),
       createdAt: zod.coerce.date(),
@@ -322,6 +331,7 @@ export const GetRecentActivityResponseItem = zod.object({
   maternalGrandsireName: zod.string().optional(),
   paternalGranddamName: zod.string().optional(),
   paternalGrandsireName: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
   breed: zod.enum([
     "alpine",
     "nubian",
@@ -339,7 +349,7 @@ export const GetRecentActivityResponseItem = zod.object({
     .min(getRecentActivityResponseMilkPerDayMin)
     .max(getRecentActivityResponseMilkPerDayMax),
   lactationStatus: zod.enum(["milking", "dry", "pregnant", "kid"]),
-  age: zod.number(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   createdAt: zod.coerce.date(),

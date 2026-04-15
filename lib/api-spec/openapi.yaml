@@ -205,6 +205,9 @@ components:
           type: string
         paternalGrandsireName:
           type: string
+        dateOfBirth:
+          type: string
+          format: date-time
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -220,6 +223,7 @@ components:
           enum: [milking, dry, pregnant, kid]
         age:
           type: integer
+          description: Calculated age in years from dateOfBirth
         description:
           type: string
         imageUrl:
@@ -258,6 +262,9 @@ components:
           type: string
         paternalGrandsireName:
           type: string
+        dateOfBirth:
+          type: string
+          format: date-time
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -273,6 +280,7 @@ components:
           enum: [milking, dry, pregnant, kid]
         age:
           type: integer
+          description: Calculated age in years from dateOfBirth
         description:
           type: string
         imageUrl:
@@ -302,6 +310,9 @@ components:
           type: string
         paternalGrandsireName:
           type: string
+        dateOfBirth:
+          type: string
+          format: date-time
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -317,6 +328,7 @@ components:
           enum: [milking, dry, pregnant, kid]
         age:
           type: integer
+          description: Calculated age in years from dateOfBirth
         description:
           type: string
         imageUrl:

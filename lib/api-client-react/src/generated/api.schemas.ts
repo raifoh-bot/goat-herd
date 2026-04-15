@@ -51,6 +51,7 @@ export interface Goat {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  dateOfBirth?: string;
   breed: GoatBreed;
   status: GoatStatus;
   /**
@@ -59,6 +60,7 @@ export interface Goat {
    */
   milkPerDay: number;
   lactationStatus: GoatLactationStatus;
+  /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
   imageUrl?: string;
@@ -109,6 +111,7 @@ export interface CreateGoatBody {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  dateOfBirth?: string;
   breed: CreateGoatBodyBreed;
   status: CreateGoatBodyStatus;
   /**
@@ -117,6 +120,7 @@ export interface CreateGoatBody {
    */
   milkPerDay: number;
   lactationStatus: CreateGoatBodyLactationStatus;
+  /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
   imageUrl?: string;
@@ -165,6 +169,7 @@ export interface UpdateGoatBody {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  dateOfBirth?: string;
   breed?: UpdateGoatBodyBreed;
   status?: UpdateGoatBodyStatus;
   /**
@@ -173,6 +178,7 @@ export interface UpdateGoatBody {
    */
   milkPerDay?: number;
   lactationStatus?: UpdateGoatBodyLactationStatus;
+  /** Calculated age in years from dateOfBirth */
   age?: number;
   description?: string;
   imageUrl?: string;

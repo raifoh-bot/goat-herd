@@ -18,6 +18,7 @@ export interface Goat {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  dateOfBirth?: Date;
   breed: GoatBreed;
   status: GoatStatus;
   /**
@@ -26,6 +27,7 @@ export interface Goat {
    */
   milkPerDay: number;
   lactationStatus: GoatLactationStatus;
+  /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
   imageUrl?: string;
