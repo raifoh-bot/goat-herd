@@ -11,6 +11,12 @@ import type { CreateGoatBodyStatus } from "./createGoatBodyStatus";
 
 export interface CreateGoatBody {
   name: string;
+  damName?: string;
+  sireName?: string;
+  maternalGranddamName?: string;
+  maternalGrandsireName?: string;
+  paternalGranddamName?: string;
+  paternalGrandsireName?: string;
   breed: CreateGoatBodyBreed;
   status: CreateGoatBodyStatus;
   /**

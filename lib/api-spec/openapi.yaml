@@ -193,6 +193,18 @@ components:
           type: integer
         name:
           type: string
+        damName:
+          type: string
+        sireName:
+          type: string
+        maternalGranddamName:
+          type: string
+        maternalGrandsireName:
+          type: string
+        paternalGranddamName:
+          type: string
+        paternalGrandsireName:
+          type: string
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -234,6 +246,18 @@ components:
       properties:
         name:
           type: string
+        damName:
+          type: string
+        sireName:
+          type: string
+        maternalGranddamName:
+          type: string
+        maternalGrandsireName:
+          type: string
+        paternalGranddamName:
+          type: string
+        paternalGrandsireName:
+          type: string
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -265,6 +289,18 @@ components:
       type: object
       properties:
         name:
+          type: string
+        damName:
+          type: string
+        sireName:
+          type: string
+        maternalGranddamName:
+          type: string
+        maternalGrandsireName:
+          type: string
+        paternalGranddamName:
+          type: string
+        paternalGrandsireName:
           type: string
         breed:
           type: string

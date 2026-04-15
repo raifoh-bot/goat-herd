@@ -130,6 +130,15 @@ export default function GoatDetails() {
   };
 
   const milkProgress = Math.min(100, (goat.milkPerDay / 10) * 100);
+  const pedigreeRows = [
+    { label: "Dam", value: goat.damName },
+    { label: "Sire", value: goat.sireName },
+    { label: "Maternal Granddam", value: goat.maternalGranddamName },
+    { label: "Maternal Grandsire", value: goat.maternalGrandsireName },
+    { label: "Paternal Granddam", value: goat.paternalGranddamName },
+    { label: "Paternal Grandsire", value: goat.paternalGrandsireName },
+  ];
+  const hasPedigree = pedigreeRows.some((row) => row.value);
 
   return (
     <Layout>
@@ -246,6 +255,30 @@ export default function GoatDetails() {
                       {goat.milkPerDay >= 5 && "High production. Prioritize nutrition, udder checks, and careful production tracking."}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/10 shadow-md">
+                <CardHeader>
+                  <CardTitle className="font-serif text-lg">Breeding Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {hasPedigree ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {pedigreeRows.map((row) => (
+                        <div key={row.label} className="rounded-xl border border-border bg-card/50 p-4">
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{row.label}</div>
+                          <div className="font-medium text-foreground">{row.value || "Not recorded"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Milk className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                      <p className="italic">No breeding information has been added yet.</p>
+                      <Button variant="link" onClick={() => setIsEditing(true)} className="mt-2 text-primary">Add pedigree</Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

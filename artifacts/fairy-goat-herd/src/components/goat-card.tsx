@@ -51,6 +51,13 @@ export function GoatCard({ goat }: GoatCardProps) {
             <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
             <span className="capitalize">{goat.lactationStatus}</span>
           </p>
+          {(goat.damName || goat.sireName) && (
+            <p className="text-xs text-muted-foreground mt-2 line-clamp-1">
+              {goat.damName && <>Dam: {goat.damName}</>}
+              {goat.damName && goat.sireName && <span> • </span>}
+              {goat.sireName && <>Sire: {goat.sireName}</>}
+            </p>
+          )}
         </CardHeader>
 
         <CardContent className="px-4 pb-4 pt-2 flex-1 flex flex-col justify-end">

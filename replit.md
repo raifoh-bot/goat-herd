@@ -2,7 +2,7 @@
 
 ## Overview
 
-A practical dairy goat herd management application. Users can track goats, manage individual records with breed, health status, lactation status, milk production, age, notes, and monitor herd health and production stats via a dashboard.
+A practical dairy goat herd management application. Users can track goats, manage individual records with breed, breeding pedigree, health status, lactation status, milk production, age, notes, and monitor herd health and production stats via a dashboard.
 
 ## Stack
 
@@ -19,7 +19,7 @@ A practical dairy goat herd management application. Users can track goats, manag
 
 ## Data Model
 
-- **Goats**: id, name, breed, status (healthy/watch/treatment/dry), milkPerDay, lactationStatus (milking/dry/pregnant/kid), age, description, imageUrl, createdAt, updatedAt
+- **Goats**: id, name, damName, sireName, maternalGranddamName, maternalGrandsireName, paternalGranddamName, paternalGrandsireName, breed, status (healthy/watch/treatment/dry), milkPerDay, lactationStatus (milking/dry/pregnant/kid), age, description, imageUrl, createdAt, updatedAt
 
 ## API Endpoints
 
