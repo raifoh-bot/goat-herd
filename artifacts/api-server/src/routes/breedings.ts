@@ -175,6 +175,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     breedingId,
     name: kid.name,
     sex: kid.sex,
+    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa",
     birthDate: kid.birthDate
       ? new Date(kid.birthDate)
       : parsed.data.birthDate

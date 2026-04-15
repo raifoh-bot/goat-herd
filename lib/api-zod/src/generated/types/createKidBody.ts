@@ -5,11 +5,13 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateKidBodyKidStatus } from "./createKidBodyKidStatus";
 import type { CreateKidBodySex } from "./createKidBodySex";
 
 export interface CreateKidBody {
   name?: string;
   sex: CreateKidBodySex;
+  kidStatus?: CreateKidBodyKidStatus;
   birthDate?: Date;
   birthWeight?: number;
   notes?: string;

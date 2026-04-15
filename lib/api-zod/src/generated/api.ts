@@ -459,7 +459,8 @@ export const GetBreedingResponse = zod
             id: zod.number(),
             breedingId: zod.number(),
             name: zod.string().optional(),
-            sex: zod.enum(["doe", "buck", "doa"]),
+            sex: zod.enum(["doe", "buck"]),
+            kidStatus: zod.enum(["alive", "doa"]).optional(),
             birthDate: zod.coerce.date().optional(),
             birthWeight: zod.number().optional(),
             notes: zod.string().optional(),
@@ -510,7 +511,8 @@ export const AddKidsBody = zod.object({
   kids: zod.array(
     zod.object({
       name: zod.string().optional(),
-      sex: zod.enum(["doe", "buck", "doa"]),
+      sex: zod.enum(["doe", "buck"]),
+      kidStatus: zod.enum(["alive", "doa"]).optional(),
       birthDate: zod.coerce.date().optional(),
       birthWeight: zod.number().optional(),
       notes: zod.string().optional(),

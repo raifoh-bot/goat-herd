@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type KidSex = (typeof KidSex)[keyof typeof KidSex];
+export type KidKidStatus = (typeof KidKidStatus)[keyof typeof KidKidStatus];
 
-export const KidSex = {
-  doe: "doe",
-  buck: "buck",
+export const KidKidStatus = {
+  alive: "alive",
+  doa: "doa",
 } as const;

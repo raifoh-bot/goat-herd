@@ -647,7 +647,10 @@ components:
           type: string
         sex:
           type: string
-          enum: [doe, buck, doa]
+          enum: [doe, buck]
+        kidStatus:
+          type: string
+          enum: [alive, doa]
         birthDate:
           type: string
           format: date-time
@@ -675,7 +678,10 @@ components:
           type: string
         sex:
           type: string
-          enum: [doe, buck, doa]
+          enum: [doe, buck]
+        kidStatus:
+          type: string
+          enum: [alive, doa]
         birthDate:
           type: string
           format: date-time

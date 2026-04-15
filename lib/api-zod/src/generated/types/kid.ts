@@ -5,6 +5,7 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { KidKidStatus } from "./kidKidStatus";
 import type { KidSex } from "./kidSex";
 
 export interface Kid {
@@ -12,6 +13,7 @@ export interface Kid {
   breedingId: number;
   name?: string;
   sex: KidSex;
+  kidStatus?: KidKidStatus;
   birthDate?: Date;
   birthWeight?: number;
   notes?: string;

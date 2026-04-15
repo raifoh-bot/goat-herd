@@ -12,5 +12,4 @@ export type CreateKidBodySex =
 export const CreateKidBodySex = {
   doe: "doe",
   buck: "buck",
-  doa: "doa",
 } as const;

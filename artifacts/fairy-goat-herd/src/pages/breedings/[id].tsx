@@ -13,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,11 +32,6 @@ const statusConfig = {
   open: { label: "Open (Did Not Take)", icon: XCircle, className: "bg-destructive text-destructive-foreground" },
 };
 
-const kidSexConfig = {
-  doe: { label: "Doe", className: "bg-secondary text-secondary-foreground" },
-  buck: { label: "Buck", className: "bg-muted text-muted-foreground" },
-  doa: { label: "DOA", className: "bg-destructive/20 text-destructive" },
-};
 
 const updateSchema = z.object({
   status: z.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -49,7 +43,8 @@ const kiddingSchema = z.object({
   birthDate: z.string().min(1, "Birth date is required"),
   kids: z.array(z.object({
     name: z.string().optional(),
-    sex: z.enum(["doe", "buck", "doa"]),
+    sex: z.enum(["doe", "buck"]),
+    kidStatus: z.enum(["alive", "doa"]),
     birthWeight: z.coerce.number().min(0).optional().or(z.literal("")),
     notes: z.string().optional(),
   })).min(1, "Add at least one kid"),
@@ -59,16 +54,19 @@ type UpdateValues = z.infer<typeof updateSchema>;
 type KiddingValues = z.infer<typeof kiddingSchema>;
 
 function KidCard({ kid }: { kid: Kid }) {
-  const config = kidSexConfig[kid.sex];
+  const isDoa = kid.kidStatus === "doa";
+  const sexLabel = kid.sex === "doe" ? "Doe ♀" : "Buck ♂";
+  const sexClass = kid.sex === "doe" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground";
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card/50">
+    <div className={`flex items-center gap-4 p-4 rounded-xl border border-border bg-card/50 ${isDoa ? "opacity-60" : ""}`}>
       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
         <Baby className="h-5 w-5" />
       </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-0.5">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
           <span className="font-medium text-foreground">{kid.name || "Unnamed"}</span>
-          <Badge className={`${config.className} text-xs px-2 py-0`}>{config.label}</Badge>
+          <Badge className={`${sexClass} text-xs px-2 py-0`}>{sexLabel}</Badge>
+          {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
         </div>
         <div className="text-xs text-muted-foreground">
           {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
@@ -87,7 +85,7 @@ export default function BreedingDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [isKiddingOpen, setIsKiddingOpen] = useState(false);
+  const [isAddingKids, setIsAddingKids] = useState(false);
 
   const { data: breeding, isLoading, isError } = useGetBreeding(id, {
     query: { enabled: !!id, queryKey: getGetBreedingQueryKey(id) },
@@ -109,7 +107,7 @@ export default function BreedingDetail() {
     resolver: zodResolver(kiddingSchema),
     defaultValues: {
       birthDate: new Date().toISOString().slice(0, 10),
-      kids: [{ name: "", sex: "doe", birthWeight: "", notes: "" }],
+      kids: [{ name: "", sex: "doe", kidStatus: "alive", birthWeight: "", notes: "" }],
     },
   });
 
@@ -147,6 +145,7 @@ export default function BreedingDetail() {
           kids: data.kids.map((k) => ({
             name: k.name || undefined,
             sex: k.sex,
+            kidStatus: k.kidStatus,
             birthDate: new Date(data.birthDate).toISOString(),
             birthWeight: k.birthWeight !== "" && k.birthWeight !== undefined ? Number(k.birthWeight) : undefined,
             notes: k.notes || undefined,
@@ -155,9 +154,9 @@ export default function BreedingDetail() {
       },
       {
         onSuccess: () => {
-          toast({ title: "Kidding recorded!", description: `${data.kids.length} kid(s) recorded successfully.` });
-          setIsKiddingOpen(false);
-          kiddingForm.reset({ birthDate: new Date().toISOString().slice(0, 10), kids: [{ name: "", sex: "doe", birthWeight: "", notes: "" }] });
+          toast({ title: "Kids recorded!", description: `${data.kids.length} kid(s) added successfully.` });
+          setIsAddingKids(false);
+          kiddingForm.reset({ birthDate: new Date().toISOString().slice(0, 10), kids: [{ name: "", sex: "doe", kidStatus: "alive", birthWeight: "", notes: "" }] });
           queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(id) });
           queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
@@ -207,135 +206,6 @@ export default function BreedingDetail() {
               <Button variant="outline" size="sm" onClick={() => setIsEditingStatus(true)}>
                 <Edit3 className="mr-2 h-3.5 w-3.5" /> Update Status
               </Button>
-            )}
-            {breeding.status !== "kidded" && breeding.status !== "open" && (
-              <Dialog open={isKiddingOpen} onOpenChange={setIsKiddingOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="shadow-sm">
-                    <Baby className="mr-2 h-3.5 w-3.5" /> Record Kidding
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="font-serif">Record Kidding</DialogTitle>
-                    <DialogDescription>
-                      Enter the birth date and details for each kid born. Add a row per kid.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <Form {...kiddingForm}>
-                    <form onSubmit={kiddingForm.handleSubmit(handleRecordKidding)} className="space-y-6">
-                      <FormField
-                        control={kiddingForm.control}
-                        name="birthDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Birth Date</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <FormLabel>Kids</FormLabel>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => append({ name: "", sex: "doe", birthWeight: "", notes: "" })}
-                          >
-                            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Kid
-                          </Button>
-                        </div>
-
-                        {fields.map((field, idx) => (
-                          <div key={field.id} className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-foreground">Kid #{idx + 1}</span>
-                              {fields.length > 1 && (
-                                <Button type="button" variant="ghost" size="sm" onClick={() => remove(idx)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <FormField
-                                control={kiddingForm.control}
-                                name={`kids.${idx}.sex`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Sex</FormLabel>
-                                    <Select onValueChange={f.onChange} value={f.value}>
-                                      <FormControl>
-                                        <SelectTrigger className="h-8">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="doe">Doe (female)</SelectItem>
-                                        <SelectItem value="buck">Buck (male)</SelectItem>
-                                        <SelectItem value="doa">DOA</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={kiddingForm.control}
-                                name={`kids.${idx}.name`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Name (optional)</FormLabel>
-                                    <FormControl>
-                                      <Input className="h-8" placeholder="e.g. Clover" {...f} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={kiddingForm.control}
-                                name={`kids.${idx}.birthWeight`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Weight (lbs)</FormLabel>
-                                    <FormControl>
-                                      <Input className="h-8" type="number" step="0.1" placeholder="e.g. 6.5" {...f} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={kiddingForm.control}
-                                name={`kids.${idx}.notes`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Notes</FormLabel>
-                                    <FormControl>
-                                      <Input className="h-8" placeholder="Any observations" {...f} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsKiddingOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={addKids.isPending}>
-                          {addKids.isPending ? "Saving..." : `Record ${fields.length} Kid${fields.length !== 1 ? "s" : ""}`}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
             )}
           </div>
         </div>
@@ -452,30 +322,157 @@ export default function BreedingDetail() {
           </Card>
         )}
 
-        {(breeding.kids?.length ?? 0) > 0 && (
+        {breeding.status !== "open" && (
           <Card className="border-primary/10 shadow-md">
             <CardHeader>
-              <CardTitle className="font-serif flex items-center gap-2">
-                <Baby className="h-5 w-5 text-primary" />
-                Litter ({breeding.kids!.length} kid{breeding.kids!.length !== 1 ? "s" : ""})
-              </CardTitle>
+              <div className="flex items-center justify-between gap-4">
+                <CardTitle className="font-serif flex items-center gap-2">
+                  <Baby className="h-5 w-5 text-primary" />
+                  Kidding Results
+                  {(breeding.kids?.length ?? 0) > 0 && (
+                    <span className="text-base font-normal text-muted-foreground">({breeding.kids!.length} kid{breeding.kids!.length !== 1 ? "s" : ""})</span>
+                  )}
+                </CardTitle>
+                {(breeding.kids?.length ?? 0) > 0 && !isAddingKids && (
+                  <Button variant="outline" size="sm" onClick={() => setIsAddingKids(true)}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Kids
+                  </Button>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {liveKids.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-3">Live Kids ({liveKids.length})</div>
-                  <div className="space-y-2">
-                    {liveKids.map((kid) => <KidCard key={kid.id} kid={kid} />)}
-                  </div>
+            <CardContent className="space-y-4">
+              {(breeding.kids?.length ?? 0) > 0 && (
+                <div className="space-y-2">
+                  {[...liveKids, ...doaKids].map((kid) => <KidCard key={kid.id} kid={kid} />)}
                 </div>
               )}
-              {doaKids.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-3">DOA ({doaKids.length})</div>
-                  <div className="space-y-2">
-                    {doaKids.map((kid) => <KidCard key={kid.id} kid={kid} />)}
-                  </div>
-                </div>
+
+              {((breeding.kids?.length ?? 0) === 0 || isAddingKids) && (
+                <Form {...kiddingForm}>
+                  <form onSubmit={kiddingForm.handleSubmit(handleRecordKidding)} className="space-y-5">
+                    <FormField
+                      control={kiddingForm.control}
+                      name="birthDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Birth Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="bg-background/50 max-w-[220px]" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Kids Born</FormLabel>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => append({ name: "", sex: "doe", kidStatus: "alive", birthWeight: "", notes: "" })}
+                        >
+                          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Another
+                        </Button>
+                      </div>
+
+                      {fields.map((field, idx) => (
+                        <div key={field.id} className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-foreground">Kid #{idx + 1}</span>
+                            {fields.length > 1 && (
+                              <Button type="button" variant="ghost" size="sm" onClick={() => remove(idx)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <FormField
+                              control={kiddingForm.control}
+                              name={`kids.${idx}.sex`}
+                              render={({ field: f }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Sex</FormLabel>
+                                  <Select onValueChange={f.onChange} value={f.value}>
+                                    <FormControl>
+                                      <SelectTrigger className="h-8 bg-background/50">
+                                        <SelectValue placeholder="Select sex" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="doe">Doe (Female)</SelectItem>
+                                      <SelectItem value="buck">Buck (Male)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={kiddingForm.control}
+                              name={`kids.${idx}.kidStatus`}
+                              render={({ field: f }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Status</FormLabel>
+                                  <Select onValueChange={f.onChange} value={f.value}>
+                                    <FormControl>
+                                      <SelectTrigger className="h-8 bg-background/50">
+                                        <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="alive">Alive</SelectItem>
+                                      <SelectItem value="doa">DOA</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={kiddingForm.control}
+                              name={`kids.${idx}.name`}
+                              render={({ field: f }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Name (optional)</FormLabel>
+                                  <FormControl>
+                                    <Input className="h-8 bg-background/50" placeholder="e.g. Clover" {...f} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={kiddingForm.control}
+                              name={`kids.${idx}.birthWeight`}
+                              render={({ field: f }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Weight (lbs, optional)</FormLabel>
+                                  <FormControl>
+                                    <Input className="h-8 bg-background/50" type="number" step="0.1" placeholder="e.g. 6.5" {...f} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <Button type="submit" disabled={addKids.isPending}>
+                        {addKids.isPending ? "Saving..." : `Save ${fields.length} Kid${fields.length !== 1 ? "s" : ""}`}
+                      </Button>
+                      {isAddingKids && (
+                        <Button type="button" variant="outline" onClick={() => setIsAddingKids(false)}>Cancel</Button>
+                      )}
+                    </div>
+                  </form>
+                </Form>
+              )}
+
+              {(breeding.kids?.length ?? 0) === 0 && breeding.status !== "kidded" && !isAddingKids && (
+                <p className="text-sm text-muted-foreground py-2">No kids recorded yet — fill in the form above to record this kidding.</p>
               )}
             </CardContent>
           </Card>
@@ -493,7 +490,7 @@ export default function BreedingDetail() {
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-foreground">{breeding.doe.name}</div>
-                  <div className="text-sm text-muted-foreground capitalize">{breeding.doe.breed} · {breeding.doe.status} · {breeding.doe.lactationStatus}</div>
+                  <div className="text-sm text-muted-foreground capitalize">{breeding.doe.breed} · {breeding.doe.lactationStatus}</div>
                 </div>
                 <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
               </a>

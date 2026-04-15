@@ -250,6 +250,12 @@ export type KidSex = (typeof KidSex)[keyof typeof KidSex];
 export const KidSex = {
   doe: "doe",
   buck: "buck",
+} as const;
+
+export type KidKidStatus = (typeof KidKidStatus)[keyof typeof KidKidStatus];
+
+export const KidKidStatus = {
+  alive: "alive",
   doa: "doa",
 } as const;
 
@@ -258,6 +264,7 @@ export interface Kid {
   breedingId: number;
   name?: string;
   sex: KidSex;
+  kidStatus?: KidKidStatus;
   birthDate?: string;
   birthWeight?: number;
   notes?: string;
@@ -302,12 +309,20 @@ export type CreateKidBodySex =
 export const CreateKidBodySex = {
   doe: "doe",
   buck: "buck",
+} as const;
+
+export type CreateKidBodyKidStatus =
+  (typeof CreateKidBodyKidStatus)[keyof typeof CreateKidBodyKidStatus];
+
+export const CreateKidBodyKidStatus = {
+  alive: "alive",
   doa: "doa",
 } as const;
 
 export interface CreateKidBody {
   name?: string;
   sex: CreateKidBodySex;
+  kidStatus?: CreateKidBodyKidStatus;
   birthDate?: string;
   birthWeight?: number;
   notes?: string;
