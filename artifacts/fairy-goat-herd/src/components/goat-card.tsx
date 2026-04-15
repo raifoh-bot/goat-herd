@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { breedLabels } from "@/pages/goats/index";
+import { formatAge } from "@/lib/age";
 
 interface GoatCardProps {
   goat: Goat;
@@ -47,7 +48,7 @@ export function GoatCard({ goat }: GoatCardProps) {
         <CardHeader className="pb-2 pt-4 px-4 flex-none">
           <h3 className="font-serif text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{goat.name}</h3>
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-            <span>{goat.age} years old</span>
+            <span>{formatAge(goat.dateOfBirth)} old</span>
             <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
             <span className="capitalize">{goat.lactationStatus}</span>
           </p>

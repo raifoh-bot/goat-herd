@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { formatAge } from "@/lib/age";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -37,20 +38,6 @@ interface GoatFormProps {
 }
 
 export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
-  const calculateAge = (dateOfBirth: string) => {
-    const dob = new Date(dateOfBirth);
-    if (Number.isNaN(dob.getTime())) {
-      return 0;
-    }
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age -= 1;
-    }
-    return Math.max(0, age);
-  };
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -255,7 +242,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
               <p className="text-sm text-muted-foreground">Age is derived automatically from the date of birth.</p>
             </div>
             <div className="text-2xl font-serif font-bold text-primary">
-              {dateOfBirth ? `${calculateAge(dateOfBirth)} years` : "—"}
+              {dateOfBirth ? formatAge(dateOfBirth) : "—"}
             </div>
           </div>
         </div>
