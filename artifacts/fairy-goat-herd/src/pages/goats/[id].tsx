@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-client-react";
 import { breedLabels } from "@/pages/goats/index";
 import { formatAge } from "@/lib/age";
+import { formatDate } from "@/lib/date";
 
 const breedingStatusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -342,17 +343,17 @@ export default function GoatDetails() {
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Heart className="h-3 w-3" />
-                                  Bred {breedingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  Bred {formatDate(breedingDate, { month: "short", day: "numeric", year: "numeric" })}
                                 </span>
                                 {kiddingDate ? (
                                   <span className="flex items-center gap-1">
                                     <Baby className="h-3 w-3" />
-                                    Kidded {kiddingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    Kidded {formatDate(kiddingDate, { month: "short", day: "numeric", year: "numeric" })}
                                   </span>
                                 ) : breeding.status !== "open" && (
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    Est. {expectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    Est. {formatDate(expectedDate, { month: "short", day: "numeric", year: "numeric" })}
                                   </span>
                                 )}
                               </div>

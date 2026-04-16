@@ -376,7 +376,7 @@ export default function ImportGoats() {
                         <td className="px-3 py-2 font-medium">{String(r.name ?? "—")}</td>
                         <td className="px-3 py-2 capitalize">{String(r.sex ?? "—")}</td>
                         <td className="px-3 py-2 capitalize">{String(r.breed ?? "—")}</td>
-                        <td className="px-3 py-2">{r.dateOfBirth ? new Date(String(r.dateOfBirth)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2">{r.dateOfBirth ? new Date(String(r.dateOfBirth)).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2">{String(r.damName ?? "—")}</td>
                         <td className="px-3 py-2">{String(r.sireName ?? "—")}</td>
                         <td className="px-3 py-2">{String(r.maternalGranddamName ?? "—")}</td>

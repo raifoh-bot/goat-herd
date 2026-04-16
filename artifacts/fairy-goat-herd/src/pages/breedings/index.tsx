@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { getListBreedingsQueryKey, useListBreedings } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,9 +46,9 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-3.5 w-3.5 shrink-0" />
               {breeding.kids && breeding.kids.length > 0 && breeding.kids[0].birthDate ? (
-                <span>Date of kidding {new Date(breeding.kids[0].birthDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                <span>Date of kidding {formatDate(breeding.kids[0].birthDate, { month: "short", day: "numeric", year: "numeric" })}</span>
               ) : (
-                <span>Bred {breedingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                <span>Bred {formatDate(breeding.breedingDate, { month: "short", day: "numeric", year: "numeric" })}</span>
               )}
             </div>
 
@@ -55,7 +56,7 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Est. {expectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  Est. {formatDate(expectedDate, { month: "short", day: "numeric", year: "numeric" })}
                   {" · "}
                   {daysUntilKidding > 0 ? `${daysUntilKidding}d away` : "Overdue"}
                 </span>

@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatDate } from "@/lib/date";
 import {
   getGetBreedingQueryKey,
   getListBreedingsQueryKey,
@@ -73,7 +74,7 @@ function KidCard({ kid }: { kid: Kid }) {
         </div>
         <div className="text-xs text-muted-foreground">
           {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
-          {kid.birthDate ? ` • Born ${new Date(kid.birthDate).toLocaleDateString()}` : null}
+          {kid.birthDate ? ` • Born ${formatDate(kid.birthDate, { month: "short", day: "numeric", year: "numeric" })}` : null}
           {kid.notes ? ` • ${kid.notes}` : null}
         </div>
       </div>
@@ -127,7 +128,7 @@ export default function BreedingDetail() {
       if (bDate >= kDate) {
         updateForm.setError("breedingDate", {
           type: "manual",
-          message: `Breeding date must be before the kidding date (${kDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`,
+          message: `Breeding date must be before the kidding date (${kDate.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })})`,
         });
         return;
       }
@@ -162,7 +163,7 @@ export default function BreedingDetail() {
       if (kDate <= bDate) {
         kiddingForm.setError("birthDate", {
           type: "manual",
-          message: `Kidding date must be after the breeding date (${bDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`,
+          message: `Kidding date must be after the breeding date (${bDate.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })})`,
         });
         return;
       }
@@ -294,12 +295,12 @@ export default function BreedingDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-border bg-card/50 p-4">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Breeding Date</div>
-                <div className="font-medium text-foreground">{new Date(breeding.breedingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                <div className="font-medium text-foreground">{formatDate(breeding.breedingDate)}</div>
               </div>
               <div className="rounded-xl border border-border bg-primary/5 p-4">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Baby className="h-3 w-3" /> Estimated Kidding Date</div>
                 <div className="font-medium text-foreground">
-                  {new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  {formatDate(new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000))}
                 </div>
                 <div className="text-xs text-muted-foreground/70 mt-0.5">Breeding date + 145 days</div>
               </div>

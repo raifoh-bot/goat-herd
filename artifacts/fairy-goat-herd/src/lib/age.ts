@@ -1,25 +1,30 @@
+import { parseDate } from "@/lib/date";
+
 export function formatAge(dateOfBirth: string | Date | null | undefined): string {
   if (!dateOfBirth) return "Unknown age";
 
-  const dob = new Date(dateOfBirth);
-  if (isNaN(dob.getTime())) return "Unknown age";
+  const dob = parseDate(dateOfBirth);
+  if (!dob) return "Unknown age";
 
-  const today = new Date();
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
 
-  let years = today.getFullYear() - dob.getFullYear();
-  let months = today.getMonth() - dob.getMonth();
-  let days = today.getDate() - dob.getDate();
+  let years = now.getFullYear() - dob.getUTCFullYear();
+  let months = now.getMonth() - dob.getUTCMonth();
+  let days = now.getDate() - dob.getUTCDate();
 
   if (days < 0) {
     months -= 1;
-    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-    days += prevMonth.getDate();
+    const prevMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0));
+    days += prevMonth.getUTCDate();
   }
 
   if (months < 0) {
     years -= 1;
     months += 12;
   }
+
+  void todayUTC;
 
   if (years < 0) return "Unknown age";
 
