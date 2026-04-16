@@ -23,8 +23,10 @@ import {
   getListGoatsQueryKey,
   useAddKids,
   useDeleteBreeding,
+  useDeleteKid,
   useGetBreeding,
   useUpdateBreeding,
+  useUpdateKid,
 } from "@workspace/api-client-react";
 import type { Kid } from "@workspace/api-client-react/src/generated/api.schemas";
 
@@ -57,28 +59,207 @@ const kiddingSchema = z.object({
 type UpdateValues = z.infer<typeof updateSchema>;
 type KiddingValues = z.infer<typeof kiddingSchema>;
 
-function KidCard({ kid }: { kid: Kid }) {
+const editKidSchema = z.object({
+  name: z.string().optional(),
+  sex: z.enum(["doe", "buck"]),
+  kidStatus: z.enum(["alive", "doa"]),
+  birthDate: z.string().optional(),
+  birthWeight: z.union([z.string(), z.number()]).optional(),
+  notes: z.string().optional(),
+});
+type EditKidValues = z.infer<typeof editKidSchema>;
+
+function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const updateKid = useUpdateKid();
+  const deleteKid = useDeleteKid();
+
   const isDoa = kid.kidStatus === "doa";
   const sexLabel = kid.sex === "doe" ? "Doe ♀" : "Buck ♂";
   const sexClass = kid.sex === "doe" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground";
+
+  const editForm = useForm<EditKidValues>({
+    resolver: zodResolver(editKidSchema),
+    values: {
+      name: kid.name ?? "",
+      sex: kid.sex as "doe" | "buck",
+      kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa",
+      birthDate: kid.birthDate ? new Date(kid.birthDate).toISOString().slice(0, 10) : "",
+      birthWeight: kid.birthWeight ?? "",
+      notes: kid.notes ?? "",
+    },
+  });
+
+  const handleSave = (data: EditKidValues) => {
+    updateKid.mutate(
+      {
+        id: breedingId,
+        kidId: kid.id,
+        data: {
+          name: data.name || undefined,
+          sex: data.sex,
+          kidStatus: data.kidStatus,
+          birthDate: data.birthDate ? new Date(data.birthDate).toISOString() : undefined,
+          birthWeight: data.birthWeight !== "" && data.birthWeight !== undefined ? Number(data.birthWeight) : undefined,
+          notes: data.notes || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Kid updated" });
+          setIsEditing(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+          queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
+        },
+        onError: () => toast({ title: "Update failed", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    deleteKid.mutate(
+      { id: breedingId, kidId: kid.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Kid removed" });
+          setIsDeleting(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+          queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
+        },
+        onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+      }
+    );
+  };
+
   return (
-    <div className={`flex items-center gap-4 p-4 rounded-xl border border-border bg-card/50 ${isDoa ? "opacity-60" : ""}`}>
-      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-        <Baby className="h-5 w-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-          <span className="font-medium text-foreground">{kid.name || "Unnamed"}</span>
-          <Badge className={`${sexClass} text-xs px-2 py-0`}>{sexLabel}</Badge>
-          {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
+    <>
+      <div className={`flex items-center gap-4 p-4 rounded-xl border border-border bg-card/50 ${isDoa ? "opacity-60" : ""}`}>
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Baby className="h-5 w-5" />
         </div>
-        <div className="text-xs text-muted-foreground">
-          {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
-          {kid.birthDate ? ` • Born ${formatDate(kid.birthDate, { month: "short", day: "numeric", year: "numeric" })}` : null}
-          {kid.notes ? ` • ${kid.notes}` : null}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <span className="font-medium text-foreground">{kid.name || "Unnamed"}</span>
+            <Badge className={`${sexClass} text-xs px-2 py-0`}>{sexLabel}</Badge>
+            {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
+            {kid.birthDate ? ` • Born ${formatDate(kid.birthDate, { month: "short", day: "numeric", year: "numeric" })}` : null}
+            {kid.notes ? ` • ${kid.notes}` : null}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsDeleting(true)} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
-    </div>
+
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit Kid Record</DialogTitle>
+            <DialogDescription>Update the details for {kid.name || "this kid"}.</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleSave)} className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={editForm.control} name="name" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Name (Optional)</FormLabel>
+                    <FormControl><Input placeholder="Kid's name" {...field} className="bg-background/50" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="sex" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sex</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="doe">Doe ♀</SelectItem>
+                        <SelectItem value="buck">Buck ♂</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="kidStatus" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="alive">Alive</SelectItem>
+                        <SelectItem value="doa">DOA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="birthDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Birth Date</FormLabel>
+                    <FormControl><Input type="date" {...field} className="bg-background/50" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="birthWeight" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Birth Weight (lbs)</FormLabel>
+                    <FormControl><Input type="number" step="0.1" placeholder="e.g. 4.2" {...field} className="bg-background/50" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="notes" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Notes (Optional)</FormLabel>
+                    <FormControl><Textarea className="bg-background/50 resize-none" rows={2} {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <DialogFooter className="gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" disabled={updateKid.isPending}>
+                  {updateKid.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-serif">Remove Kid?</DialogTitle>
+            <DialogDescription>
+              This will remove <strong>{kid.name || "this kid"}</strong> from the kidding record.
+              {kid.goatId ? " The goat record in The Herd will not be deleted." : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteKid.isPending}>
+              {deleteKid.isPending ? "Removing..." : "Remove Kid"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -426,7 +607,7 @@ export default function BreedingDetail() {
             <CardContent className="space-y-4">
               {(breeding.kids?.length ?? 0) > 0 && (
                 <div className="space-y-2">
-                  {[...liveKids, ...doaKids].map((kid) => <KidCard key={kid.id} kid={kid} />)}
+                  {[...liveKids, ...doaKids].map((kid) => <KidCard key={kid.id} kid={kid} breedingId={id} />)}
                 </div>
               )}
 

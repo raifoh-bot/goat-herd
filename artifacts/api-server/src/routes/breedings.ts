@@ -9,6 +9,9 @@ import {
   UpdateBreedingParams,
   AddKidsParams,
   DeleteBreedingParams,
+  UpdateKidBody,
+  UpdateKidParams,
+  DeleteKidParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -253,6 +256,66 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
   // Return kids with goatId populated
   const finalKids = await db.select().from(kidsTable).where(eq(kidsTable.breedingId, breedingId));
   res.status(201).json(finalKids);
+});
+
+router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
+  const paramsParsed = UpdateKidParams.safeParse({ id: Number(req.params.id), kidId: Number(req.params.kidId) });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const parsed = UpdateKidBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db.select().from(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
+  if (!existing) {
+    res.status(404).json({ error: "Kid not found" });
+    return;
+  }
+
+  const updateData: Partial<typeof existing> = { updatedAt: new Date() };
+  if (parsed.data.name !== undefined) updateData.name = parsed.data.name || null;
+  if (parsed.data.sex !== undefined) updateData.sex = parsed.data.sex;
+  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "doa";
+  if (parsed.data.birthDate !== undefined) updateData.birthDate = new Date(parsed.data.birthDate);
+  if (parsed.data.birthWeight !== undefined) updateData.birthWeight = parsed.data.birthWeight ?? null;
+  if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
+
+  const [updated] = await db.update(kidsTable).set(updateData).where(eq(kidsTable.id, paramsParsed.data.kidId)).returning();
+
+  // Sync the linked goat's name and sex if it exists
+  if (updated.goatId) {
+    const goatUpdate: Record<string, unknown> = { updatedAt: new Date() };
+    if (parsed.data.name !== undefined) goatUpdate.name = parsed.data.name || (updated.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
+    if (parsed.data.sex !== undefined) goatUpdate.sex = parsed.data.sex;
+    if (Object.keys(goatUpdate).length > 1) {
+      await db.update(goatsTable).set(goatUpdate).where(eq(goatsTable.id, updated.goatId));
+    }
+  }
+
+  res.json(updated);
+});
+
+router.delete("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
+  const paramsParsed = DeleteKidParams.safeParse({ id: Number(req.params.id), kidId: Number(req.params.kidId) });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const [kid] = await db.select().from(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
+  if (!kid) {
+    res.status(404).json({ error: "Kid not found" });
+    return;
+  }
+
+  await db.delete(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
+
+  res.status(204).send();
 });
 
 router.delete("/breedings/:id", async (req, res): Promise<void> => {

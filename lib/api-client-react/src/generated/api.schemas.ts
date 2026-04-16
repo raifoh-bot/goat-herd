@@ -414,6 +414,31 @@ export interface AddKidsBody {
   kids: CreateKidBody[];
 }
 
+export type UpdateKidBodySex =
+  (typeof UpdateKidBodySex)[keyof typeof UpdateKidBodySex];
+
+export const UpdateKidBodySex = {
+  doe: "doe",
+  buck: "buck",
+} as const;
+
+export type UpdateKidBodyKidStatus =
+  (typeof UpdateKidBodyKidStatus)[keyof typeof UpdateKidBodyKidStatus];
+
+export const UpdateKidBodyKidStatus = {
+  alive: "alive",
+  doa: "doa",
+} as const;
+
+export interface UpdateKidBody {
+  name?: string;
+  sex?: UpdateKidBodySex;
+  kidStatus?: UpdateKidBodyKidStatus;
+  birthDate?: string;
+  birthWeight?: number;
+  notes?: string;
+}
+
 export interface DoeLactationBreakdown {
   milking: number;
   dry: number;

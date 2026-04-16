@@ -359,6 +359,58 @@ paths:
         "404":
           description: Breeding not found
 
+  /breedings/{id}/kids/{kidId}:
+    put:
+      operationId: updateKid
+      tags: [breedings]
+      summary: Update a kid record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateKidBody"
+      responses:
+        "200":
+          description: Kid updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kid"
+        "404":
+          description: Kid not found
+    delete:
+      operationId: deleteKid
+      tags: [breedings]
+      summary: Delete a kid record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: kidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Kid deleted
+        "404":
+          description: Kid not found
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -786,6 +838,25 @@ components:
             $ref: "#/components/schemas/CreateKidBody"
       required:
         - kids
+
+    UpdateKidBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sex:
+          type: string
+          enum: [doe, buck]
+        kidStatus:
+          type: string
+          enum: [alive, doa]
+        birthDate:
+          type: string
+          format: date-time
+        birthWeight:
+          type: number
+        notes:
+          type: string
 
     DoeLactationBreakdown:
       type: object

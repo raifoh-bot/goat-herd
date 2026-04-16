@@ -713,6 +713,45 @@ export const AddKidsBody = zod.object({
 });
 
 /**
+ * @summary Update a kid record
+ */
+export const UpdateKidParams = zod.object({
+  id: zod.coerce.number(),
+  kidId: zod.coerce.number(),
+});
+
+export const UpdateKidBody = zod.object({
+  name: zod.string().optional(),
+  sex: zod.enum(["doe", "buck"]).optional(),
+  kidStatus: zod.enum(["alive", "doa"]).optional(),
+  birthDate: zod.coerce.date().optional(),
+  birthWeight: zod.number().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateKidResponse = zod.object({
+  id: zod.number(),
+  breedingId: zod.number(),
+  goatId: zod.number().optional(),
+  name: zod.string().optional(),
+  sex: zod.enum(["doe", "buck"]),
+  kidStatus: zod.enum(["alive", "doa"]).optional(),
+  birthDate: zod.coerce.date().optional(),
+  birthWeight: zod.number().optional(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a kid record
+ */
+export const DeleteKidParams = zod.object({
+  id: zod.coerce.number(),
+  kidId: zod.coerce.number(),
+});
+
+/**
  * @summary Get herd dashboard summary
  */
 export const getDashboardSummaryResponseTopProducerMilkPerDayMin = 0;

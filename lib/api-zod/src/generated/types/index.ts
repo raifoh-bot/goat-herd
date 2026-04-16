@@ -54,5 +54,8 @@ export * from "./updateGoatBodyHerdStatus";
 export * from "./updateGoatBodyLactationStatus";
 export * from "./updateGoatBodySex";
 export * from "./updateGoatBodyStatus";
+export * from "./updateKidBody";
+export * from "./updateKidBodyKidStatus";
+export * from "./updateKidBodySex";
 export * from "./uploadUrlRequest";
 export * from "./uploadUrlResponse";
