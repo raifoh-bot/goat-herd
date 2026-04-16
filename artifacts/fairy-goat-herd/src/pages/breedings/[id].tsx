@@ -120,6 +120,18 @@ export default function BreedingDetail() {
   const { fields, append, remove } = useFieldArray({ control: kiddingForm.control, name: "kids" });
 
   const handleUpdateStatus = (data: UpdateValues) => {
+    const kiddingDate = breeding?.kids?.find((k) => k.birthDate)?.birthDate;
+    if (kiddingDate) {
+      const bDate = new Date(data.breedingDate);
+      const kDate = new Date(kiddingDate);
+      if (bDate >= kDate) {
+        updateForm.setError("breedingDate", {
+          type: "manual",
+          message: `Breeding date must be before the kidding date (${kDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`,
+        });
+        return;
+      }
+    }
     updateBreeding.mutate(
       {
         id,
@@ -144,6 +156,17 @@ export default function BreedingDetail() {
   };
 
   const handleRecordKidding = (data: KiddingValues) => {
+    if (breeding?.breedingDate) {
+      const bDate = new Date(breeding.breedingDate);
+      const kDate = new Date(data.birthDate);
+      if (kDate <= bDate) {
+        kiddingForm.setError("birthDate", {
+          type: "manual",
+          message: `Kidding date must be after the breeding date (${bDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`,
+        });
+        return;
+      }
+    }
     addKids.mutate(
       {
         id,
