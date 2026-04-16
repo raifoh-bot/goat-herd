@@ -323,7 +323,7 @@ export default function BreedingDetail() {
           </Card>
         )}
 
-        {breeding.status === "kidded" && (
+        {breeding.status !== "open" && (
           <Card className="border-primary/10 shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
