@@ -42,7 +42,11 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <span>Bred {breedingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+              {breeding.kids && breeding.kids.length > 0 && breeding.kids[0].birthDate ? (
+                <span>Date of kidding {new Date(breeding.kids[0].birthDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+              ) : (
+                <span>Bred {breedingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+              )}
             </div>
 
             {expectedDate && breeding.status !== "kidded" && breeding.status !== "open" && (

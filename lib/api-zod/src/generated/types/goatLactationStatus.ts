@@ -7,7 +7,8 @@
  */
 
 export type GoatLactationStatus =
-  (typeof GoatLactationStatus)[keyof typeof GoatLactationStatus];
+  | (typeof GoatLactationStatus)[keyof typeof GoatLactationStatus]
+  | null;
 
 export const GoatLactationStatus = {
   milking: "milking",

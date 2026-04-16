@@ -19,9 +19,18 @@ router.get("/breedings", async (req, res): Promise<void> => {
     .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
     .orderBy(desc(breedingsTable.breedingDate));
 
+  const allKids = await db.select().from(kidsTable).orderBy(kidsTable.createdAt);
+
+  const kidsByBreeding = allKids.reduce<Record<number, typeof allKids>>((acc, kid) => {
+    if (!acc[kid.breedingId]) acc[kid.breedingId] = [];
+    acc[kid.breedingId].push(kid);
+    return acc;
+  }, {});
+
   const result = rows.map((row) => ({
     ...row.breedings,
     doe: row.goats,
+    kids: kidsByBreeding[row.breedings.id] ?? [],
   }));
 
   res.json(result);

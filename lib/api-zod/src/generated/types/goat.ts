@@ -30,7 +30,7 @@ export interface Goat {
    * @maximum 10
    */
   milkPerDay: number;
-  lactationStatus: GoatLactationStatus;
+  lactationStatus?: GoatLactationStatus;
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;

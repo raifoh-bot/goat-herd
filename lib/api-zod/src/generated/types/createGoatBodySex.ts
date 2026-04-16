@@ -12,4 +12,5 @@ export type CreateGoatBodySex =
 export const CreateGoatBodySex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;

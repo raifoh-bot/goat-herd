@@ -29,7 +29,7 @@ export interface CreateGoatBody {
    * @maximum 10
    */
   milkPerDay?: number;
-  lactationStatus: CreateGoatBodyLactationStatus;
+  lactationStatus?: CreateGoatBodyLactationStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;

@@ -41,7 +41,8 @@ export const GoatStatus = {
 } as const;
 
 export type GoatLactationStatus =
-  (typeof GoatLactationStatus)[keyof typeof GoatLactationStatus];
+  | (typeof GoatLactationStatus)[keyof typeof GoatLactationStatus]
+  | null;
 
 export const GoatLactationStatus = {
   milking: "milking",
@@ -71,7 +72,7 @@ export interface Goat {
    * @maximum 10
    */
   milkPerDay: number;
-  lactationStatus?: GoatLactationStatus | null;
+  lactationStatus?: GoatLactationStatus;
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
@@ -119,7 +120,8 @@ export const CreateGoatBodyStatus = {
 } as const;
 
 export type CreateGoatBodyLactationStatus =
-  (typeof CreateGoatBodyLactationStatus)[keyof typeof CreateGoatBodyLactationStatus];
+  | (typeof CreateGoatBodyLactationStatus)[keyof typeof CreateGoatBodyLactationStatus]
+  | null;
 
 export const CreateGoatBodyLactationStatus = {
   milking: "milking",
@@ -148,7 +150,7 @@ export interface CreateGoatBody {
    * @maximum 10
    */
   milkPerDay?: number;
-  lactationStatus?: CreateGoatBodyLactationStatus | null;
+  lactationStatus?: CreateGoatBodyLactationStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;
@@ -194,7 +196,8 @@ export const UpdateGoatBodyStatus = {
 } as const;
 
 export type UpdateGoatBodyLactationStatus =
-  (typeof UpdateGoatBodyLactationStatus)[keyof typeof UpdateGoatBodyLactationStatus];
+  | (typeof UpdateGoatBodyLactationStatus)[keyof typeof UpdateGoatBodyLactationStatus]
+  | null;
 
 export const UpdateGoatBodyLactationStatus = {
   milking: "milking",
@@ -223,7 +226,7 @@ export interface UpdateGoatBody {
    * @maximum 10
    */
   milkPerDay?: number;
-  lactationStatus?: UpdateGoatBodyLactationStatus | null;
+  lactationStatus?: UpdateGoatBodyLactationStatus;
   /** Calculated age in years from dateOfBirth */
   age?: number;
   description?: string;
@@ -256,10 +259,6 @@ export interface Breeding {
   updatedAt: string;
 }
 
-export type BreedingWithDoe = Breeding & {
-  doe?: Goat;
-};
-
 export type KidSex = (typeof KidSex)[keyof typeof KidSex];
 
 export const KidSex = {
@@ -286,6 +285,11 @@ export interface Kid {
   createdAt: string;
   updatedAt: string;
 }
+
+export type BreedingWithDoe = Breeding & {
+  doe?: Goat;
+  kids?: Kid[];
+};
 
 export type BreedingDetail = Breeding & {
   doe?: Goat;

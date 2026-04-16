@@ -605,6 +605,10 @@ components:
           properties:
             doe:
               $ref: "#/components/schemas/Goat"
+            kids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Kid"
 
     BreedingDetail:
       allOf:

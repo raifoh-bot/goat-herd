@@ -7,7 +7,9 @@
  */
 import type { Breeding } from "./breeding";
 import type { Goat } from "./goat";
+import type { Kid } from "./kid";
 
 export type BreedingWithDoe = Breeding & {
   doe?: Goat;
+  kids?: Kid[];
 };

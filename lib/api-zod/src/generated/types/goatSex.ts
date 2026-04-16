@@ -11,4 +11,5 @@ export type GoatSex = (typeof GoatSex)[keyof typeof GoatSex];
 export const GoatSex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;

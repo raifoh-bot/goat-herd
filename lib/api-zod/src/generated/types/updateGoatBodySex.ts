@@ -12,4 +12,5 @@ export type UpdateGoatBodySex =
 export const UpdateGoatBodySex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;
