@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Activity, HeartPulse, Milk, ShieldPlus, Stethoscope } from "lucide-react";
+import { Activity, Milk, ShieldPlus, Stethoscope } from "lucide-react";
 import {
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
@@ -73,13 +73,6 @@ export default function Dashboard() {
             icon={Milk}
             isLoading={isLoadingSummary}
             description="Currently in milk"
-          />
-          <StatCard
-            title="Avg Milk / Day"
-            value={summary?.averageMilkPerDay ? `${summary.averageMilkPerDay} qt` : undefined}
-            icon={HeartPulse}
-            isLoading={isLoadingSummary}
-            description="Across the herd"
           />
         </div>
 
