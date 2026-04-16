@@ -22,7 +22,7 @@ router.get("/goats", async (req, res): Promise<void> => {
 
   const conditions = [];
   if (params.data.status) {
-    conditions.push(eq(goatsTable.status, params.data.status));
+    conditions.push(eq(goatsTable.herdStatus, params.data.status));
   }
   if (params.data.sex) {
     conditions.push(eq(goatsTable.sex, params.data.sex));

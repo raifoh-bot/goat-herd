@@ -124,7 +124,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [healthy, watch, treatment, dry]
+            enum: [dead, first-freshener, leased, on-farm, retired, sold]
         - name: sex
           in: query
           schema:

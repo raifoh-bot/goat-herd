@@ -209,15 +209,17 @@ export default function GoatsList() {
             </Select>
 
             <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? undefined : val as ListGoatsStatus)}>
-              <SelectTrigger className="w-[140px] bg-background/50 border-input">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-[160px] bg-background/50 border-input">
+                <SelectValue placeholder="Herd Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="healthy">Healthy</SelectItem>
-                <SelectItem value="watch">Watch</SelectItem>
-                <SelectItem value="treatment">Treatment</SelectItem>
-                <SelectItem value="dry">Dry</SelectItem>
+                <SelectItem value="all">All Herd Status</SelectItem>
+                <SelectItem value="on-farm">On Farm</SelectItem>
+                <SelectItem value="first-freshener">First Freshener</SelectItem>
+                <SelectItem value="leased">Leased</SelectItem>
+                <SelectItem value="retired">Retired</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="dead">Dead</SelectItem>
               </SelectContent>
             </Select>
 

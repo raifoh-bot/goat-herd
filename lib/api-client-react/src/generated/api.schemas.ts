@@ -538,10 +538,12 @@ export type ListGoatsStatus =
   (typeof ListGoatsStatus)[keyof typeof ListGoatsStatus];
 
 export const ListGoatsStatus = {
-  healthy: "healthy",
-  watch: "watch",
-  treatment: "treatment",
-  dry: "dry",
+  dead: "dead",
+  "first-freshener": "first-freshener",
+  leased: "leased",
+  "on-farm": "on-farm",
+  retired: "retired",
+  sold: "sold",
 } as const;
 
 export type ListGoatsSex = (typeof ListGoatsSex)[keyof typeof ListGoatsSex];

@@ -55,7 +55,9 @@ export const HealthCheckResponse = zod.object({
  * @summary List all dairy goats
  */
 export const ListGoatsQueryParams = zod.object({
-  status: zod.enum(["healthy", "watch", "treatment", "dry"]).optional(),
+  status: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .optional(),
   sex: zod.enum(["doe", "buck", "wether"]).optional(),
 });
 
