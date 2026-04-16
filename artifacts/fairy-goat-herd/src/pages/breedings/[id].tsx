@@ -37,6 +37,7 @@ const statusConfig = {
 
 const updateSchema = z.object({
   status: z.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
+  breedingDate: z.string().min(1, "Breeding date is required"),
   notes: z.string().optional(),
   expectedKiddingDate: z.string().optional(),
 });
@@ -102,6 +103,7 @@ export default function BreedingDetail() {
     resolver: zodResolver(updateSchema),
     values: breeding ? {
       status: breeding.status,
+      breedingDate: new Date(breeding.breedingDate).toISOString().slice(0, 10),
       notes: breeding.notes ?? "",
       expectedKiddingDate: breeding.expectedKiddingDate ? new Date(breeding.expectedKiddingDate).toISOString().slice(0, 10) : "",
     } : undefined,
@@ -123,6 +125,7 @@ export default function BreedingDetail() {
         id,
         data: {
           status: data.status,
+          breedingDate: new Date(data.breedingDate).toISOString(),
           notes: data.notes,
           expectedKiddingDate: data.expectedKiddingDate ? new Date(data.expectedKiddingDate).toISOString() : undefined,
         },
@@ -303,6 +306,19 @@ export default function BreedingDetail() {
               <Form {...updateForm}>
                 <form onSubmit={updateForm.handleSubmit(handleUpdateStatus)} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={updateForm.control}
+                      name="breedingDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Breeding Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="bg-background/50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={updateForm.control}
                       name="status"
