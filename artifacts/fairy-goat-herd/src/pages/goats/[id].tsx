@@ -289,7 +289,7 @@ export default function GoatDetails() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-primary/10 shadow-md">
                 <CardHeader>
-                  <CardTitle className="font-serif text-lg">Breeding Information</CardTitle>
+                  <CardTitle className="font-serif text-lg">Breeding Lines</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {hasPedigree ? (
