@@ -61,7 +61,7 @@ export default function BreedingNew() {
     { query: { queryKey: getListGoatsQueryKey() } }
   );
 
-  const does = goats?.filter((g) => g.lactationStatus !== "kid") ?? [];
+  const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
 
   const breedingForm = useForm<BreedingValues>({
     resolver: zodResolver(breedingSchema),
