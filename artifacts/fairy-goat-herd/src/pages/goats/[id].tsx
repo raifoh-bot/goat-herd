@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, Tag, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, Tag, Trash2, User } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,7 +214,7 @@ export default function GoatDetails() {
 
                     {goat.sex && (
                       <div className="flex justify-between items-center pb-3 border-b border-border">
-                        <span className="text-muted-foreground flex items-center gap-2 text-sm"><ShieldAlert className="h-4 w-4" /> Sex</span>
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm"><User className="h-4 w-4" /> Sex</span>
                         <Badge variant="outline" className="capitalize font-medium">{goat.sex === "doe" ? "Doe ♀" : goat.sex === "wether" ? "Wether ⚬" : "Buck ♂"}</Badge>
                       </div>
                     )}
