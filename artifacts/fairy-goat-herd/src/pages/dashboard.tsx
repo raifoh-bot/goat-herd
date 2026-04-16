@@ -11,8 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Cell,
+  PieChart, Pie, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Cell, Legend,
 } from "recharts";
 
 const breedLabels: Record<string, string> = {
@@ -101,32 +101,38 @@ export default function Dashboard() {
                   <Skeleton className="h-[180px] w-full rounded-lg" />
                 </div>
               ) : lactationChartData.length > 0 ? (
-                <div className="h-[220px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={lactationChartData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <RechartsTooltip
-                        contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)", fontSize: 12 }}
-                        formatter={(value: number, name: string) => [value, name]}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {lactationChartData.map((entry) => (
-                          <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="space-y-3">
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={lactationChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={58}
+                          outerRadius={80}
+                          paddingAngle={3}
+                          dataKey="value"
+                          isAnimationActive={false}
+                        >
+                          {lactationChartData.map((entry) => (
+                            <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip
+                          contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)", fontSize: 12 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+                    {lactationChartData.map((entry) => (
+                      <div key={entry.name} className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full shrink-0" style={{ background: LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))" }} />
+                        <span className="text-xs text-muted-foreground">{entry.name} <span className="font-medium text-foreground">{entry.value}</span></span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
