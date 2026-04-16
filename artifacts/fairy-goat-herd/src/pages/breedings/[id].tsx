@@ -229,12 +229,13 @@ export default function BreedingDetail() {
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Breeding Date</div>
                 <div className="font-medium text-foreground">{new Date(breeding.breedingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
               </div>
-              {breeding.expectedKiddingDate && (
-                <div className="rounded-xl border border-border bg-card/50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Baby className="h-3 w-3" /> Expected Kidding</div>
-                  <div className="font-medium text-foreground">{new Date(breeding.expectedKiddingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+              <div className="rounded-xl border border-border bg-primary/5 p-4">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Baby className="h-3 w-3" /> Estimated Kidding Date</div>
+                <div className="font-medium text-foreground">
+                  {new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground/70 mt-0.5">Breeding date + 145 days</div>
+              </div>
               {breeding.doe?.breed && (
                 <div className="rounded-xl border border-border bg-card/50 p-4">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Milk className="h-3 w-3" /> Doe Breed</div>
