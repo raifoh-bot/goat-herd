@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, ShieldAlert, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, Tag, Trash2 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,8 +220,16 @@ export default function GoatDetails() {
                     )}
 
                     <div className="flex justify-between items-center pb-3 border-b border-border">
-                      <span className="text-muted-foreground flex items-center gap-2 text-sm"><ShieldAlert className="h-4 w-4" /> Lactation</span>
-                      <span className="font-medium capitalize text-foreground">{goat.lactationStatus}</span>
+                      <span className="text-muted-foreground flex items-center gap-2 text-sm"><Tag className="h-4 w-4" /> Herd Status</span>
+                      <span className="font-medium text-foreground">
+                        {goat.herdStatus === "dead" ? "Dead"
+                          : goat.herdStatus === "first-freshener" ? "First Freshener"
+                          : goat.herdStatus === "leased" ? "Leased"
+                          : goat.herdStatus === "on-farm" ? "On Farm"
+                          : goat.herdStatus === "retired" ? "Retired"
+                          : goat.herdStatus === "sold" ? "Sold"
+                          : "—"}
+                      </span>
                     </div>
 
                     <div className="flex justify-between items-center pb-3 border-b border-border">
