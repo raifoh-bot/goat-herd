@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, Heart, List, Milk, Sprout } from "lucide-react";
+import { ClipboardList, GitBranch, Heart, List, Milk, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -15,6 +15,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/goats", label: "The Herd", icon: List, exact: false },
     { href: "/breedings", label: "Kiddings", icon: Heart, exact: false },
     { href: "/goats/new", label: "Add Goat", icon: Milk, exact: true },
+    { href: "/lineage", label: "Lineage Reports", icon: GitBranch, exact: false },
   ];
 
   return (
