@@ -19,8 +19,10 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
   const breedingDate = new Date(breeding.breedingDate);
-  const expectedDate = breeding.expectedKiddingDate ? new Date(breeding.expectedKiddingDate) : null;
-  const daysUntilKidding = expectedDate ? Math.ceil((expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+  const expectedDate = breeding.expectedKiddingDate
+    ? new Date(breeding.expectedKiddingDate)
+    : new Date(breedingDate.getTime() + 145 * 24 * 60 * 60 * 1000);
+  const daysUntilKidding = Math.ceil((expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
   return (
     <Link href={`/breedings/${breeding.id}`}>
@@ -49,15 +51,13 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
               )}
             </div>
 
-            {expectedDate && breeding.status !== "kidded" && breeding.status !== "open" && (
+            {breeding.status !== "kidded" && breeding.status !== "open" && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {daysUntilKidding !== null && daysUntilKidding > 0
-                    ? `Kidding in ${daysUntilKidding} days`
-                    : daysUntilKidding !== null && daysUntilKidding <= 0
-                    ? "Kidding overdue"
-                    : `Expected ${expectedDate.toLocaleDateString()}`}
+                  Est. {expectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {" · "}
+                  {daysUntilKidding > 0 ? `${daysUntilKidding}d away` : "Overdue"}
                 </span>
               </div>
             )}
