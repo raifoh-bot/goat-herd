@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Layout } from "@/components/layout";
@@ -15,11 +16,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getListBreedingsQueryKey,
   getListGoatsQueryKey,
+  getGetBreedingQueryKey,
+  useAddKids,
   useCreateBreeding,
   useListGoats,
 } from "@workspace/api-client-react";
 
-const formSchema = z.object({
+const breedingSchema = z.object({
   doeId: z.coerce.number().int().positive("Please select a doe"),
   sireName: z.string().min(1, "Sire name is required"),
   breedingDate: z.string().min(1, "Breeding date is required"),
@@ -27,13 +30,31 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const historicalSchema = z.object({
+  doeId: z.coerce.number().int().positive("Please select a doe"),
+  sireName: z.string().min(1, "Sire name is required"),
+  kiddingDate: z.string().min(1, "Kidding date is required"),
+  breedingDate: z.string().optional(),
+  notes: z.string().optional(),
+  kids: z.array(z.object({
+    name: z.string().optional(),
+    sex: z.enum(["doe", "buck"]),
+    kidStatus: z.enum(["alive", "doa"]),
+    birthWeight: z.union([z.string(), z.number()]).optional(),
+  })).min(1, "At least one kid is required"),
+});
+
+type BreedingValues = z.infer<typeof breedingSchema>;
+type HistoricalValues = z.infer<typeof historicalSchema>;
 
 export default function BreedingNew() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState<"breeding" | "historical">("breeding");
+
   const createBreeding = useCreateBreeding();
+  const addKids = useAddKids();
 
   const { data: goats } = useListGoats(
     {},
@@ -42,8 +63,8 @@ export default function BreedingNew() {
 
   const does = goats?.filter((g) => g.lactationStatus !== "kid") ?? [];
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const breedingForm = useForm<BreedingValues>({
+    resolver: zodResolver(breedingSchema),
     defaultValues: {
       sireName: "",
       breedingDate: new Date().toISOString().slice(0, 10),
@@ -52,7 +73,24 @@ export default function BreedingNew() {
     },
   });
 
-  const breedingDate = form.watch("breedingDate");
+  const historicalForm = useForm<HistoricalValues>({
+    resolver: zodResolver(historicalSchema),
+    defaultValues: {
+      sireName: "",
+      kiddingDate: new Date().toISOString().slice(0, 10),
+      breedingDate: "",
+      notes: "",
+      kids: [{ name: "", sex: "doe", kidStatus: "alive", birthWeight: "" }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: historicalForm.control,
+    name: "kids",
+  });
+
+  const breedingDate = breedingForm.watch("breedingDate");
+  const kiddingDate = historicalForm.watch("kiddingDate");
 
   const computedExpected = (() => {
     if (!breedingDate) return "";
@@ -61,7 +99,14 @@ export default function BreedingNew() {
     return d.toISOString().slice(0, 10);
   })();
 
-  const handleSubmit = (data: FormValues) => {
+  const autoBreedingDate = (() => {
+    if (!kiddingDate) return "";
+    const d = new Date(kiddingDate);
+    d.setDate(d.getDate() - 145);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const handleBreedingSubmit = (data: BreedingValues) => {
     createBreeding.mutate(
       {
         data: {
@@ -76,17 +121,66 @@ export default function BreedingNew() {
       },
       {
         onSuccess: (breeding) => {
-          toast({ title: "Breeding recorded", description: `Breeding has been saved.` });
+          toast({ title: "Breeding recorded" });
           queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
           setLocation(`/breedings/${breeding.id}`);
         },
-        onError: () => {
-          toast({ title: "Save failed", description: "There was an error saving the breeding record.", variant: "destructive" });
-        },
+        onError: () => toast({ title: "Save failed", variant: "destructive" }),
       }
     );
   };
+
+  const handleHistoricalSubmit = (data: HistoricalValues) => {
+    const resolvedBreedingDate = data.breedingDate
+      ? new Date(data.breedingDate).toISOString()
+      : new Date(autoBreedingDate).toISOString();
+
+    createBreeding.mutate(
+      {
+        data: {
+          doeId: data.doeId,
+          sireName: data.sireName,
+          breedingDate: resolvedBreedingDate,
+          status: "kidded",
+          notes: data.notes,
+        },
+      },
+      {
+        onSuccess: (breeding) => {
+          addKids.mutate(
+            {
+              id: breeding.id,
+              data: {
+                birthDate: new Date(data.kiddingDate).toISOString(),
+                kids: data.kids.map((k) => ({
+                  name: k.name || undefined,
+                  sex: k.sex,
+                  kidStatus: k.kidStatus,
+                  birthDate: new Date(data.kiddingDate).toISOString(),
+                  birthWeight: k.birthWeight !== "" && k.birthWeight !== undefined
+                    ? Number(k.birthWeight) : undefined,
+                })),
+              },
+            },
+            {
+              onSuccess: () => {
+                toast({ title: "Historical kidding saved", description: `${data.kids.length} kid(s) recorded.` });
+                queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
+                queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
+                queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breeding.id) });
+                setLocation(`/breedings/${breeding.id}`);
+              },
+              onError: () => toast({ title: "Kidding details failed to save", variant: "destructive" }),
+            }
+          );
+        },
+        onError: () => toast({ title: "Save failed", variant: "destructive" }),
+      }
+    );
+  };
+
+  const isPending = createBreeding.isPending || addKids.isPending;
 
   return (
     <Layout>
@@ -96,24 +190,43 @@ export default function BreedingNew() {
         </Button>
 
         <div>
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Record Breeding</h2>
-          <p className="text-muted-foreground">Log a doe being bred to a buck. The doe's lactation status will automatically update to pregnant.</p>
+          <h2 className="text-3xl font-serif font-bold text-foreground mb-2">
+            {mode === "historical" ? "Record Historical Kidding" : "Record Breeding"}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {mode === "historical"
+              ? "Enter a past kidding event. Provide the actual kidding date and the kids born."
+              : "Log a doe being bred to a buck. Her lactation status will automatically update to pregnant."}
+          </p>
         </div>
 
-        <Card className="border-primary/10 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
-          <CardHeader className="pb-4 pt-8">
-            <CardTitle className="font-serif">Breeding Details</CardTitle>
-            <CardDescription>Select the doe and enter information about the buck and breeding date.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="doeId"
-                    render={({ field }) => (
+        <div className="flex rounded-lg border border-border overflow-hidden bg-background/50 w-fit">
+          <button
+            onClick={() => setMode("breeding")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${mode === "breeding" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+          >
+            New Breeding
+          </button>
+          <button
+            onClick={() => setMode("historical")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${mode === "historical" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+          >
+            Historical Kidding
+          </button>
+        </div>
+
+        {mode === "breeding" ? (
+          <Card className="border-primary/10 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
+            <CardHeader className="pb-4 pt-8">
+              <CardTitle className="font-serif">Breeding Details</CardTitle>
+              <CardDescription>Select the doe and enter information about the buck and breeding date.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...breedingForm}>
+                <form onSubmit={breedingForm.handleSubmit(handleBreedingSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={breedingForm.control} name="doeId" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Doe</FormLabel>
                         <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} value={field.value?.toString() ?? ""}>
@@ -136,13 +249,9 @@ export default function BreedingNew() {
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    )} />
 
-                  <FormField
-                    control={form.control}
-                    name="sireName"
-                    render={({ field }) => (
+                    <FormField control={breedingForm.control} name="sireName" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Sire (Buck)</FormLabel>
                         <FormControl>
@@ -150,13 +259,9 @@ export default function BreedingNew() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    )} />
 
-                  <FormField
-                    control={form.control}
-                    name="breedingDate"
-                    render={({ field }) => (
+                    <FormField control={breedingForm.control} name="breedingDate" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Breeding Date</FormLabel>
                         <FormControl>
@@ -164,36 +269,23 @@ export default function BreedingNew() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    )} />
 
-                  <FormField
-                    control={form.control}
-                    name="expectedKiddingDate"
-                    render={({ field }) => (
+                    <FormField control={breedingForm.control} name="expectedKiddingDate" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Expected Kidding Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            placeholder={computedExpected}
-                            className="bg-background/50"
-                          />
+                          <Input type="date" {...field} placeholder={computedExpected} className="bg-background/50" />
                         </FormControl>
                         <FormDescription>
                           {computedExpected ? `~150 days after breeding: ${new Date(computedExpected + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : "Leave blank to auto-calculate"}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                </div>
+                    )} />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
+                  <FormField control={breedingForm.control} name="notes" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Notes (Optional)</FormLabel>
                       <FormControl>
@@ -201,18 +293,200 @@ export default function BreedingNew() {
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}
-                />
+                  )} />
 
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={createBreeding.isPending} size="lg" className="min-w-[200px] shadow-md">
-                    {createBreeding.isPending ? "Saving..." : "Record Breeding"}
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={isPending} size="lg" className="min-w-[200px] shadow-md">
+                      {isPending ? "Saving..." : "Record Breeding"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        ) : (
+          <Form {...historicalForm}>
+            <form onSubmit={historicalForm.handleSubmit(handleHistoricalSubmit)} className="space-y-6">
+              <Card className="border-primary/10 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
+                <CardHeader className="pb-4 pt-8">
+                  <CardTitle className="font-serif">Kidding Details</CardTitle>
+                  <CardDescription>Enter the doe, sire, and actual kidding date for this historical record.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={historicalForm.control} name="doeId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Doe</FormLabel>
+                        <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} value={field.value?.toString() ?? ""}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background/50">
+                              <SelectValue placeholder="Select a doe from your herd" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {does.length === 0 ? (
+                              <SelectItem value="0" disabled>No does available — add one first</SelectItem>
+                            ) : (
+                              does.map((g) => (
+                                <SelectItem key={g.id} value={g.id.toString()}>
+                                  {g.name} ({g.breed})
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={historicalForm.control} name="sireName" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sire (Buck)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Buck's name or registration" {...field} className="bg-background/50" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={historicalForm.control} name="kiddingDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kidding Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} className="bg-background/50" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={historicalForm.control} name="breedingDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Breeding Date (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} className="bg-background/50" />
+                        </FormControl>
+                        <FormDescription>
+                          {autoBreedingDate
+                            ? `Leave blank to use ${new Date(autoBreedingDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (kidding − 145 d)`
+                            : "Auto-calculated from kidding date"}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <div className="mt-6">
+                    <FormField control={historicalForm.control} name="notes" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Any notes about this kidding..." className="resize-none bg-background/50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/10 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-serif">Kids Born</CardTitle>
+                  <CardDescription>Add each kid born during this kidding event.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Kid #{index + 1}</span>
+                        {fields.length > 1 && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <FormField control={historicalForm.control} name={`kids.${index}.name`} render={({ field }) => (
+                          <FormItem className="col-span-2 md:col-span-2">
+                            <FormLabel>Name (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Kid's barn name" {...field} className="bg-background/50" />
+                            </FormControl>
+                          </FormItem>
+                        )} />
+
+                        <FormField control={historicalForm.control} name={`kids.${index}.sex`} render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sex</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="doe">Doe ♀</SelectItem>
+                                <SelectItem value="buck">Buck ♂</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+
+                        <FormField control={historicalForm.control} name={`kids.${index}.kidStatus`} render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="alive">Alive</SelectItem>
+                                <SelectItem value="doa">DOA</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+
+                        <FormField control={historicalForm.control} name={`kids.${index}.birthWeight`} render={({ field }) => (
+                          <FormItem className="col-span-2 md:col-span-1">
+                            <FormLabel>Birth Weight (lbs)</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.1" placeholder="e.g. 4.2" {...field} className="bg-background/50" />
+                            </FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ name: "", sex: "doe", kidStatus: "alive", birthWeight: "" })}
+                    className="w-full border-dashed"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Another Kid
                   </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+
+                  {historicalForm.formState.errors.kids?.root && (
+                    <p className="text-sm text-destructive">{historicalForm.formState.errors.kids.root.message}</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isPending} size="lg" className="min-w-[240px] shadow-md">
+                  {isPending ? "Saving..." : "Save Historical Kidding"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </div>
     </Layout>
   );

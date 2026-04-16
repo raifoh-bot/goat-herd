@@ -14,6 +14,7 @@ export * from "./breedingDetail";
 export * from "./breedingStatus";
 export * from "./breedingWithDoe";
 export * from "./createBreedingBody";
+export * from "./createBreedingBodyStatus";
 export * from "./createGoatBody";
 export * from "./createGoatBodyBreed";
 export * from "./createGoatBodyHerdStatus";

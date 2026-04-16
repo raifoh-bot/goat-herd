@@ -347,11 +347,22 @@ export type BreedingDetail = Breeding & {
   kids?: Kid[];
 };
 
+export type CreateBreedingBodyStatus =
+  (typeof CreateBreedingBodyStatus)[keyof typeof CreateBreedingBodyStatus];
+
+export const CreateBreedingBodyStatus = {
+  bred: "bred",
+  "confirmed-pregnant": "confirmed-pregnant",
+  kidded: "kidded",
+  open: "open",
+} as const;
+
 export interface CreateBreedingBody {
   doeId: number;
   sireName: string;
   breedingDate: string;
   expectedKiddingDate?: string;
+  status?: CreateBreedingBodyStatus;
   notes?: string;
 }
 

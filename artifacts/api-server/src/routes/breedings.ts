@@ -50,6 +50,8 @@ router.post("/breedings", async (req, res): Promise<void> => {
     return;
   }
 
+  const initialStatus = parsed.data.status ?? "bred";
+
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
@@ -58,14 +60,16 @@ router.post("/breedings", async (req, res): Promise<void> => {
       breedingDate: new Date(parsed.data.breedingDate),
       expectedKiddingDate: parsed.data.expectedKiddingDate ? new Date(parsed.data.expectedKiddingDate) : null,
       notes: parsed.data.notes,
-      status: "bred",
+      status: initialStatus,
     })
     .returning();
 
-  await db
-    .update(goatsTable)
-    .set({ lactationStatus: "pregnant", updatedAt: new Date() })
-    .where(eq(goatsTable.id, parsed.data.doeId));
+  if (initialStatus === "bred" || initialStatus === "confirmed-pregnant") {
+    await db
+      .update(goatsTable)
+      .set({ lactationStatus: "pregnant", updatedAt: new Date() })
+      .where(eq(goatsTable.id, parsed.data.doeId));
+  }
 
   res.status(201).json(breeding);
 });

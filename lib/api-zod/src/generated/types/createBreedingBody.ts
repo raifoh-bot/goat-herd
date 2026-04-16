@@ -5,11 +5,13 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateBreedingBodyStatus } from "./createBreedingBodyStatus";
 
 export interface CreateBreedingBody {
   doeId: number;
   sireName: string;
   breedingDate: Date;
   expectedKiddingDate?: Date;
+  status?: CreateBreedingBodyStatus;
   notes?: string;
 }

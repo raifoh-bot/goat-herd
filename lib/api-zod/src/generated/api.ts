@@ -538,6 +538,7 @@ export const CreateBreedingBody = zod.object({
   sireName: zod.string(),
   breedingDate: zod.coerce.date(),
   expectedKiddingDate: zod.coerce.date().optional(),
+  status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]).optional(),
   notes: zod.string().optional(),
 });
 
