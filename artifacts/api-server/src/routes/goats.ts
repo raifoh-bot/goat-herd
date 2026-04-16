@@ -24,8 +24,8 @@ router.get("/goats", async (req, res): Promise<void> => {
   if (params.data.status) {
     conditions.push(eq(goatsTable.status, params.data.status));
   }
-  if (params.data.breed) {
-    conditions.push(eq(goatsTable.breed, params.data.breed));
+  if (params.data.sex) {
+    conditions.push(eq(goatsTable.sex, params.data.sex));
   }
 
   const goats = await db

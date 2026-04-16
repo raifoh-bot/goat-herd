@@ -125,11 +125,11 @@ paths:
           schema:
             type: string
             enum: [healthy, watch, treatment, dry]
-        - name: breed
+        - name: sex
           in: query
           schema:
             type: string
-            enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
+            enum: [doe, buck, wether]
       responses:
         "200":
           description: List of dairy goats

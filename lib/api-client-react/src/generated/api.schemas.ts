@@ -485,7 +485,7 @@ export interface BreedCount {
 
 export type ListGoatsParams = {
   status?: ListGoatsStatus;
-  breed?: ListGoatsBreed;
+  sex?: ListGoatsSex;
 };
 
 export type ListGoatsStatus =
@@ -498,17 +498,10 @@ export const ListGoatsStatus = {
   dry: "dry",
 } as const;
 
-export type ListGoatsBreed =
-  (typeof ListGoatsBreed)[keyof typeof ListGoatsBreed];
+export type ListGoatsSex = (typeof ListGoatsSex)[keyof typeof ListGoatsSex];
 
-export const ListGoatsBreed = {
-  alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
-  boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
-  mixed: "mixed",
+export const ListGoatsSex = {
+  doe: "doe",
+  buck: "buck",
+  wether: "wether",
 } as const;

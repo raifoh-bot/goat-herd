@@ -5,10 +5,10 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
-import type { ListGoatsBreed } from "./listGoatsBreed";
+import type { ListGoatsSex } from "./listGoatsSex";
 import type { ListGoatsStatus } from "./listGoatsStatus";
 
 export type ListGoatsParams = {
   status?: ListGoatsStatus;
-  breed?: ListGoatsBreed;
+  sex?: ListGoatsSex;
 };

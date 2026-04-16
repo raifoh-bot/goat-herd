@@ -56,19 +56,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListGoatsQueryParams = zod.object({
   status: zod.enum(["healthy", "watch", "treatment", "dry"]).optional(),
-  breed: zod
-    .enum([
-      "alpine",
-      "nubian",
-      "saanen",
-      "lamancha",
-      "toggenburg",
-      "boer",
-      "nigerian-dwarf",
-      "oberhasli",
-      "mixed",
-    ])
-    .optional(),
+  sex: zod.enum(["doe", "buck", "wether"]).optional(),
 });
 
 export const listGoatsResponseMilkPerDayMin = 0;

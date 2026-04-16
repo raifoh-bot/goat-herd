@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, ArrowRight } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
-import type { Goat, ListGoatsBreed, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,15 +103,15 @@ function CompactCard({ goat }: { goat: Goat }) {
 
 export default function GoatsList() {
   const [statusFilter, setStatusFilter] = useState<ListGoatsStatus | undefined>();
-  const [breedFilter, setBreedFilter] = useState<ListGoatsBreed | undefined>();
+  const [sexFilter, setSexFilter] = useState<ListGoatsSex | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try { return (localStorage.getItem("herd-view") as ViewMode) || "grid"; } catch { return "grid"; }
   });
 
   const { data: goats, isLoading } = useListGoats(
-    { status: statusFilter, breed: breedFilter },
-    { query: { queryKey: getListGoatsQueryKey({ status: statusFilter, breed: breedFilter }) } }
+    { status: statusFilter, sex: sexFilter },
+    { query: { queryKey: getListGoatsQueryKey({ status: statusFilter, sex: sexFilter }) } }
   );
 
   const filteredGoats = goats?.filter((goat) => searchQuery === "" || goat.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -151,15 +151,15 @@ export default function GoatsList() {
             <Input placeholder="Search by name..." className="pl-9 bg-background/50 border-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Select value={breedFilter || "all"} onValueChange={(val) => setBreedFilter(val === "all" ? undefined : val as ListGoatsBreed)}>
-              <SelectTrigger className="w-[160px] bg-background/50 border-input">
-                <SelectValue placeholder="Breed" />
+            <Select value={sexFilter || "all"} onValueChange={(val) => setSexFilter(val === "all" ? undefined : val as ListGoatsSex)}>
+              <SelectTrigger className="w-[140px] bg-background/50 border-input">
+                <SelectValue placeholder="Sex" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Breeds</SelectItem>
-                {Object.entries(breedLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
+                <SelectItem value="all">All Sexes</SelectItem>
+                <SelectItem value="doe">Does</SelectItem>
+                <SelectItem value="buck">Bucks</SelectItem>
+                <SelectItem value="wether">Wethers</SelectItem>
               </SelectContent>
             </Select>
 
