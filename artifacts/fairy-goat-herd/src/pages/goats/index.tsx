@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Filter, Plus, Search } from "lucide-react";
+import { Filter, Plus, Search, Upload } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { ListGoatsBreed, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -42,12 +42,20 @@ export default function GoatsList() {
             <h2 className="text-3xl font-serif font-bold text-foreground mb-2">The Herd</h2>
             <p className="text-muted-foreground">Manage your dairy goats, production records, and health status.</p>
           </div>
-          <Link href="/goats/new">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Goat
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/goats/import">
+              <Button variant="outline" className="shadow-sm">
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            </Link>
+            <Link href="/goats/new">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Goat
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 items-center bg-card p-4 rounded-xl border border-border shadow-sm">

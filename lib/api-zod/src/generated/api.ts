@@ -350,6 +350,53 @@ export const DeleteGoatParams = zod.object({
 });
 
 /**
+ * @summary Bulk import goats into the herd
+ */
+export const importGoatsBodyGoatsItemRightEarTattooMax = 4;
+
+export const importGoatsBodyGoatsItemLeftEarTattooMax = 4;
+
+export const ImportGoatsBody = zod.object({
+  goats: zod.array(
+    zod.object({
+      name: zod.string(),
+      registeredName: zod.string().optional(),
+      adgaId: zod.string().optional(),
+      sex: zod.enum(["doe", "buck", "wether"]).optional(),
+      breed: zod.enum([
+        "alpine",
+        "nubian",
+        "saanen",
+        "lamancha",
+        "toggenburg",
+        "boer",
+        "nigerian-dwarf",
+        "oberhasli",
+        "mixed",
+      ]),
+      dateOfBirth: zod.coerce.date().optional(),
+      damName: zod.string().optional(),
+      sireName: zod.string().optional(),
+      maternalGranddamName: zod.string().optional(),
+      maternalGrandsireName: zod.string().optional(),
+      paternalGranddamName: zod.string().optional(),
+      paternalGrandsireName: zod.string().optional(),
+      rightEarTattoo: zod
+        .string()
+        .max(importGoatsBodyGoatsItemRightEarTattooMax)
+        .optional(),
+      leftEarTattoo: zod
+        .string()
+        .max(importGoatsBodyGoatsItemLeftEarTattooMax)
+        .optional(),
+      lactationStatus: zod
+        .enum(["milking", "dry", "pregnant", "kid", "retired"])
+        .optional(),
+    }),
+  ),
+});
+
+/**
  * @summary List all breeding records
  */
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;

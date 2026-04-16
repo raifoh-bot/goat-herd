@@ -28,6 +28,8 @@ import type {
   ErrorEnvelope,
   Goat,
   HealthStatus,
+  ImportGoatsBody,
+  ImportGoatsResult,
   Kid,
   ListGoatsParams,
   UpdateBreedingBody,
@@ -810,6 +812,92 @@ export const useDeleteGoat = <
   TContext
 > => {
   return useMutation(getDeleteGoatMutationOptions(options));
+};
+
+/**
+ * @summary Bulk import goats into the herd
+ */
+export const getImportGoatsUrl = () => {
+  return `/api/goats/import`;
+};
+
+export const importGoats = async (
+  importGoatsBody: ImportGoatsBody,
+  options?: RequestInit,
+): Promise<ImportGoatsResult> => {
+  return customFetch<ImportGoatsResult>(getImportGoatsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importGoatsBody),
+  });
+};
+
+export const getImportGoatsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importGoats>>,
+    TError,
+    { data: BodyType<ImportGoatsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importGoats>>,
+  TError,
+  { data: BodyType<ImportGoatsBody> },
+  TContext
+> => {
+  const mutationKey = ["importGoats"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importGoats>>,
+    { data: BodyType<ImportGoatsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importGoats(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportGoatsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importGoats>>
+>;
+export type ImportGoatsMutationBody = BodyType<ImportGoatsBody>;
+export type ImportGoatsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk import goats into the herd
+ */
+export const useImportGoats = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importGoats>>,
+    TError,
+    { data: BodyType<ImportGoatsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importGoats>>,
+  TError,
+  { data: BodyType<ImportGoatsBody> },
+  TContext
+> => {
+  return useMutation(getImportGoatsMutationOptions(options));
 };
 
 /**

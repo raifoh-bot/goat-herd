@@ -218,6 +218,25 @@ paths:
         "404":
           description: Goat not found
 
+  /goats/import:
+    post:
+      operationId: importGoats
+      tags: [goats]
+      summary: Bulk import goats into the herd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportGoatsBody"
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportGoatsResult"
+
   /breedings:
     get:
       operationId: listBreedings
@@ -785,6 +804,75 @@ components:
       properties:
         error:
           type: string
+
+    ImportGoatRow:
+      type: object
+      properties:
+        name:
+          type: string
+        registeredName:
+          type: string
+        adgaId:
+          type: string
+        sex:
+          type: string
+          enum: [doe, buck, wether]
+        breed:
+          type: string
+          enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
+        dateOfBirth:
+          type: string
+          format: date-time
+        damName:
+          type: string
+        sireName:
+          type: string
+        maternalGranddamName:
+          type: string
+        maternalGrandsireName:
+          type: string
+        paternalGranddamName:
+          type: string
+        paternalGrandsireName:
+          type: string
+        rightEarTattoo:
+          type: string
+          maxLength: 4
+        leftEarTattoo:
+          type: string
+          maxLength: 4
+        lactationStatus:
+          type: string
+          enum: [milking, dry, pregnant, kid, retired]
+      required:
+        - name
+        - breed
+
+    ImportGoatsBody:
+      type: object
+      properties:
+        goats:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportGoatRow"
+      required:
+        - goats
+
+    ImportGoatsResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - imported
+        - skipped
+        - errors
 
     BreedCount:
       type: object

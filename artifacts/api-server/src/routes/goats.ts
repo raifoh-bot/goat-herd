@@ -5,6 +5,7 @@ import {
   CreateGoatBody,
   DeleteGoatParams,
   GetGoatParams,
+  ImportGoatsBody,
   ListGoatsQueryParams,
   UpdateGoatBody,
   UpdateGoatParams,
@@ -45,6 +46,45 @@ router.post("/goats", async (req, res): Promise<void> => {
 
   const [goat] = await db.insert(goatsTable).values(parsed.data).returning();
   res.status(201).json(goat);
+});
+
+router.post("/goats/import", async (req, res): Promise<void> => {
+  const parsed = ImportGoatsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  let imported = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < parsed.data.goats.length; i++) {
+    const row = parsed.data.goats[i];
+    try {
+      await db.insert(goatsTable).values({
+        name: row.name,
+        registeredName: row.registeredName ?? null,
+        adgaId: row.adgaId ?? null,
+        sex: row.sex ?? null,
+        breed: row.breed,
+        dateOfBirth: row.dateOfBirth ? new Date(row.dateOfBirth) : null,
+        damName: row.damName ?? "",
+        sireName: row.sireName ?? "",
+        maternalGranddamName: row.maternalGranddamName ?? "",
+        maternalGrandsireName: row.maternalGrandsireName ?? "",
+        paternalGranddamName: row.paternalGranddamName ?? "",
+        paternalGrandsireName: row.paternalGrandsireName ?? "",
+        rightEarTattoo: row.rightEarTattoo ? row.rightEarTattoo.slice(0, 4) : null,
+        leftEarTattoo: row.leftEarTattoo ? row.leftEarTattoo.slice(0, 4) : null,
+        lactationStatus: row.lactationStatus ?? null,
+      });
+      imported++;
+    } catch (err) {
+      errors.push(`Row ${i + 1} (${row.name}): ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  }
+
+  res.status(201).json({ imported, skipped: parsed.data.goats.length - imported - errors.length, errors });
 });
 
 router.get("/goats/:id", async (req, res): Promise<void> => {

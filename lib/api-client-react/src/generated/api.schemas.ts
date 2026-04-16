@@ -382,6 +382,71 @@ export interface ErrorEnvelope {
   error: string;
 }
 
+export type ImportGoatRowSex =
+  (typeof ImportGoatRowSex)[keyof typeof ImportGoatRowSex];
+
+export const ImportGoatRowSex = {
+  doe: "doe",
+  buck: "buck",
+  wether: "wether",
+} as const;
+
+export type ImportGoatRowBreed =
+  (typeof ImportGoatRowBreed)[keyof typeof ImportGoatRowBreed];
+
+export const ImportGoatRowBreed = {
+  alpine: "alpine",
+  nubian: "nubian",
+  saanen: "saanen",
+  lamancha: "lamancha",
+  toggenburg: "toggenburg",
+  boer: "boer",
+  "nigerian-dwarf": "nigerian-dwarf",
+  oberhasli: "oberhasli",
+  mixed: "mixed",
+} as const;
+
+export type ImportGoatRowLactationStatus =
+  (typeof ImportGoatRowLactationStatus)[keyof typeof ImportGoatRowLactationStatus];
+
+export const ImportGoatRowLactationStatus = {
+  milking: "milking",
+  dry: "dry",
+  pregnant: "pregnant",
+  kid: "kid",
+  retired: "retired",
+} as const;
+
+export interface ImportGoatRow {
+  name: string;
+  registeredName?: string;
+  adgaId?: string;
+  sex?: ImportGoatRowSex;
+  breed: ImportGoatRowBreed;
+  dateOfBirth?: string;
+  damName?: string;
+  sireName?: string;
+  maternalGranddamName?: string;
+  maternalGrandsireName?: string;
+  paternalGranddamName?: string;
+  paternalGrandsireName?: string;
+  /** @maxLength 4 */
+  rightEarTattoo?: string;
+  /** @maxLength 4 */
+  leftEarTattoo?: string;
+  lactationStatus?: ImportGoatRowLactationStatus;
+}
+
+export interface ImportGoatsBody {
+  goats: ImportGoatRow[];
+}
+
+export interface ImportGoatsResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
 export type BreedCountBreed =
   (typeof BreedCountBreed)[keyof typeof BreedCountBreed];
 
