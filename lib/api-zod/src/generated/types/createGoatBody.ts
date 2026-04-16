@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateGoatBodyBreed } from "./createGoatBodyBreed";
+import type { CreateGoatBodyHerdStatus } from "./createGoatBodyHerdStatus";
 import type { CreateGoatBodyLactationStatus } from "./createGoatBodyLactationStatus";
 import type { CreateGoatBodySex } from "./createGoatBodySex";
 import type { CreateGoatBodyStatus } from "./createGoatBodyStatus";
@@ -35,6 +36,7 @@ export interface CreateGoatBody {
   description?: string;
   imageUrl?: string;
   leasedBuck?: boolean;
+  herdStatus?: CreateGoatBodyHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

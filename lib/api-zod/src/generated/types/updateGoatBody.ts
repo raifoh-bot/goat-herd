@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateGoatBodyBreed } from "./updateGoatBodyBreed";
+import type { UpdateGoatBodyHerdStatus } from "./updateGoatBodyHerdStatus";
 import type { UpdateGoatBodyLactationStatus } from "./updateGoatBodyLactationStatus";
 import type { UpdateGoatBodySex } from "./updateGoatBodySex";
 import type { UpdateGoatBodyStatus } from "./updateGoatBodyStatus";
@@ -35,6 +36,7 @@ export interface UpdateGoatBody {
   description?: string;
   imageUrl?: string;
   leasedBuck?: boolean;
+  herdStatus?: UpdateGoatBodyHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

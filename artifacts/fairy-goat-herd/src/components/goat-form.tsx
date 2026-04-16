@@ -29,6 +29,7 @@ const formSchema = z.object({
   lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
+  herdStatus: z.enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"]).nullable().optional(),
   leasedBuck: z.boolean().optional(),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
   leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
@@ -76,6 +77,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         : (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
+      herdStatus: (defaultValues?.herdStatus as "dead" | "first-freshener" | "leased" | "on-farm" | "retired" | "sold" | null | undefined) ?? null,
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
@@ -302,6 +304,38 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             )}
           />
 
+          <FormField
+            control={form.control}
+            name="herdStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Herd Status</FormLabel>
+                <Select
+                  onValueChange={(val) => field.onChange(val === "_none" ? null : val)}
+                  value={field.value ?? "_none"}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder="Select herd status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="_none">— Not set —</SelectItem>
+                    <SelectItem value="dead">Dead</SelectItem>
+                    <SelectItem value="first-freshener">First Freshener</SelectItem>
+                    <SelectItem value="leased">Leased</SelectItem>
+                    <SelectItem value="on-farm">On Farm</SelectItem>
+                    <SelectItem value="retired">Retired</SelectItem>
+                    <SelectItem value="sold">Sold</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="imageUrl"

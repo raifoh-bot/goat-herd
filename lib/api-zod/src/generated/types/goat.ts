@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GoatBreed } from "./goatBreed";
+import type { GoatHerdStatus } from "./goatHerdStatus";
 import type { GoatLactationStatus } from "./goatLactationStatus";
 import type { GoatSex } from "./goatSex";
 import type { GoatStatus } from "./goatStatus";
@@ -37,6 +38,8 @@ export interface Goat {
   imageUrl?: string;
   /** Buck is on a breeding lease and excluded from herd totals */
   leasedBuck?: boolean;
+  /** Current standing of the goat in the herd */
+  herdStatus?: GoatHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

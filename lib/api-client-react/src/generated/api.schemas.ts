@@ -52,6 +52,22 @@ export const GoatLactationStatus = {
   retired: "retired",
 } as const;
 
+/**
+ * Current standing of the goat in the herd
+ */
+export type GoatHerdStatus =
+  | (typeof GoatHerdStatus)[keyof typeof GoatHerdStatus]
+  | null;
+
+export const GoatHerdStatus = {
+  dead: "dead",
+  "first-freshener": "first-freshener",
+  leased: "leased",
+  "on-farm": "on-farm",
+  retired: "retired",
+  sold: "sold",
+} as const;
+
 export interface Goat {
   id: number;
   name: string;
@@ -79,6 +95,8 @@ export interface Goat {
   imageUrl?: string;
   /** Buck is on a breeding lease and excluded from herd totals */
   leasedBuck?: boolean;
+  /** Current standing of the goat in the herd */
+  herdStatus?: GoatHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */
@@ -133,6 +151,19 @@ export const CreateGoatBodyLactationStatus = {
   retired: "retired",
 } as const;
 
+export type CreateGoatBodyHerdStatus =
+  | (typeof CreateGoatBodyHerdStatus)[keyof typeof CreateGoatBodyHerdStatus]
+  | null;
+
+export const CreateGoatBodyHerdStatus = {
+  dead: "dead",
+  "first-freshener": "first-freshener",
+  leased: "leased",
+  "on-farm": "on-farm",
+  retired: "retired",
+  sold: "sold",
+} as const;
+
 export interface CreateGoatBody {
   name: string;
   registeredName?: string;
@@ -158,6 +189,7 @@ export interface CreateGoatBody {
   description?: string;
   imageUrl?: string;
   leasedBuck?: boolean;
+  herdStatus?: CreateGoatBodyHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */
@@ -210,6 +242,19 @@ export const UpdateGoatBodyLactationStatus = {
   retired: "retired",
 } as const;
 
+export type UpdateGoatBodyHerdStatus =
+  | (typeof UpdateGoatBodyHerdStatus)[keyof typeof UpdateGoatBodyHerdStatus]
+  | null;
+
+export const UpdateGoatBodyHerdStatus = {
+  dead: "dead",
+  "first-freshener": "first-freshener",
+  leased: "leased",
+  "on-farm": "on-farm",
+  retired: "retired",
+  sold: "sold",
+} as const;
+
 export interface UpdateGoatBody {
   name?: string;
   registeredName?: string;
@@ -235,6 +280,7 @@ export interface UpdateGoatBody {
   description?: string;
   imageUrl?: string;
   leasedBuck?: boolean;
+  herdStatus?: UpdateGoatBodyHerdStatus;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

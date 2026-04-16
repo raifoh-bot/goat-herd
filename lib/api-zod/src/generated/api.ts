@@ -105,6 +105,10 @@ export const ListGoatsResponseItem = zod.object({
     .boolean()
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
     .string()
     .max(listGoatsResponseRightEarTattooMax)
@@ -164,6 +168,9 @@ export const CreateGoatBody = zod.object({
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   leasedBuck: zod.boolean().optional(),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish(),
   rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).optional(),
 });
@@ -221,6 +228,10 @@ export const GetGoatResponse = zod.object({
     .boolean()
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod.string().max(getGoatResponseRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(getGoatResponseLeftEarTattooMax).optional(),
   createdAt: zod.coerce.date(),
@@ -282,6 +293,9 @@ export const UpdateGoatBody = zod.object({
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
   leasedBuck: zod.boolean().optional(),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish(),
   rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).optional(),
 });
@@ -332,6 +346,10 @@ export const UpdateGoatResponse = zod.object({
     .boolean()
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
     .string()
     .max(updateGoatResponseRightEarTattooMax)
@@ -466,6 +484,17 @@ export const ListBreedingsResponseItem = zod
             .describe(
               "Buck is on a breeding lease and excluded from herd totals",
             ),
+          herdStatus: zod
+            .enum([
+              "dead",
+              "first-freshener",
+              "leased",
+              "on-farm",
+              "retired",
+              "sold",
+            ])
+            .nullish()
+            .describe("Current standing of the goat in the herd"),
           rightEarTattoo: zod
             .string()
             .max(listBreedingsResponseTwoDoeRightEarTattooMax)
@@ -582,6 +611,17 @@ export const GetBreedingResponse = zod
             .describe(
               "Buck is on a breeding lease and excluded from herd totals",
             ),
+          herdStatus: zod
+            .enum([
+              "dead",
+              "first-freshener",
+              "leased",
+              "on-farm",
+              "retired",
+              "sold",
+            ])
+            .nullish()
+            .describe("Current standing of the goat in the herd"),
           rightEarTattoo: zod
             .string()
             .max(getBreedingResponseTwoDoeRightEarTattooMax)
@@ -729,6 +769,17 @@ export const GetDashboardSummaryResponse = zod.object({
         .boolean()
         .optional()
         .describe("Buck is on a breeding lease and excluded from herd totals"),
+      herdStatus: zod
+        .enum([
+          "dead",
+          "first-freshener",
+          "leased",
+          "on-farm",
+          "retired",
+          "sold",
+        ])
+        .nullish()
+        .describe("Current standing of the goat in the herd"),
       rightEarTattoo: zod
         .string()
         .max(getDashboardSummaryResponseTopProducerRightEarTattooMax)
@@ -813,6 +864,10 @@ export const GetRecentActivityResponseItem = zod.object({
     .boolean()
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
     .string()
     .max(getRecentActivityResponseRightEarTattooMax)
