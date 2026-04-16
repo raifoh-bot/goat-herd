@@ -427,6 +427,12 @@ components:
           type: string
         imageUrl:
           type: string
+        rightEarTattoo:
+          type: string
+          maxLength: 4
+        leftEarTattoo:
+          type: string
+          maxLength: 4
         createdAt:
           type: string
           format: date-time
@@ -491,6 +497,12 @@ components:
           type: string
         imageUrl:
           type: string
+        rightEarTattoo:
+          type: string
+          maxLength: 4
+        leftEarTattoo:
+          type: string
+          maxLength: 4
       required:
         - name
         - breed
@@ -543,6 +555,12 @@ components:
           type: string
         imageUrl:
           type: string
+        rightEarTattoo:
+          type: string
+          maxLength: 4
+        leftEarTattoo:
+          type: string
+          maxLength: 4
 
     Breeding:
       type: object

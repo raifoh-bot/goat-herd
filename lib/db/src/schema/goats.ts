@@ -1,4 +1,4 @@
-import { doublePrecision, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { doublePrecision, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -25,6 +25,8 @@ export const goatsTable = pgTable("goats", {
   age: integer("age"),
   description: text("description"),
   imageUrl: text("image_url"),
+  rightEarTattoo: varchar("right_ear_tattoo", { length: 4 }),
+  leftEarTattoo: varchar("left_ear_tattoo", { length: 4 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

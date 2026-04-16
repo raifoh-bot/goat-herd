@@ -74,6 +74,10 @@ export const ListGoatsQueryParams = zod.object({
 export const listGoatsResponseMilkPerDayMin = 0;
 export const listGoatsResponseMilkPerDayMax = 10;
 
+export const listGoatsResponseRightEarTattooMax = 4;
+
+export const listGoatsResponseLeftEarTattooMax = 4;
+
 export const ListGoatsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
@@ -107,6 +111,11 @@ export const ListGoatsResponseItem = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod
+    .string()
+    .max(listGoatsResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod.string().max(listGoatsResponseLeftEarTattooMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -117,6 +126,10 @@ export const ListGoatsResponse = zod.array(ListGoatsResponseItem);
  */
 export const createGoatBodyMilkPerDayMin = 0;
 export const createGoatBodyMilkPerDayMax = 10;
+
+export const createGoatBodyRightEarTattooMax = 4;
+
+export const createGoatBodyLeftEarTattooMax = 4;
 
 export const CreateGoatBody = zod.object({
   name: zod.string(),
@@ -154,6 +167,8 @@ export const CreateGoatBody = zod.object({
     .describe("Legacy field, calculated from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).optional(),
+  leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).optional(),
 });
 
 /**
@@ -165,6 +180,10 @@ export const GetGoatParams = zod.object({
 
 export const getGoatResponseMilkPerDayMin = 0;
 export const getGoatResponseMilkPerDayMax = 10;
+
+export const getGoatResponseRightEarTattooMax = 4;
+
+export const getGoatResponseLeftEarTattooMax = 4;
 
 export const GetGoatResponse = zod.object({
   id: zod.number(),
@@ -199,6 +218,8 @@ export const GetGoatResponse = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod.string().max(getGoatResponseRightEarTattooMax).optional(),
+  leftEarTattoo: zod.string().max(getGoatResponseLeftEarTattooMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -212,6 +233,10 @@ export const UpdateGoatParams = zod.object({
 
 export const updateGoatBodyMilkPerDayMin = 0;
 export const updateGoatBodyMilkPerDayMax = 10;
+
+export const updateGoatBodyRightEarTattooMax = 4;
+
+export const updateGoatBodyLeftEarTattooMax = 4;
 
 export const UpdateGoatBody = zod.object({
   name: zod.string().optional(),
@@ -253,10 +278,16 @@ export const UpdateGoatBody = zod.object({
     .describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).optional(),
+  leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).optional(),
 });
 
 export const updateGoatResponseMilkPerDayMin = 0;
 export const updateGoatResponseMilkPerDayMax = 10;
+
+export const updateGoatResponseRightEarTattooMax = 4;
+
+export const updateGoatResponseLeftEarTattooMax = 4;
 
 export const UpdateGoatResponse = zod.object({
   id: zod.number(),
@@ -291,6 +322,14 @@ export const UpdateGoatResponse = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod
+    .string()
+    .max(updateGoatResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod
+    .string()
+    .max(updateGoatResponseLeftEarTattooMax)
+    .optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -307,6 +346,10 @@ export const DeleteGoatParams = zod.object({
  */
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;
 export const listBreedingsResponseTwoDoeMilkPerDayMax = 10;
+
+export const listBreedingsResponseTwoDoeRightEarTattooMax = 4;
+
+export const listBreedingsResponseTwoDoeLeftEarTattooMax = 4;
 
 export const ListBreedingsResponseItem = zod
   .object({
@@ -364,6 +407,14 @@ export const ListBreedingsResponseItem = zod
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
           imageUrl: zod.string().optional(),
+          rightEarTattoo: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeRightEarTattooMax)
+            .optional(),
+          leftEarTattoo: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeLeftEarTattooMax)
+            .optional(),
           createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
         })
@@ -392,6 +443,10 @@ export const GetBreedingParams = zod.object({
 
 export const getBreedingResponseTwoDoeMilkPerDayMin = 0;
 export const getBreedingResponseTwoDoeMilkPerDayMax = 10;
+
+export const getBreedingResponseTwoDoeRightEarTattooMax = 4;
+
+export const getBreedingResponseTwoDoeLeftEarTattooMax = 4;
 
 export const GetBreedingResponse = zod
   .object({
@@ -449,6 +504,14 @@ export const GetBreedingResponse = zod
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
           imageUrl: zod.string().optional(),
+          rightEarTattoo: zod
+            .string()
+            .max(getBreedingResponseTwoDoeRightEarTattooMax)
+            .optional(),
+          leftEarTattoo: zod
+            .string()
+            .max(getBreedingResponseTwoDoeLeftEarTattooMax)
+            .optional(),
           createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
         })
@@ -526,6 +589,10 @@ export const AddKidsBody = zod.object({
 export const getDashboardSummaryResponseTopProducerMilkPerDayMin = 0;
 export const getDashboardSummaryResponseTopProducerMilkPerDayMax = 10;
 
+export const getDashboardSummaryResponseTopProducerRightEarTattooMax = 4;
+
+export const getDashboardSummaryResponseTopProducerLeftEarTattooMax = 4;
+
 export const GetDashboardSummaryResponse = zod.object({
   totalGoats: zod.number(),
   healthyCount: zod.number(),
@@ -573,6 +640,14 @@ export const GetDashboardSummaryResponse = zod.object({
       age: zod.number().describe("Calculated age in years from dateOfBirth"),
       description: zod.string().optional(),
       imageUrl: zod.string().optional(),
+      rightEarTattoo: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerRightEarTattooMax)
+        .optional(),
+      leftEarTattoo: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerLeftEarTattooMax)
+        .optional(),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
     })
@@ -605,6 +680,10 @@ export const GetBreedBreakdownResponse = zod.array(
  */
 export const getRecentActivityResponseMilkPerDayMin = 0;
 export const getRecentActivityResponseMilkPerDayMax = 10;
+
+export const getRecentActivityResponseRightEarTattooMax = 4;
+
+export const getRecentActivityResponseLeftEarTattooMax = 4;
 
 export const GetRecentActivityResponseItem = zod.object({
   id: zod.number(),
@@ -639,6 +718,14 @@ export const GetRecentActivityResponseItem = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  rightEarTattoo: zod
+    .string()
+    .max(getRecentActivityResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod
+    .string()
+    .max(getRecentActivityResponseLeftEarTattooMax)
+    .optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

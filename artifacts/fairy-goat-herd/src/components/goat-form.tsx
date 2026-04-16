@@ -28,6 +28,8 @@ const formSchema = z.object({
   lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
+  rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
+  leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,6 +72,8 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       lactationStatus: (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
+      rightEarTattoo: defaultValues?.rightEarTattoo || "",
+      leftEarTattoo: defaultValues?.leftEarTattoo || "",
     },
   });
 
@@ -400,6 +404,41 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                   <FormLabel>Paternal Grandsire</FormLabel>
                   <FormControl>
                     <Input placeholder="Sire's sire" {...field} className="bg-background/50" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-xl border border-border bg-card/50 p-4">
+          <div>
+            <h3 className="font-serif text-lg font-semibold text-foreground">Tattoo</h3>
+            <p className="text-sm text-muted-foreground">ADGA ear tattoo identifiers (up to 4 characters each).</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="rightEarTattoo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Right Ear</FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., A1B2" maxLength={4} {...field} className="bg-background/50 uppercase" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="leftEarTattoo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Left Ear</FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., C3D4" maxLength={4} {...field} className="bg-background/50 uppercase" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

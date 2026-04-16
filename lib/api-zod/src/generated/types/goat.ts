@@ -35,6 +35,10 @@ export interface Goat {
   age: number;
   description?: string;
   imageUrl?: string;
+  /** @maxLength 4 */
+  rightEarTattoo?: string;
+  /** @maxLength 4 */
+  leftEarTattoo?: string;
   createdAt: Date;
   updatedAt: Date;
 }

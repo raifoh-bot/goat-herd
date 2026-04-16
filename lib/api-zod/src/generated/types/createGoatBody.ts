@@ -34,4 +34,8 @@ export interface CreateGoatBody {
   age?: number;
   description?: string;
   imageUrl?: string;
+  /** @maxLength 4 */
+  rightEarTattoo?: string;
+  /** @maxLength 4 */
+  leftEarTattoo?: string;
 }
