@@ -43,7 +43,7 @@ export function GoatCard({ goat }: GoatCardProps) {
             {goat.sex && (
               <>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                <span className="capitalize">{goat.sex === "doe" ? "Doe ♀" : goat.sex === "wether" ? "Wether ⚬" : "Buck ♂"}</span>
+                <span className="capitalize">{goat.sex === "doe" ? "Doe ♀" : goat.sex === "wether" ? "Wether ⚬" : goat.leasedBuck ? "Leased Buck ♂" : "Buck ♂"}</span>
               </>
             )}
           </p>
