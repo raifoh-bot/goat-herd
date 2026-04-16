@@ -50,7 +50,7 @@ const kiddingSchema = z.object({
   kids: z.array(z.object({
     name: z.string().optional(),
     sex: z.enum(["doe", "buck"]),
-    kidStatus: z.enum(["alive", "doa"]),
+    kidStatus: z.enum(["alive", "doa", "sold"]),
     birthWeight: z.coerce.number().min(0).optional().or(z.literal("")),
     notes: z.string().optional(),
   })).min(1, "Add at least one kid"),
@@ -62,7 +62,7 @@ type KiddingValues = z.infer<typeof kiddingSchema>;
 const editKidSchema = z.object({
   name: z.string().optional(),
   sex: z.enum(["doe", "buck"]),
-  kidStatus: z.enum(["alive", "doa"]),
+  kidStatus: z.enum(["alive", "doa", "sold"]),
   birthDate: z.string().optional(),
   birthWeight: z.union([z.string(), z.number()]).optional(),
   notes: z.string().optional(),
@@ -146,6 +146,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
             <span className="font-medium text-foreground">{kid.name || "Unnamed"}</span>
             <Badge className={`${sexClass} text-xs px-2 py-0`}>{sexLabel}</Badge>
             {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
+          {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
           </div>
           <div className="text-xs text-muted-foreground">
             {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
@@ -203,6 +204,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="alive">Alive</SelectItem>
+                        <SelectItem value="sold">Sold</SelectItem>
                         <SelectItem value="doa">DOA</SelectItem>
                       </SelectContent>
                     </Select>
@@ -687,6 +689,7 @@ export default function BreedingDetail() {
                                     </FormControl>
                                     <SelectContent>
                                       <SelectItem value="alive">Alive</SelectItem>
+                                      <SelectItem value="sold">Sold</SelectItem>
                                       <SelectItem value="doa">DOA</SelectItem>
                                     </SelectContent>
                                   </Select>

@@ -23,7 +23,7 @@ import {
   useListBreedings,
 } from "@workspace/api-client-react";
 
-const NEW_SIRE_SENTINEL = "__new__";
+const NEW_SENTINEL = "__new__";
 
 function SireSelect({
   value,
@@ -39,7 +39,7 @@ function SireSelect({
   const [showFreeText, setShowFreeText] = useState(!isKnown && value !== "");
 
   const handleSelect = (v: string) => {
-    if (v === NEW_SIRE_SENTINEL) {
+    if (v === NEW_SENTINEL) {
       setShowFreeText(true);
       setFreeText("");
       onChange("");
@@ -94,8 +94,70 @@ function SireSelect({
             {name}
           </SelectItem>
         ))}
-        <SelectItem value={NEW_SIRE_SENTINEL} className="text-primary font-medium border-t border-border mt-1 pt-1">
+        <SelectItem value={NEW_SENTINEL} className="text-primary font-medium border-t border-border mt-1 pt-1">
           + Add new sire...
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function GoatNameSelect({
+  value,
+  onChange,
+  goatNames,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  goatNames: string[];
+}) {
+  const isKnown = goatNames.includes(value);
+  const [freeText, setFreeText] = useState(!isKnown && value !== "" ? value : "");
+  const [showFreeText, setShowFreeText] = useState(!isKnown && value !== "");
+
+  const handleSelect = (v: string) => {
+    if (v === NEW_SENTINEL) {
+      setShowFreeText(true);
+      setFreeText("");
+      onChange("");
+    } else {
+      setShowFreeText(false);
+      onChange(v);
+    }
+  };
+
+  if (showFreeText) {
+    return (
+      <div className="flex gap-2 items-center">
+        <Input
+          value={freeText}
+          onChange={(e) => { setFreeText(e.target.value); onChange(e.target.value); }}
+          placeholder="Enter kid's name"
+          className="bg-background/50 flex-1"
+          autoFocus
+        />
+        {goatNames.length > 0 && (
+          <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs h-9 px-3"
+            onClick={() => { setShowFreeText(false); onChange(""); }}>
+            <ChevronDown className="h-3 w-3 mr-1" />
+            Pick existing
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Select onValueChange={handleSelect} value={value || ""}>
+      <SelectTrigger className="bg-background/50">
+        <SelectValue placeholder="Select or enter a name" />
+      </SelectTrigger>
+      <SelectContent>
+        {goatNames.map((name) => (
+          <SelectItem key={name} value={name}>{name}</SelectItem>
+        ))}
+        <SelectItem value={NEW_SENTINEL} className="text-primary font-medium border-t border-border mt-1 pt-1">
+          + Add new name...
         </SelectItem>
       </SelectContent>
     </Select>
@@ -119,7 +181,7 @@ const historicalSchema = z.object({
   kids: z.array(z.object({
     name: z.string().optional(),
     sex: z.enum(["doe", "buck"]),
-    kidStatus: z.enum(["alive", "doa"]),
+    kidStatus: z.enum(["alive", "doa", "sold"]),
     birthWeight: z.union([z.string(), z.number()]).optional(),
   })).min(1, "At least one kid is required"),
 });
@@ -147,6 +209,12 @@ export default function BreedingNew() {
   );
 
   const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
+
+  const goatNames = useMemo(() => {
+    const names = new Set<string>();
+    goats?.forEach((g) => { if (g.name) names.add(g.name.trim()); });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [goats]);
 
   const knownSires = useMemo(() => {
     const names = new Set<string>();
@@ -518,7 +586,11 @@ export default function BreedingNew() {
                           <FormItem className="col-span-2 md:col-span-2">
                             <FormLabel>Name (Optional)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Kid's barn name" {...field} className="bg-background/50" />
+                              <GoatNameSelect
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                goatNames={goatNames}
+                              />
                             </FormControl>
                           </FormItem>
                         )} />
@@ -551,6 +623,7 @@ export default function BreedingNew() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="alive">Alive</SelectItem>
+                                <SelectItem value="sold">Sold</SelectItem>
                                 <SelectItem value="doa">DOA</SelectItem>
                               </SelectContent>
                             </Select>

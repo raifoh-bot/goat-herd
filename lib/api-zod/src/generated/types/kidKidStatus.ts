@@ -11,4 +11,5 @@ export type KidKidStatus = (typeof KidKidStatus)[keyof typeof KidKidStatus];
 export const KidKidStatus = {
   alive: "alive",
   doa: "doa",
+  sold: "sold",
 } as const;

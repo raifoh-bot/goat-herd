@@ -321,6 +321,7 @@ export type KidKidStatus = (typeof KidKidStatus)[keyof typeof KidKidStatus];
 export const KidKidStatus = {
   alive: "alive",
   doa: "doa",
+  sold: "sold",
 } as const;
 
 export interface Kid {
@@ -398,6 +399,7 @@ export type CreateKidBodyKidStatus =
 export const CreateKidBodyKidStatus = {
   alive: "alive",
   doa: "doa",
+  sold: "sold",
 } as const;
 
 export interface CreateKidBody {
@@ -428,6 +430,7 @@ export type UpdateKidBodyKidStatus =
 export const UpdateKidBodyKidStatus = {
   alive: "alive",
   doa: "doa",
+  sold: "sold",
 } as const;
 
 export interface UpdateKidBody {

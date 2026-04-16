@@ -12,4 +12,5 @@ export type UpdateKidBodyKidStatus =
 export const UpdateKidBodyKidStatus = {
   alive: "alive",
   doa: "doa",
+  sold: "sold",
 } as const;
