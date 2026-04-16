@@ -215,7 +215,7 @@ export default function GoatDetails() {
                     {goat.sex && (
                       <div className="flex justify-between items-center pb-3 border-b border-border">
                         <span className="text-muted-foreground flex items-center gap-2 text-sm"><ShieldAlert className="h-4 w-4" /> Sex</span>
-                        <Badge variant="outline" className="capitalize font-medium">{goat.sex === "doe" ? "Doe ♀" : "Buck ♂"}</Badge>
+                        <Badge variant="outline" className="capitalize font-medium">{goat.sex === "doe" ? "Doe ♀" : goat.sex === "wether" ? "Wether ⚬" : "Buck ♂"}</Badge>
                       </div>
                     )}
 

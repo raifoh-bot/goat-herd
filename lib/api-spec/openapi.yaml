@@ -406,7 +406,7 @@ components:
           format: date-time
         sex:
           type: string
-          enum: [doe, buck]
+          enum: [doe, buck, wether]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -419,6 +419,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
+          nullable: true
           enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer
@@ -445,7 +446,6 @@ components:
         - breed
         - status
         - milkPerDay
-        - lactationStatus
         - age
         - createdAt
         - updatedAt
@@ -476,7 +476,7 @@ components:
           format: date-time
         sex:
           type: string
-          enum: [doe, buck]
+          enum: [doe, buck, wether]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -489,6 +489,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
+          nullable: true
           enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer
@@ -506,7 +507,6 @@ components:
       required:
         - name
         - breed
-        - lactationStatus
 
     UpdateGoatBody:
       type: object
@@ -534,7 +534,7 @@ components:
           format: date-time
         sex:
           type: string
-          enum: [doe, buck]
+          enum: [doe, buck, wether]
         breed:
           type: string
           enum: [alpine, nubian, saanen, lamancha, toggenburg, boer, nigerian-dwarf, oberhasli, mixed]
@@ -547,6 +547,7 @@ components:
           maximum: 10
         lactationStatus:
           type: string
+          nullable: true
           enum: [milking, dry, pregnant, kid, retired]
         age:
           type: integer

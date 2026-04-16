@@ -17,7 +17,7 @@ const formSchema = z.object({
   registeredName: z.string().optional(),
   adgaId: z.string().optional(),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
-  sex: z.enum(["doe", "buck"]).optional(),
+  sex: z.enum(["doe", "buck", "wether"]).optional(),
   damName: z.string().optional(),
   sireName: z.string().optional(),
   maternalGranddamName: z.string().optional(),
@@ -25,7 +25,7 @@ const formSchema = z.object({
   paternalGranddamName: z.string().optional(),
   paternalGrandsireName: z.string().optional(),
   breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
-  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]),
+  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
@@ -61,7 +61,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       registeredName: defaultValues?.registeredName || "",
       adgaId: defaultValues?.adgaId || "",
       dateOfBirth: defaultValues?.dateOfBirth ? new Date(defaultValues.dateOfBirth).toISOString().slice(0, 10) : "",
-      sex: (defaultValues?.sex as "doe" | "buck" | undefined) || undefined,
+      sex: (defaultValues?.sex as "doe" | "buck" | "wether" | undefined) || undefined,
       damName: defaultValues?.damName || "",
       sireName: defaultValues?.sireName || "",
       maternalGranddamName: defaultValues?.maternalGranddamName || "",
@@ -69,7 +69,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       paternalGranddamName: defaultValues?.paternalGranddamName || "",
       paternalGrandsireName: defaultValues?.paternalGrandsireName || "",
       breed: defaultValues?.breed || "mixed",
-      lactationStatus: (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
+      lactationStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether")
+        ? ((defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | null | undefined) || null)
+        : (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
@@ -80,6 +82,21 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
   const dateOfBirth = form.watch("dateOfBirth");
   const damName = form.watch("damName");
   const sireName = form.watch("sireName");
+  const sex = form.watch("sex");
+  const showBlankLactation = sex === "buck" || sex === "wether";
+  const isSexInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isSexInitialized.current) {
+      isSexInitialized.current = true;
+      return;
+    }
+    if (sex === "buck" || sex === "wether") {
+      form.setValue("lactationStatus", null);
+    } else if (sex === "doe" && !form.getValues("lactationStatus")) {
+      form.setValue("lactationStatus", "milking");
+    }
+  }, [sex, form]);
 
   useEffect(() => {
     if (!defaultValues) {
@@ -186,9 +203,10 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     <SelectContent>
                       <SelectItem value="doe">Doe (Female)</SelectItem>
                       <SelectItem value="buck">Buck (Male)</SelectItem>
+                      <SelectItem value="wether">Wether (Neutered Male)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>Whether this goat is a doe or a buck.</FormDescription>
+                  <FormDescription>Whether this goat is a doe, a buck, or a wether.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -232,13 +250,16 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Lactation Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(val) => field.onChange(val === "_none" ? null : val)} value={field.value ?? (showBlankLactation ? "_none" : "")}>
                   <FormControl>
                     <SelectTrigger className="bg-background/50">
                       <SelectValue placeholder="Select lactation status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    {showBlankLactation && (
+                      <SelectItem value="_none">— Not applicable —</SelectItem>
+                    )}
                     <SelectItem value="milking">Milking</SelectItem>
                     <SelectItem value="dry">Dry</SelectItem>
                     <SelectItem value="pregnant">Pregnant</SelectItem>

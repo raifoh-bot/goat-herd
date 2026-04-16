@@ -14,6 +14,7 @@ export type GoatSex = (typeof GoatSex)[keyof typeof GoatSex];
 export const GoatSex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;
 
 export type GoatBreed = (typeof GoatBreed)[keyof typeof GoatBreed];
@@ -70,7 +71,7 @@ export interface Goat {
    * @maximum 10
    */
   milkPerDay: number;
-  lactationStatus: GoatLactationStatus;
+  lactationStatus?: GoatLactationStatus | null;
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
@@ -89,6 +90,7 @@ export type CreateGoatBodySex =
 export const CreateGoatBodySex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;
 
 export type CreateGoatBodyBreed =
@@ -146,7 +148,7 @@ export interface CreateGoatBody {
    * @maximum 10
    */
   milkPerDay?: number;
-  lactationStatus: CreateGoatBodyLactationStatus;
+  lactationStatus?: CreateGoatBodyLactationStatus | null;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;
@@ -163,6 +165,7 @@ export type UpdateGoatBodySex =
 export const UpdateGoatBodySex = {
   doe: "doe",
   buck: "buck",
+  wether: "wether",
 } as const;
 
 export type UpdateGoatBodyBreed =
@@ -220,7 +223,7 @@ export interface UpdateGoatBody {
    * @maximum 10
    */
   milkPerDay?: number;
-  lactationStatus?: UpdateGoatBodyLactationStatus;
+  lactationStatus?: UpdateGoatBodyLactationStatus | null;
   /** Calculated age in years from dateOfBirth */
   age?: number;
   description?: string;
