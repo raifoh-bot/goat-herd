@@ -170,32 +170,71 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     return;
   }
 
-  const [breeding] = await db
+  // Fetch breeding + full doe record (we need pedigree fields)
+  const breedingRows = await db
     .select()
     .from(breedingsTable)
+    .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
     .where(eq(breedingsTable.id, breedingId));
 
-  if (!breeding) {
+  if (!breedingRows.length) {
     res.status(404).json({ error: "Breeding not found" });
     return;
   }
 
+  const breeding = breedingRows[0].breedings;
+  const doe = breedingRows[0].goats;
+
+  const birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
+
+  // Insert kid records first (without goatId)
   const kidRows = parsed.data.kids.map((kid) => ({
     breedingId,
     name: kid.name,
     sex: kid.sex,
     kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa",
-    birthDate: kid.birthDate
-      ? new Date(kid.birthDate)
-      : parsed.data.birthDate
-      ? new Date(parsed.data.birthDate)
-      : null,
+    birthDate: kid.birthDate ? new Date(kid.birthDate) : birthDate,
     birthWeight: kid.birthWeight,
     notes: kid.notes,
   }));
 
   const insertedKids = await db.insert(kidsTable).values(kidRows).returning();
 
+  // For each alive kid, create a goat herd record with full pedigree
+  for (const kid of insertedKids) {
+    if (kid.kidStatus !== "alive") continue;
+
+    const kidName = kid.name ?? (kid.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
+
+    const [newGoat] = await db
+      .insert(goatsTable)
+      .values({
+        name: kidName,
+        sex: kid.sex,
+        breed: doe?.breed ?? "mixed",
+        dateOfBirth: kid.birthDate,
+        lactationStatus: "kid",
+        // Dam info (the doe from this breeding)
+        damName: doe?.registeredName ?? doe?.name ?? "",
+        // Sire info (the buck name from this breeding)
+        sireName: breeding.sireName,
+        // Maternal grands = dam's parents
+        maternalGranddamName: doe?.damName ?? "",
+        maternalGrandsireName: doe?.sireName ?? "",
+        // Paternal grands = not tracked (sire is a name string only)
+        paternalGranddamName: "",
+        paternalGrandsireName: "",
+      })
+      .returning();
+
+    // Link the kid record back to the new goat
+    await db
+      .update(kidsTable)
+      .set({ goatId: newGoat.id })
+      .where(eq(kidsTable.id, kid.id));
+  }
+
+  // Mark breeding as kidded and update doe's lactation status
   await db
     .update(breedingsTable)
     .set({ status: "kidded", updatedAt: new Date() })
@@ -206,7 +245,9 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     .set({ lactationStatus: "milking", updatedAt: new Date() })
     .where(eq(goatsTable.id, breeding.doeId));
 
-  res.status(201).json(insertedKids);
+  // Return kids with goatId populated
+  const finalKids = await db.select().from(kidsTable).where(eq(kidsTable.breedingId, breedingId));
+  res.status(201).json(finalKids);
 });
 
 export default router;

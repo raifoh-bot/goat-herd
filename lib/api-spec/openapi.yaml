@@ -666,6 +666,8 @@ components:
           type: integer
         breedingId:
           type: integer
+        goatId:
+          type: integer
         name:
           type: string
         sex:

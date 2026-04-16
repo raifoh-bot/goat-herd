@@ -18,6 +18,7 @@ export const breedingsTable = pgTable("breedings", {
 export const kidsTable = pgTable("kids", {
   id: serial("id").primaryKey(),
   breedingId: integer("breeding_id").notNull().references(() => breedingsTable.id),
+  goatId: integer("goat_id").references(() => goatsTable.id),
   name: text("name"),
   sex: text("sex", { enum: ["doe", "buck"] }).notNull(),
   kidStatus: text("kid_status", { enum: ["alive", "doa"] }).notNull().default("alive"),

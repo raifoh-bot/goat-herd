@@ -428,6 +428,7 @@ export const ListBreedingsResponseItem = zod
           zod.object({
             id: zod.number(),
             breedingId: zod.number(),
+            goatId: zod.number().optional(),
             name: zod.string().optional(),
             sex: zod.enum(["doe", "buck"]),
             kidStatus: zod.enum(["alive", "doa"]).optional(),
@@ -537,6 +538,7 @@ export const GetBreedingResponse = zod
           zod.object({
             id: zod.number(),
             breedingId: zod.number(),
+            goatId: zod.number().optional(),
             name: zod.string().optional(),
             sex: zod.enum(["doe", "buck"]),
             kidStatus: zod.enum(["alive", "doa"]).optional(),

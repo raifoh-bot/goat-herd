@@ -276,6 +276,7 @@ export const KidKidStatus = {
 export interface Kid {
   id: number;
   breedingId: number;
+  goatId?: number;
   name?: string;
   sex: KidSex;
   kidStatus?: KidKidStatus;
