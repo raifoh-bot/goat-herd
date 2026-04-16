@@ -367,7 +367,7 @@ export default function BreedingDetail() {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <FormLabel>Kids Born</FormLabel>
+                        <p className="text-sm font-medium leading-none">Kids Born</p>
                         <Button
                           type="button"
                           variant="outline"
