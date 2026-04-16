@@ -1,10 +1,21 @@
 import { Link } from "wouter";
-import { Milk } from "lucide-react";
+import { CheckCircle2, Milk } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { breedLabels } from "@/pages/goats/index";
 import { formatAge } from "@/lib/age";
+
+function hasCompleteBreedingLines(goat: Goat): boolean {
+  return !!(
+    goat.damName &&
+    goat.sireName &&
+    goat.maternalGranddamName &&
+    goat.maternalGrandsireName &&
+    goat.paternalGranddamName &&
+    goat.paternalGrandsireName
+  );
+}
 
 interface GoatCardProps {
   goat: Goat;
@@ -24,10 +35,16 @@ export function GoatCard({ goat }: GoatCardProps) {
             </div>
           )}
 
-          <div className="absolute top-3 left-3 flex gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
             <Badge variant="outline" className="bg-card/85 capitalize shadow-sm backdrop-blur-md">
               {breedLabels[goat.breed]}
             </Badge>
+            {hasCompleteBreedingLines(goat) && (
+              <Badge variant="outline" className="bg-card/85 shadow-sm backdrop-blur-md flex items-center gap-1 text-primary border-primary/30">
+                <CheckCircle2 className="h-3 w-3" />
+                Includes Breeding Lines
+              </Badge>
+            )}
           </div>
         </div>
 
