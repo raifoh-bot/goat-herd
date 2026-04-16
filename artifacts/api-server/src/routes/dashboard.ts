@@ -6,7 +6,7 @@ const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const allGoats = await db.select().from(goatsTable);
-  const ownedGoats = allGoats.filter((g) => !g.leasedBuck);
+  const ownedGoats = allGoats.filter((g) => !g.leasedBuck && g.herdStatus !== "dead" && g.herdStatus !== "sold");
   const totalGoats = ownedGoats.length;
 
   const doeCount = ownedGoats.filter((g) => g.sex === "doe").length;
