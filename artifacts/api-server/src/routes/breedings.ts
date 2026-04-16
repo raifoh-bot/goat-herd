@@ -200,7 +200,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     breedingId,
     name: kid.name,
     sex: kid.sex,
-    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa",
+    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa" | "sold",
     birthDate: kid.birthDate ? new Date(kid.birthDate) : birthDate,
     birthWeight: kid.birthWeight,
     notes: kid.notes,
@@ -208,9 +208,9 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
 
   const insertedKids = await db.insert(kidsTable).values(kidRows).returning();
 
-  // For each alive kid, create a goat herd record with full pedigree
+  // For each alive or sold kid, create a goat herd record with full pedigree
   for (const kid of insertedKids) {
-    if (kid.kidStatus !== "alive") continue;
+    if (kid.kidStatus !== "alive" && kid.kidStatus !== "sold") continue;
 
     const kidName = kid.name ?? (kid.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
 
@@ -222,6 +222,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
         breed: doe?.breed ?? "mixed",
         dateOfBirth: kid.birthDate,
         lactationStatus: "kid",
+        herdStatus: kid.kidStatus === "sold" ? "sold" : null,
         // Dam info (the doe from this breeding)
         damName: doe?.registeredName ?? doe?.name ?? "",
         // Sire info (the buck name from this breeding)
@@ -280,18 +281,22 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   const updateData: Partial<typeof existing> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name || null;
   if (parsed.data.sex !== undefined) updateData.sex = parsed.data.sex;
-  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "doa";
+  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "doa" | "sold";
   if (parsed.data.birthDate !== undefined) updateData.birthDate = new Date(parsed.data.birthDate);
   if (parsed.data.birthWeight !== undefined) updateData.birthWeight = parsed.data.birthWeight ?? null;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
 
   const [updated] = await db.update(kidsTable).set(updateData).where(eq(kidsTable.id, paramsParsed.data.kidId)).returning();
 
-  // Sync the linked goat's name and sex if it exists
+  // Sync the linked goat's name, sex, and herdStatus if it exists
   if (updated.goatId) {
     const goatUpdate: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.name !== undefined) goatUpdate.name = parsed.data.name || (updated.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
     if (parsed.data.sex !== undefined) goatUpdate.sex = parsed.data.sex;
+    if (parsed.data.kidStatus !== undefined) {
+      if (parsed.data.kidStatus === "sold") goatUpdate.herdStatus = "sold";
+      else if (parsed.data.kidStatus === "alive") goatUpdate.herdStatus = "on-farm";
+    }
     if (Object.keys(goatUpdate).length > 1) {
       await db.update(goatsTable).set(goatUpdate).where(eq(goatsTable.id, updated.goatId));
     }
