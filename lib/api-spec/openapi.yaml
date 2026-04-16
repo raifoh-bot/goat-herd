@@ -756,10 +756,36 @@ components:
       required:
         - kids
 
+    DoeLactationBreakdown:
+      type: object
+      properties:
+        milking:
+          type: integer
+        dry:
+          type: integer
+        pregnant:
+          type: integer
+        kid:
+          type: integer
+        retired:
+          type: integer
+      required:
+        - milking
+        - dry
+        - pregnant
+        - kid
+        - retired
+
     DashboardSummary:
       type: object
       properties:
         totalGoats:
+          type: integer
+        doeCount:
+          type: integer
+        buckCount:
+          type: integer
+        wetherCount:
           type: integer
         healthyCount:
           type: integer
@@ -771,15 +797,21 @@ components:
           type: integer
         averageMilkPerDay:
           type: number
+        doeLactationBreakdown:
+          $ref: "#/components/schemas/DoeLactationBreakdown"
         topProducer:
           $ref: "#/components/schemas/Goat"
       required:
         - totalGoats
+        - doeCount
+        - buckCount
+        - wetherCount
         - healthyCount
         - treatmentCount
         - milkingCount
         - dryCount
         - averageMilkPerDay
+        - doeLactationBreakdown
 
     UploadUrlRequest:
       type: object

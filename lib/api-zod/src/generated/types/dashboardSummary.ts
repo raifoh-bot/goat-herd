@@ -5,14 +5,19 @@
  * Dairy Goat Herd Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { DoeLactationBreakdown } from "./doeLactationBreakdown";
 import type { Goat } from "./goat";
 
 export interface DashboardSummary {
   totalGoats: number;
+  doeCount: number;
+  buckCount: number;
+  wetherCount: number;
   healthyCount: number;
   treatmentCount: number;
   milkingCount: number;
   dryCount: number;
   averageMilkPerDay: number;
+  doeLactationBreakdown: DoeLactationBreakdown;
   topProducer?: Goat;
 }

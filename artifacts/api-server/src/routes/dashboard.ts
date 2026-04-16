@@ -6,30 +6,48 @@ const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const allGoats = await db.select().from(goatsTable);
-  const totalGoats = allGoats.filter((g) => !g.leasedBuck).length;
+  const ownedGoats = allGoats.filter((g) => !g.leasedBuck);
+  const totalGoats = ownedGoats.length;
 
-  const healthyCount = allGoats.filter((g) => g.status === "healthy").length;
-  const treatmentCount = allGoats.filter((g) => g.status === "treatment").length;
-  const dryCount = allGoats.filter((g) => g.status === "dry").length;
-  const milkingCount = allGoats.filter((g) => g.lactationStatus === "milking").length;
+  const doeCount = ownedGoats.filter((g) => g.sex === "doe").length;
+  const buckCount = ownedGoats.filter((g) => g.sex === "buck").length;
+  const wetherCount = ownedGoats.filter((g) => g.sex === "wether").length;
+
+  const does = ownedGoats.filter((g) => g.sex === "doe");
+  const doeLactationBreakdown = {
+    milking: does.filter((g) => g.lactationStatus === "milking").length,
+    dry: does.filter((g) => g.lactationStatus === "dry").length,
+    pregnant: does.filter((g) => g.lactationStatus === "pregnant").length,
+    kid: does.filter((g) => g.lactationStatus === "kid").length,
+    retired: does.filter((g) => g.lactationStatus === "retired").length,
+  };
+
+  const healthyCount = ownedGoats.filter((g) => g.status === "healthy").length;
+  const treatmentCount = ownedGoats.filter((g) => g.status === "treatment").length;
+  const dryCount = ownedGoats.filter((g) => g.status === "dry").length;
+  const milkingCount = ownedGoats.filter((g) => g.lactationStatus === "milking").length;
 
   const averageMilkPerDay =
     totalGoats > 0
-      ? allGoats.reduce((sum, g) => sum + g.milkPerDay, 0) / totalGoats
+      ? ownedGoats.reduce((sum, g) => sum + g.milkPerDay, 0) / totalGoats
       : 0;
 
   const topProducer =
     totalGoats > 0
-      ? allGoats.reduce((best, g) => (g.milkPerDay > best.milkPerDay ? g : best))
+      ? ownedGoats.reduce((best, g) => (g.milkPerDay > best.milkPerDay ? g : best))
       : null;
 
   res.json({
     totalGoats,
+    doeCount,
+    buckCount,
+    wetherCount,
     healthyCount,
     treatmentCount,
     milkingCount,
     dryCount,
     averageMilkPerDay: Math.round(averageMilkPerDay * 10) / 10,
+    doeLactationBreakdown,
     topProducer,
   });
 });

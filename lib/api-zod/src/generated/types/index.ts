@@ -23,6 +23,7 @@ export * from "./createKidBody";
 export * from "./createKidBodyKidStatus";
 export * from "./createKidBodySex";
 export * from "./dashboardSummary";
+export * from "./doeLactationBreakdown";
 export * from "./errorEnvelope";
 export * from "./goat";
 export * from "./goatBreed";

@@ -686,11 +686,21 @@ export const getDashboardSummaryResponseTopProducerLeftEarTattooMax = 4;
 
 export const GetDashboardSummaryResponse = zod.object({
   totalGoats: zod.number(),
+  doeCount: zod.number(),
+  buckCount: zod.number(),
+  wetherCount: zod.number(),
   healthyCount: zod.number(),
   treatmentCount: zod.number(),
   milkingCount: zod.number(),
   dryCount: zod.number(),
   averageMilkPerDay: zod.number(),
+  doeLactationBreakdown: zod.object({
+    milking: zod.number(),
+    dry: zod.number(),
+    pregnant: zod.number(),
+    kid: zod.number(),
+    retired: zod.number(),
+  }),
   topProducer: zod
     .object({
       id: zod.number(),

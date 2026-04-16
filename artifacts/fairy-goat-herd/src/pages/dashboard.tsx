@@ -1,18 +1,19 @@
 import { Link } from "wouter";
-import { Activity, HeartPulse, Milk, ShieldPlus, Sprout, Stethoscope } from "lucide-react";
+import { Activity, HeartPulse, Milk, ShieldPlus, Stethoscope } from "lucide-react";
 import {
-  getGetBreedBreakdownQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
-  useGetBreedBreakdown,
   useGetDashboardSummary,
   useGetRecentActivity,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Cell,
+} from "recharts";
 
 const breedLabels: Record<string, string> = {
   alpine: "Alpine",
@@ -26,41 +27,39 @@ const breedLabels: Record<string, string> = {
   mixed: "Mixed",
 };
 
+const LACTATION_COLORS: Record<string, string> = {
+  Milking: "hsl(var(--chart-1))",
+  Dry: "hsl(var(--chart-2))",
+  Pregnant: "hsl(var(--chart-3))",
+  Kid: "hsl(var(--chart-4))",
+  Retired: "hsl(var(--chart-5))",
+};
+
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
-  const { data: breedBreakdown, isLoading: isLoadingBreakdown } = useGetBreedBreakdown({ query: { queryKey: getGetBreedBreakdownQueryKey() } });
   const { data: recentActivity, isLoading: isLoadingActivity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
 
-  const chartColors = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-  ];
-
-  const chartData = breedBreakdown?.map((item, index) => ({
-    name: breedLabels[item.breed] || item.breed,
-    value: item.count,
-    color: chartColors[index % chartColors.length],
-  })) || [];
+  const lactationChartData = summary?.doeLactationBreakdown
+    ? [
+        { name: "Milking", value: summary.doeLactationBreakdown.milking },
+        { name: "Dry", value: summary.doeLactationBreakdown.dry },
+        { name: "Pregnant", value: summary.doeLactationBreakdown.pregnant },
+        { name: "Kid", value: summary.doeLactationBreakdown.kid },
+        { name: "Retired", value: summary.doeLactationBreakdown.retired },
+      ].filter((d) => d.value > 0)
+    : [];
 
   return (
     <Layout>
       <div className="space-y-8 animate-in fade-in duration-500">
         <div>
           <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
-          <p className="text-muted-foreground">Track production, health, and breed mix across your dairy goat herd.</p>
+          <p className="text-muted-foreground">Track production, health, and composition across your dairy goat herd.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Goats"
-            value={summary?.totalGoats}
-            icon={Activity}
-            isLoading={isLoadingSummary}
-            description="Active herd members"
-          />
+          <TotalGoatsCard summary={summary} isLoading={isLoadingSummary} />
+
           <StatCard
             title="Healthy"
             value={summary?.healthyCount}
@@ -87,31 +86,52 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <Card className="lg:col-span-1 shadow-md border-primary/10">
             <CardHeader>
-              <CardTitle className="font-serif text-lg">Breed Mix</CardTitle>
+              <div className="flex items-baseline justify-between gap-2">
+                <CardTitle className="font-serif text-lg">Does</CardTitle>
+                {isLoadingSummary
+                  ? <Skeleton className="h-7 w-10" />
+                  : <span className="text-3xl font-serif font-bold text-primary">{summary?.doeCount ?? 0}</span>
+                }
+              </div>
+              <p className="text-sm text-muted-foreground">Lactation status breakdown</p>
             </CardHeader>
             <CardContent>
-              {isLoadingBreakdown ? (
-                <div className="flex justify-center items-center h-[300px]">
-                  <Skeleton className="h-[200px] w-[200px] rounded-full" />
+              {isLoadingSummary ? (
+                <div className="flex justify-center items-center h-[220px]">
+                  <Skeleton className="h-[180px] w-full rounded-lg" />
                 </div>
-              ) : chartData.length > 0 ? (
-                <div className="h-[300px] w-full">
+              ) : lactationChartData.length > 0 ? (
+                <div className="h-[220px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                    <BarChart data={lactationChartData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)", fontSize: 12 }}
+                        formatter={(value: number, name: string) => [value, name]}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {lactationChartData.map((entry) => (
+                          <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
                         ))}
-                      </Pie>
-                      <RechartsTooltip contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)" }} />
-                      <Legend />
-                    </PieChart>
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                  <Sprout className="h-8 w-8 mb-2 opacity-50" />
-                  <p>No breed data yet</p>
+                <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
+                  <Milk className="h-8 w-8 mb-2 opacity-40" />
+                  <p className="text-sm">No does recorded yet</p>
                 </div>
               )}
             </CardContent>
@@ -148,7 +168,7 @@ export default function Dashboard() {
                         <div className="flex-1">
                           <h4 className="font-medium text-foreground">{goat.name}</h4>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            {breedLabels[goat.breed]} • {goat.milkPerDay} qt/day • {goat.lactationStatus}
+                            {breedLabels[goat.breed]} · {goat.lactationStatus ?? "—"}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -180,6 +200,46 @@ export default function Dashboard() {
   );
 }
 
+function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number; doeCount: number; buckCount: number; wetherCount: number } | null; isLoading: boolean }) {
+  return (
+    <Card className="shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Goats</CardTitle>
+        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <Activity className="h-4 w-4 text-primary" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading
+          ? <Skeleton className="h-8 w-16 mb-3" />
+          : <div className="text-2xl font-serif font-bold text-foreground mb-3">{summary?.totalGoats ?? 0}</div>
+        }
+        {isLoading ? (
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+              <span className="text-[10px]">♀</span> {summary?.doeCount ?? 0} Does
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className="text-[10px]">♂</span> {summary?.buckCount ?? 0} Bucks
+            </span>
+            {(summary?.wetherCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                ⚬ {summary?.wetherCount ?? 0} Wethers
+              </span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function StatCard({ title, value, icon: Icon, isLoading, description }: { title: string; value?: number | string; icon: any; isLoading: boolean; description?: string }) {
   return (
     <Card className="shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
@@ -190,7 +250,7 @@ function StatCard({ title, value, icon: Icon, isLoading, description }: { title:
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <Skeleton className="h-8 w-16 mb-1" /> : <div className="text-2xl font-serif font-bold text-foreground">{value || 0}</div>}
+        {isLoading ? <Skeleton className="h-8 w-16 mb-1" /> : <div className="text-2xl font-serif font-bold text-foreground">{value ?? 0}</div>}
         {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </CardContent>
     </Card>

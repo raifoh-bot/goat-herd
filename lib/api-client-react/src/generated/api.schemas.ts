@@ -357,13 +357,25 @@ export interface AddKidsBody {
   kids: CreateKidBody[];
 }
 
+export interface DoeLactationBreakdown {
+  milking: number;
+  dry: number;
+  pregnant: number;
+  kid: number;
+  retired: number;
+}
+
 export interface DashboardSummary {
   totalGoats: number;
+  doeCount: number;
+  buckCount: number;
+  wetherCount: number;
   healthyCount: number;
   treatmentCount: number;
   milkingCount: number;
   dryCount: number;
   averageMilkPerDay: number;
+  doeLactationBreakdown: DoeLactationBreakdown;
   topProducer?: Goat;
 }
 
