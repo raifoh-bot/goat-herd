@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, ArrowRight } from "lucide-react";
+import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -108,13 +108,44 @@ export default function GoatsList() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try { return (localStorage.getItem("herd-view") as ViewMode) || "grid"; } catch { return "grid"; }
   });
+  const [sortKey, setSortKey] = useState<"name" | "breed" | "sex" | "age" | "status" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const { data: goats, isLoading } = useListGoats(
     { status: statusFilter, sex: sexFilter },
     { query: { queryKey: getListGoatsQueryKey({ status: statusFilter, sex: sexFilter }) } }
   );
 
-  const filteredGoats = goats?.filter((goat) => searchQuery === "" || goat.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const handleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const filteredGoats = useMemo(() => {
+    const base = goats?.filter((goat) => searchQuery === "" || goat.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? [];
+    if (!sortKey) return base;
+    return [...base].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortKey === "breed") {
+        cmp = (breedLabels[a.breed] ?? a.breed).localeCompare(breedLabels[b.breed] ?? b.breed);
+      } else if (sortKey === "sex") {
+        cmp = (a.sex ?? "").localeCompare(b.sex ?? "");
+      } else if (sortKey === "age") {
+        const aDate = a.dateOfBirth ? new Date(a.dateOfBirth).getTime() : 0;
+        const bDate = b.dateOfBirth ? new Date(b.dateOfBirth).getTime() : 0;
+        cmp = bDate - aDate;
+      } else if (sortKey === "status") {
+        cmp = (a.status ?? "").localeCompare(b.status ?? "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [goats, searchQuery, sortKey, sortDir]);
 
   const setView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -235,11 +266,20 @@ export default function GoatsList() {
               <div className="hidden md:grid grid-cols-[2.5rem_1fr] px-4 py-2 bg-muted/50 border-b border-border text-xs uppercase tracking-wide text-muted-foreground font-medium">
                 <div />
                 <div className="grid grid-cols-6 gap-x-4 ml-4">
-                  <div className="col-span-2">Name</div>
-                  <div>Breed</div>
-                  <div>Sex</div>
-                  <div>Age</div>
-                  <div>Status</div>
+                  {(["name", "breed", "sex", "age", "status"] as const).map((col, i) => (
+                    <button
+                      key={col}
+                      onClick={() => handleSort(col)}
+                      className={`flex items-center gap-1 hover:text-foreground transition-colors text-left ${i === 0 ? "col-span-2" : ""} ${sortKey === col ? "text-foreground" : ""}`}
+                    >
+                      {col.charAt(0).toUpperCase() + col.slice(1)}
+                      {sortKey === col ? (
+                        sortDir === "asc" ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />
+                      ) : (
+                        <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-40" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
               {filteredGoats.map((goat, i) => (
@@ -272,7 +312,7 @@ export default function GoatsList() {
             </div>
             <h3 className="text-xl font-serif font-medium text-foreground mb-2">No goats found</h3>
             <p className="text-muted-foreground max-w-md">We couldn't find any dairy goats matching your current filters. Try adjusting them or add a new goat to the herd.</p>
-            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setBreedFilter(undefined); setStatusFilter(undefined); }}>
+            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter(undefined); setSortKey(null); }}>
               Clear Filters
             </Button>
           </div>
