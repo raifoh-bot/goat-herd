@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload, X } from "lucide-react";
+import { Camera, Loader2, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
 
@@ -45,6 +45,7 @@ interface GoatFormProps {
 
 export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading, progress } = useUpload({
     onSuccess: (response) => {
       form.setValue("imageUrl", `/api/storage${response.objectPath}`);
@@ -359,11 +360,19 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                       </Button>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
                       className="hidden"
                       onChange={handleFileSelect}
                     />
@@ -380,6 +389,16 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                       ) : (
                         <><Upload className="h-4 w-4" /> Upload Image</>
                       )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="gap-2"
+                    >
+                      <Camera className="h-4 w-4" /> Take Photo
                     </Button>
                     {field.value?.startsWith("/api/storage") && (
                       <img src={field.value} alt="Preview" className="h-10 w-10 rounded-md object-cover border border-border" />
