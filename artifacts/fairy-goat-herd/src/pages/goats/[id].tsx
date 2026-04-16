@@ -232,6 +232,20 @@ export default function GoatDetails() {
                       </span>
                     </div>
 
+                    {goat.lactationStatus && (
+                      <div className="flex justify-between items-center pb-3 border-b border-border">
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm"><Milk className="h-4 w-4" /> Lactation Status</span>
+                        <span className="font-medium text-foreground">
+                          {goat.lactationStatus === "milking" ? "Milking"
+                            : goat.lactationStatus === "dry" ? "Dry"
+                            : goat.lactationStatus === "pregnant" ? "Pregnant"
+                            : goat.lactationStatus === "kid" ? "Kid"
+                            : goat.lactationStatus === "retired" ? "Retired"
+                            : "—"}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center pb-3 border-b border-border">
                       <span className="text-muted-foreground flex items-center gap-2 text-sm"><Calendar className="h-4 w-4" /> Age</span>
                       <span className="font-medium text-foreground">{goat.dateOfBirth ? formatAge(goat.dateOfBirth) : `${goat.age} yr`}</span>
