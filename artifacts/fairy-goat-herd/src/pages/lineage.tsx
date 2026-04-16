@@ -50,7 +50,7 @@ export default function LineageReports() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const { data: goats, isLoading } = useListGoats();
+  const { data: goats, isLoading } = useListGoats({ status: "on-farm" });
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
