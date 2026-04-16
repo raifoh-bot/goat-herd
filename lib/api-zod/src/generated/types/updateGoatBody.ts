@@ -34,6 +34,7 @@ export interface UpdateGoatBody {
   age?: number;
   description?: string;
   imageUrl?: string;
+  leasedBuck?: boolean;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

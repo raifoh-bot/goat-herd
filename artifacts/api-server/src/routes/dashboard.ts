@@ -6,7 +6,7 @@ const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const allGoats = await db.select().from(goatsTable);
-  const totalGoats = allGoats.length;
+  const totalGoats = allGoats.filter((g) => !g.leasedBuck).length;
 
   const healthyCount = allGoats.filter((g) => g.status === "healthy").length;
   const treatmentCount = allGoats.filter((g) => g.status === "treatment").length;

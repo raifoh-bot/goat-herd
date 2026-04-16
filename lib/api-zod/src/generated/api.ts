@@ -113,6 +113,10 @@ export const ListGoatsResponseItem = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
   rightEarTattoo: zod
     .string()
     .max(listGoatsResponseRightEarTattooMax)
@@ -171,6 +175,7 @@ export const CreateGoatBody = zod.object({
     .describe("Legacy field, calculated from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod.boolean().optional(),
   rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).optional(),
 });
@@ -224,6 +229,10 @@ export const GetGoatResponse = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
   rightEarTattoo: zod.string().max(getGoatResponseRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(getGoatResponseLeftEarTattooMax).optional(),
   createdAt: zod.coerce.date(),
@@ -284,6 +293,7 @@ export const UpdateGoatBody = zod.object({
     .describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod.boolean().optional(),
   rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).optional(),
 });
@@ -330,6 +340,10 @@ export const UpdateGoatResponse = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
   rightEarTattoo: zod
     .string()
     .max(updateGoatResponseRightEarTattooMax)
@@ -458,6 +472,12 @@ export const ListBreedingsResponseItem = zod
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
           imageUrl: zod.string().optional(),
+          leasedBuck: zod
+            .boolean()
+            .optional()
+            .describe(
+              "Buck is on a breeding lease and excluded from herd totals",
+            ),
           rightEarTattoo: zod
             .string()
             .max(listBreedingsResponseTwoDoeRightEarTattooMax)
@@ -568,6 +588,12 @@ export const GetBreedingResponse = zod
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
           imageUrl: zod.string().optional(),
+          leasedBuck: zod
+            .boolean()
+            .optional()
+            .describe(
+              "Buck is on a breeding lease and excluded from herd totals",
+            ),
           rightEarTattoo: zod
             .string()
             .max(getBreedingResponseTwoDoeRightEarTattooMax)
@@ -701,6 +727,10 @@ export const GetDashboardSummaryResponse = zod.object({
       age: zod.number().describe("Calculated age in years from dateOfBirth"),
       description: zod.string().optional(),
       imageUrl: zod.string().optional(),
+      leasedBuck: zod
+        .boolean()
+        .optional()
+        .describe("Buck is on a breeding lease and excluded from herd totals"),
       rightEarTattoo: zod
         .string()
         .max(getDashboardSummaryResponseTopProducerRightEarTattooMax)
@@ -781,6 +811,10 @@ export const GetRecentActivityResponseItem = zod.object({
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
   imageUrl: zod.string().optional(),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
   rightEarTattoo: zod
     .string()
     .max(getRecentActivityResponseRightEarTattooMax)

@@ -77,6 +77,8 @@ export interface Goat {
   age: number;
   description?: string;
   imageUrl?: string;
+  /** Buck is on a breeding lease and excluded from herd totals */
+  leasedBuck?: boolean;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */
@@ -155,6 +157,7 @@ export interface CreateGoatBody {
   age?: number;
   description?: string;
   imageUrl?: string;
+  leasedBuck?: boolean;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */
@@ -231,6 +234,7 @@ export interface UpdateGoatBody {
   age?: number;
   description?: string;
   imageUrl?: string;
+  leasedBuck?: boolean;
   /** @maxLength 4 */
   rightEarTattoo?: string;
   /** @maxLength 4 */

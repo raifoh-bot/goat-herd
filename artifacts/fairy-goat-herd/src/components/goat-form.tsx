@@ -7,6 +7,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -28,6 +29,7 @@ const formSchema = z.object({
   lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
+  leasedBuck: z.boolean().optional(),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
   leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
 });
@@ -74,6 +76,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         : (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
+      leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
     },
@@ -95,6 +98,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       form.setValue("lactationStatus", null);
     } else if (sex === "doe" && !form.getValues("lactationStatus")) {
       form.setValue("lactationStatus", "milking");
+    }
+    if (sex !== "buck") {
+      form.setValue("leasedBuck", false);
     }
   }, [sex, form]);
 
@@ -212,6 +218,30 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
               )}
             />
           </div>
+
+          {sex === "buck" && (
+            <FormField
+              control={form.control}
+              name="leasedBuck"
+              render={({ field }) => (
+                <FormItem className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20 p-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value ?? false}
+                      onCheckedChange={field.onChange}
+                      className="mt-0.5"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="cursor-pointer font-medium">Breeding Leased Buck</FormLabel>
+                    <FormDescription>
+                      This buck is on a breeding lease. He will not be counted in herd totals on the overview.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

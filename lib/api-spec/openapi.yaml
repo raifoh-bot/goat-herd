@@ -447,6 +447,9 @@ components:
           type: string
         imageUrl:
           type: string
+        leasedBuck:
+          type: boolean
+          description: Buck is on a breeding lease and excluded from herd totals
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -517,6 +520,8 @@ components:
           type: string
         imageUrl:
           type: string
+        leasedBuck:
+          type: boolean
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -575,6 +580,8 @@ components:
           type: string
         imageUrl:
           type: string
+        leasedBuck:
+          type: boolean
         rightEarTattoo:
           type: string
           maxLength: 4
