@@ -191,8 +191,8 @@ export default function BreedingDetail() {
 
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
-  const liveKids = breeding.kids?.filter((k) => k.sex !== "doa") ?? [];
-  const doaKids = breeding.kids?.filter((k) => k.sex === "doa") ?? [];
+  const liveKids = breeding.kids?.filter((k) => k.kidStatus !== "doa") ?? [];
+  const doaKids = breeding.kids?.filter((k) => k.kidStatus === "doa") ?? [];
 
   return (
     <Layout>
@@ -202,7 +202,7 @@ export default function BreedingDetail() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kiddings
           </Button>
           <div className="flex items-center gap-2">
-            {!isEditingStatus && breeding.status !== "kidded" && (
+            {!isEditingStatus && (
               <Button variant="outline" size="sm" onClick={() => setIsEditingStatus(true)}>
                 <Edit3 className="mr-2 h-3.5 w-3.5" /> Update Status
               </Button>
@@ -276,6 +276,7 @@ export default function BreedingDetail() {
                             <SelectContent>
                               <SelectItem value="bred">Bred</SelectItem>
                               <SelectItem value="confirmed-pregnant">Confirmed Pregnant</SelectItem>
+                              <SelectItem value="kidded">Kidded</SelectItem>
                               <SelectItem value="open">Open (Did Not Take)</SelectItem>
                             </SelectContent>
                           </Select>
@@ -322,7 +323,7 @@ export default function BreedingDetail() {
           </Card>
         )}
 
-        {breeding.status !== "open" && (
+        {breeding.status === "kidded" && (
           <Card className="border-primary/10 shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
@@ -471,9 +472,6 @@ export default function BreedingDetail() {
                 </Form>
               )}
 
-              {(breeding.kids?.length ?? 0) === 0 && breeding.status !== "kidded" && !isAddingKids && (
-                <p className="text-sm text-muted-foreground py-2">No kids recorded yet — fill in the form above to record this kidding.</p>
-              )}
             </CardContent>
           </Card>
         )}
