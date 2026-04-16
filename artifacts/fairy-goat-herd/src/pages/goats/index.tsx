@@ -60,7 +60,7 @@ function GoatRow({ goat }: { goat: Goat }) {
             : <div className="w-full h-full flex items-center justify-center text-primary/40 text-xs font-bold uppercase">{goat.name.slice(0, 2)}</div>
           }
         </div>
-        <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-6 gap-x-4 items-center">
+        <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-7 gap-x-4 items-center">
           <div className="md:col-span-2">
             <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{goat.name}</p>
             {goat.registeredName && <p className="text-xs text-muted-foreground/70 truncate italic">{goat.registeredName}</p>}
@@ -71,6 +71,9 @@ function GoatRow({ goat }: { goat: Goat }) {
           </div>
           <div className="hidden md:block text-sm text-muted-foreground capitalize">{sexLabel(goat)}</div>
           <div className="hidden md:block text-sm text-muted-foreground">{formatAge(goat.dateOfBirth)} old</div>
+          <div className="hidden md:block text-sm text-muted-foreground">
+            {goat.lactationStatus ? lactationLabels[goat.lactationStatus] ?? goat.lactationStatus : <span className="text-muted-foreground/40">—</span>}
+          </div>
           <div className="hidden md:block">
             {goat.herdStatus
               ? <Badge variant="secondary" className="text-xs">{herdStatusLabels[goat.herdStatus] ?? goat.herdStatus}</Badge>
@@ -117,7 +120,7 @@ export default function GoatsList() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try { return (localStorage.getItem("herd-view") as ViewMode) || "grid"; } catch { return "grid"; }
   });
-  const [sortKey, setSortKey] = useState<"name" | "breed" | "sex" | "age" | "status" | null>(null);
+  const [sortKey, setSortKey] = useState<"name" | "breed" | "sex" | "age" | "lactation" | "status" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const { data: goats, isLoading } = useListGoats(
@@ -149,8 +152,10 @@ export default function GoatsList() {
         const aDate = a.dateOfBirth ? new Date(a.dateOfBirth).getTime() : 0;
         const bDate = b.dateOfBirth ? new Date(b.dateOfBirth).getTime() : 0;
         cmp = bDate - aDate;
+      } else if (sortKey === "lactation") {
+        cmp = (a.lactationStatus ?? "").localeCompare(b.lactationStatus ?? "");
       } else if (sortKey === "status") {
-        cmp = (a.status ?? "").localeCompare(b.status ?? "");
+        cmp = (a.herdStatus ?? "").localeCompare(b.herdStatus ?? "");
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -274,14 +279,14 @@ export default function GoatsList() {
             <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
               <div className="hidden md:grid grid-cols-[2.5rem_1fr] px-4 py-2 bg-muted/50 border-b border-border text-xs uppercase tracking-wide text-muted-foreground font-medium">
                 <div />
-                <div className="grid grid-cols-6 gap-x-4 ml-4">
-                  {(["name", "breed", "sex", "age", "status"] as const).map((col, i) => (
+                <div className="grid grid-cols-7 gap-x-4 ml-4">
+                  {(["name", "breed", "sex", "age", "lactation", "status"] as const).map((col, i) => (
                     <button
                       key={col}
                       onClick={() => handleSort(col)}
                       className={`flex items-center gap-1 hover:text-foreground transition-colors text-left ${i === 0 ? "col-span-2" : ""} ${sortKey === col ? "text-foreground" : ""}`}
                     >
-                      {col.charAt(0).toUpperCase() + col.slice(1)}
+                      {col === "lactation" ? "Lactation" : col.charAt(0).toUpperCase() + col.slice(1)}
                       {sortKey === col ? (
                         sortDir === "asc" ? <ChevronUp className="h-3 w-3 shrink-0" /> : <ChevronDown className="h-3 w-3 shrink-0" />
                       ) : (
