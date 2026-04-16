@@ -1236,6 +1236,90 @@ export const useUpdateBreeding = <
 };
 
 /**
+ * @summary Delete a breeding record and its kids
+ */
+export const getDeleteBreedingUrl = (id: number) => {
+  return `/api/breedings/${id}`;
+};
+
+export const deleteBreeding = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteBreedingUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBreedingMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBreeding>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBreeding>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBreeding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBreeding>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteBreeding(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBreedingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBreeding>>
+>;
+
+export type DeleteBreedingMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a breeding record and its kids
+ */
+export const useDeleteBreeding = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBreeding>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBreeding>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteBreedingMutationOptions(options));
+};
+
+/**
  * @summary Record kids from a kidding
  */
 export const getAddKidsUrl = (id: number) => {

@@ -682,6 +682,13 @@ export const UpdateBreedingResponse = zod.object({
 });
 
 /**
+ * @summary Delete a breeding record and its kids
+ */
+export const DeleteBreedingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Record kids from a kidding
  */
 export const AddKidsParams = zod.object({

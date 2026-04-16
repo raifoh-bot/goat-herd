@@ -8,6 +8,7 @@ import {
   GetBreedingParams,
   UpdateBreedingParams,
   AddKidsParams,
+  DeleteBreedingParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -248,6 +249,27 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
   // Return kids with goatId populated
   const finalKids = await db.select().from(kidsTable).where(eq(kidsTable.breedingId, breedingId));
   res.status(201).json(finalKids);
+});
+
+router.delete("/breedings/:id", async (req, res): Promise<void> => {
+  const idParsed = DeleteBreedingParams.safeParse({ id: Number(req.params.id) });
+  if (!idParsed.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const { id } = idParsed.data;
+
+  const [breeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, id));
+  if (!breeding) {
+    res.status(404).json({ error: "Breeding not found" });
+    return;
+  }
+
+  await db.delete(kidsTable).where(eq(kidsTable.breedingId, id));
+  await db.delete(breedingsTable).where(eq(breedingsTable.id, id));
+
+  res.status(204).send();
 });
 
 export default router;

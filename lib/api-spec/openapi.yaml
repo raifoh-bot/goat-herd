@@ -314,6 +314,21 @@ paths:
                 $ref: "#/components/schemas/Breeding"
         "404":
           description: Breeding not found
+    delete:
+      operationId: deleteBreeding
+      tags: [breedings]
+      summary: Delete a breeding record and its kids
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Breeding deleted
+        "404":
+          description: Breeding not found
 
   /breedings/{id}/kids:
     post:

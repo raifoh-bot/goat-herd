@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Plus, Trash2, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +21,7 @@ import {
   getListBreedingsQueryKey,
   getListGoatsQueryKey,
   useAddKids,
+  useDeleteBreeding,
   useGetBreeding,
   useUpdateBreeding,
 } from "@workspace/api-client-react";
@@ -86,6 +88,7 @@ export default function BreedingDetail() {
   const queryClient = useQueryClient();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [isAddingKids, setIsAddingKids] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const { data: breeding, isLoading, isError } = useGetBreeding(id, {
     query: { enabled: !!id, queryKey: getGetBreedingQueryKey(id) },
@@ -93,6 +96,7 @@ export default function BreedingDetail() {
 
   const updateBreeding = useUpdateBreeding();
   const addKids = useAddKids();
+  const deleteBreeding = useDeleteBreeding();
 
   const updateForm = useForm<UpdateValues>({
     resolver: zodResolver(updateSchema),
@@ -166,6 +170,20 @@ export default function BreedingDetail() {
     );
   };
 
+  const handleDelete = () => {
+    deleteBreeding.mutate({ id }, {
+      onSuccess: () => {
+        toast({ title: "Record deleted", description: "The kidding record has been removed." });
+        queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
+        setLocation("/breedings");
+      },
+      onError: () => {
+        toast({ title: "Delete failed", description: "Could not delete the record.", variant: "destructive" });
+        setIsDeleteDialogOpen(false);
+      },
+    });
+  };
+
   if (isError) {
     return (
       <Layout>
@@ -207,6 +225,29 @@ export default function BreedingDetail() {
                 <Edit3 className="mr-2 h-3.5 w-3.5" /> Update Status
               </Button>
             )}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" size="icon" className="shadow-sm">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="font-serif">Delete Kidding Record?</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete the breeding record for{" "}
+                    <strong>{breeding?.doe?.name ?? "this doe"}</strong> × <strong>{breeding?.sireName}</strong>,
+                    including all kid records. This cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-6">
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                  <Button variant="destructive" onClick={handleDelete} disabled={deleteBreeding.isPending}>
+                    {deleteBreeding.isPending ? "Deleting..." : "Delete Record"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
