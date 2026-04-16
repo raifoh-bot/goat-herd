@@ -5,13 +5,15 @@ import { useListGoats } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatAge } from "@/lib/age";
+import { formatDate } from "@/lib/date";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 
-type SortKey = "name" | "age" | "damName" | "sireName" | "maternalGranddamName" | "maternalGrandsireName" | "paternalGranddamName" | "paternalGrandsireName";
+type SortKey = "name" | "age" | "dateOfBirth" | "damName" | "sireName" | "maternalGranddamName" | "maternalGrandsireName" | "paternalGranddamName" | "paternalGrandsireName";
 type SortDir = "asc" | "desc";
 
 const COLUMNS: { key: SortKey; label: string; width?: string }[] = [
   { key: "name",                    label: "Barn Name",           width: "w-36" },
+  { key: "dateOfBirth",             label: "Date of Birth",       width: "w-32" },
   { key: "age",                     label: "Age",                 width: "w-28" },
   { key: "damName",                 label: "Dam",                 width: "" },
   { key: "sireName",                label: "Sire",                width: "" },
@@ -26,7 +28,7 @@ function sortGoats(goats: Goat[], key: SortKey, dir: SortDir): Goat[] {
     let aVal: string | number = "";
     let bVal: string | number = "";
 
-    if (key === "age") {
+    if (key === "age" || key === "dateOfBirth") {
       aVal = a.dateOfBirth ? new Date(a.dateOfBirth).getTime() : 0;
       bVal = b.dateOfBirth ? new Date(b.dateOfBirth).getTime() : 0;
       return dir === "asc" ? bVal - aVal : aVal - bVal;
@@ -113,6 +115,9 @@ export default function LineageReports() {
                       <Link href={`/goats/${goat.id}`} className="text-foreground hover:text-primary transition-colors">
                         {goat.name}
                       </Link>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {formatDate(goat.dateOfBirth, { month: "short", day: "numeric", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {goat.dateOfBirth ? formatAge(goat.dateOfBirth) : "—"}
