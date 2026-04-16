@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Calendar, Edit3, Milk, Tag, Trash2, User } from "lucide-react";
+import { Link, useLocation, useParams } from "wouter";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Tag, Trash2, User, XCircle } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,13 +14,22 @@ import {
   getGetBreedBreakdownQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetGoatQueryKey,
+  getListBreedingsQueryKey,
   getListGoatsQueryKey,
   useDeleteGoat,
   useGetGoat,
+  useListBreedings,
   useUpdateGoat,
 } from "@workspace/api-client-react";
 import { breedLabels } from "@/pages/goats/index";
 import { formatAge } from "@/lib/age";
+
+const breedingStatusConfig = {
+  bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
+  "confirmed-pregnant": { label: "Pregnant", icon: CheckCircle2, className: "bg-chart-1 text-primary-foreground" },
+  kidded: { label: "Kidded", icon: Baby, className: "bg-primary text-primary-foreground" },
+  open: { label: "Open", icon: XCircle, className: "bg-destructive text-destructive-foreground" },
+};
 
 export default function GoatDetails() {
   const params = useParams();
@@ -37,6 +46,11 @@ export default function GoatDetails() {
       queryKey: getGetGoatQueryKey(id),
     },
   });
+
+  const { data: allBreedings } = useListBreedings({
+    query: { queryKey: getListBreedingsQueryKey() },
+  });
+  const doeBreedings = (allBreedings ?? []).filter((b) => b.doeId === id);
 
   const updateGoat = useUpdateGoat();
   const deleteGoat = useDeleteGoat();
@@ -295,6 +309,79 @@ export default function GoatDetails() {
                   )}
                 </CardContent>
               </Card>
+
+              {goat.sex === "doe" && doeBreedings.length > 0 && (
+                <Card className="border-primary/10 shadow-md">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">Kidding Records</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {doeBreedings
+                      .slice()
+                      .sort((a, b) => new Date(b.breedingDate).getTime() - new Date(a.breedingDate).getTime())
+                      .map((breeding) => {
+                        const config = breedingStatusConfig[breeding.status];
+                        const StatusIcon = config.icon;
+                        const breedingDate = new Date(breeding.breedingDate);
+                        const expectedDate = breeding.expectedKiddingDate
+                          ? new Date(breeding.expectedKiddingDate)
+                          : new Date(breedingDate.getTime() + 145 * 24 * 60 * 60 * 1000);
+                        const kiddingDate = breeding.kids && breeding.kids.length > 0 && breeding.kids[0].birthDate
+                          ? new Date(breeding.kids[0].birthDate)
+                          : null;
+                        return (
+                          <Link key={breeding.id} href={`/breedings/${breeding.id}`}>
+                            <div className="rounded-xl border border-border bg-card/50 p-4 hover:bg-muted/30 transition-colors cursor-pointer">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium text-foreground text-sm">× {breeding.sireName}</span>
+                                <Badge className={`${config.className} flex items-center gap-1 px-2 py-0.5 text-xs`}>
+                                  <StatusIcon className="h-3 w-3" />
+                                  {config.label}
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3" />
+                                  Bred {breedingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </span>
+                                {kiddingDate ? (
+                                  <span className="flex items-center gap-1">
+                                    <Baby className="h-3 w-3" />
+                                    Kidded {kiddingDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  </span>
+                                ) : breeding.status !== "open" && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    Est. {expectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  </span>
+                                )}
+                              </div>
+                              {breeding.kids && breeding.kids.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {breeding.kids.map((kid, i) => (
+                                    <span
+                                      key={i}
+                                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        kid.kidStatus === "doa"
+                                          ? "bg-destructive/10 text-destructive"
+                                          : kid.sex === "doe"
+                                          ? "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
+                                          : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                      }`}
+                                    >
+                                      {kid.name || (kid.sex === "doe" ? "Doe ♀" : "Buck ♂")}
+                                      {kid.kidStatus === "doa" && " · DOA"}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="border-primary/10 shadow-md h-full">
                 <CardHeader>
