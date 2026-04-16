@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronDown } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,7 +20,87 @@ import {
   useAddKids,
   useCreateBreeding,
   useListGoats,
+  useListBreedings,
 } from "@workspace/api-client-react";
+
+const NEW_SIRE_SENTINEL = "__new__";
+
+function SireSelect({
+  value,
+  onChange,
+  knownSires,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  knownSires: string[];
+}) {
+  const isKnown = knownSires.includes(value);
+  const [freeText, setFreeText] = useState(!isKnown && value !== "" ? value : "");
+  const [showFreeText, setShowFreeText] = useState(!isKnown && value !== "");
+
+  const handleSelect = (v: string) => {
+    if (v === NEW_SIRE_SENTINEL) {
+      setShowFreeText(true);
+      setFreeText("");
+      onChange("");
+    } else {
+      setShowFreeText(false);
+      onChange(v);
+    }
+  };
+
+  const handleFreeTextChange = (v: string) => {
+    setFreeText(v);
+    onChange(v);
+  };
+
+  if (showFreeText) {
+    return (
+      <div className="flex gap-2 items-center">
+        <Input
+          value={freeText}
+          onChange={(e) => handleFreeTextChange(e.target.value)}
+          placeholder="Enter sire name or registration"
+          className="bg-background/50 flex-1"
+          autoFocus
+        />
+        {knownSires.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 text-xs h-9 px-3"
+            onClick={() => {
+              setShowFreeText(false);
+              onChange("");
+            }}
+          >
+            <ChevronDown className="h-3 w-3 mr-1" />
+            Pick existing
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Select onValueChange={handleSelect} value={value || ""}>
+      <SelectTrigger className="bg-background/50">
+        <SelectValue placeholder="Select a sire or add new" />
+      </SelectTrigger>
+      <SelectContent>
+        {knownSires.map((name) => (
+          <SelectItem key={name} value={name}>
+            {name}
+          </SelectItem>
+        ))}
+        <SelectItem value={NEW_SIRE_SENTINEL} className="text-primary font-medium border-t border-border mt-1 pt-1">
+          + Add new sire...
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
 
 const breedingSchema = z.object({
   doeId: z.coerce.number().int().positive("Please select a doe"),
@@ -61,7 +141,25 @@ export default function BreedingNew() {
     { query: { queryKey: getListGoatsQueryKey() } }
   );
 
+  const { data: breedings } = useListBreedings(
+    {},
+    { query: { queryKey: getListBreedingsQueryKey() } }
+  );
+
   const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
+
+  const knownSires = useMemo(() => {
+    const names = new Set<string>();
+    goats?.forEach((g) => {
+      if (g.sireName) names.add(g.sireName.trim());
+      if (g.maternalGrandsireName) names.add(g.maternalGrandsireName.trim());
+      if (g.paternalGrandsireName) names.add(g.paternalGrandsireName.trim());
+    });
+    breedings?.forEach((b) => {
+      if (b.sireName) names.add(b.sireName.trim());
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [goats, breedings]);
 
   const breedingForm = useForm<BreedingValues>({
     resolver: zodResolver(breedingSchema),
@@ -255,7 +353,11 @@ export default function BreedingNew() {
                       <FormItem>
                         <FormLabel>Sire (Buck)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Buck's name or registration" {...field} className="bg-background/50" />
+                          <SireSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            knownSires={knownSires}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -344,7 +446,11 @@ export default function BreedingNew() {
                       <FormItem>
                         <FormLabel>Sire (Buck)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Buck's name or registration" {...field} className="bg-background/50" />
+                          <SireSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            knownSires={knownSires}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
