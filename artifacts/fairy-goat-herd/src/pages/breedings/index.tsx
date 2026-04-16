@@ -70,7 +70,33 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
             )}
           </div>
 
-          {breeding.notes && (
+          {breeding.kids && breeding.kids.length > 0 && (
+            <div className="mt-3 border-t border-border pt-3 space-y-1.5">
+              <p className="text-xs font-medium text-foreground">
+                {breeding.kids.length} kid{breeding.kids.length !== 1 ? "s" : ""}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {breeding.kids.map((kid, i) => (
+                  <span
+                    key={kid.id ?? i}
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${
+                      kid.kidStatus === "doa"
+                        ? "bg-destructive/10 border-destructive/20 text-destructive"
+                        : kid.sex === "doe"
+                        ? "bg-secondary/60 border-secondary text-secondary-foreground"
+                        : "bg-muted border-border text-muted-foreground"
+                    }`}
+                  >
+                    {kid.name || (kid.sex === "doe" ? "Doe" : "Buck")}
+                    <span className="opacity-60">{kid.sex === "doe" ? "♀" : "♂"}</span>
+                    {kid.kidStatus === "doa" && <span className="opacity-70">· DOA</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {breeding.notes && !breeding.kids?.length && (
             <p className="mt-3 text-xs text-muted-foreground line-clamp-2 italic border-t border-border pt-3">{breeding.notes}</p>
           )}
         </CardContent>
