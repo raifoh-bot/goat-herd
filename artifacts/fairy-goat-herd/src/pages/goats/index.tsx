@@ -32,6 +32,15 @@ const lactationLabels: Record<string, string> = {
   retired: "Retired",
 };
 
+const herdStatusLabels: Record<string, string> = {
+  dead: "Dead",
+  "first-freshener": "First Freshener",
+  leased: "Leased",
+  "on-farm": "On Farm",
+  retired: "Retired",
+  sold: "Sold",
+};
+
 type ViewMode = "grid" | "compact" | "list";
 
 function sexLabel(goat: Goat) {
@@ -63,8 +72,8 @@ function GoatRow({ goat }: { goat: Goat }) {
           <div className="hidden md:block text-sm text-muted-foreground capitalize">{sexLabel(goat)}</div>
           <div className="hidden md:block text-sm text-muted-foreground">{formatAge(goat.dateOfBirth)} old</div>
           <div className="hidden md:block">
-            {goat.lactationStatus
-              ? <Badge variant="secondary" className="text-xs">{lactationLabels[goat.lactationStatus] ?? goat.lactationStatus}</Badge>
+            {goat.herdStatus
+              ? <Badge variant="secondary" className="text-xs">{herdStatusLabels[goat.herdStatus] ?? goat.herdStatus}</Badge>
               : <span className="text-xs text-muted-foreground/50">—</span>
             }
           </div>
