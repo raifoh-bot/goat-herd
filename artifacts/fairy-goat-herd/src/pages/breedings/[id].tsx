@@ -146,7 +146,8 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
             <span className="font-medium text-foreground">{kid.name || "Unnamed"}</span>
             <Badge className={`${sexClass} text-xs px-2 py-0`}>{sexLabel}</Badge>
             {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
-          {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
+            {kid.kidStatus === "dead" && <Badge className="bg-destructive/10 text-destructive/70 text-xs px-2 py-0">Dead</Badge>}
+            {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
           </div>
           <div className="text-xs text-muted-foreground">
             {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
@@ -205,6 +206,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
                       <SelectContent>
                         <SelectItem value="alive">Alive</SelectItem>
                         <SelectItem value="sold">Sold</SelectItem>
+                        <SelectItem value="dead">Dead</SelectItem>
                         <SelectItem value="doa">DOA</SelectItem>
                       </SelectContent>
                     </Select>
@@ -690,6 +692,7 @@ export default function BreedingDetail() {
                                     <SelectContent>
                                       <SelectItem value="alive">Alive</SelectItem>
                                       <SelectItem value="sold">Sold</SelectItem>
+                                      <SelectItem value="dead">Dead</SelectItem>
                                       <SelectItem value="doa">DOA</SelectItem>
                                     </SelectContent>
                                   </Select>

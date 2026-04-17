@@ -200,7 +200,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     breedingId,
     name: kid.name,
     sex: kid.sex,
-    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa" | "sold",
+    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "dead" | "doa" | "sold",
     birthDate: kid.birthDate ? new Date(kid.birthDate) : birthDate,
     birthWeight: kid.birthWeight,
     notes: kid.notes,
@@ -211,7 +211,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
   // For each alive or sold kid, create a goat herd record with full pedigree
   // Skip if skipHerdAdd is set (e.g. historical kidding records)
   if (!parsed.data.skipHerdAdd) for (const kid of insertedKids) {
-    if (kid.kidStatus !== "alive" && kid.kidStatus !== "sold") continue;
+    if (kid.kidStatus !== "alive" && kid.kidStatus !== "sold" && kid.kidStatus !== "dead") continue;
 
     const kidName = kid.name ?? (kid.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
 
@@ -223,7 +223,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
         breed: doe?.breed ?? "mixed",
         dateOfBirth: kid.birthDate,
         lactationStatus: "kid",
-        herdStatus: kid.kidStatus === "sold" ? "sold" : null,
+        herdStatus: kid.kidStatus === "sold" ? "sold" : kid.kidStatus === "dead" ? "dead" : null,
         // Dam info (the doe from this breeding)
         damName: doe?.registeredName ?? doe?.name ?? "",
         // Sire info (the buck name from this breeding)
@@ -282,7 +282,7 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   const updateData: Partial<typeof existing> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name || null;
   if (parsed.data.sex !== undefined) updateData.sex = parsed.data.sex;
-  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "doa" | "sold";
+  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "dead" | "doa" | "sold";
   if (parsed.data.birthDate !== undefined) updateData.birthDate = new Date(parsed.data.birthDate);
   if (parsed.data.birthWeight !== undefined) updateData.birthWeight = parsed.data.birthWeight ?? null;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
@@ -296,6 +296,7 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
     if (parsed.data.sex !== undefined) goatUpdate.sex = parsed.data.sex;
     if (parsed.data.kidStatus !== undefined) {
       if (parsed.data.kidStatus === "sold") goatUpdate.herdStatus = "sold";
+      else if (parsed.data.kidStatus === "dead") goatUpdate.herdStatus = "dead";
       else if (parsed.data.kidStatus === "alive") goatUpdate.herdStatus = "on-farm";
     }
     if (Object.keys(goatUpdate).length > 1) {

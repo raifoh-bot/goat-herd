@@ -625,6 +625,7 @@ export default function BreedingNew() {
                               <SelectContent>
                                 <SelectItem value="alive">Alive</SelectItem>
                                 <SelectItem value="sold">Sold</SelectItem>
+                                <SelectItem value="dead">Dead</SelectItem>
                                 <SelectItem value="doa">DOA</SelectItem>
                               </SelectContent>
                             </Select>

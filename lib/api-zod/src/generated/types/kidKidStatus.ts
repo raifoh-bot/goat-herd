@@ -10,6 +10,7 @@ export type KidKidStatus = (typeof KidKidStatus)[keyof typeof KidKidStatus];
 
 export const KidKidStatus = {
   alive: "alive",
+  dead: "dead",
   doa: "doa",
   sold: "sold",
 } as const;
