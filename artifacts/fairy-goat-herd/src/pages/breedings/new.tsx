@@ -219,6 +219,8 @@ export default function BreedingNew() {
   const knownSires = useMemo(() => {
     const names = new Set<string>();
     goats?.forEach((g) => {
+      // Include bucks in the herd as selectable sires
+      if (g.sex === "buck" && g.name) names.add(g.name.trim());
       if (g.sireName) names.add(g.sireName.trim());
       if (g.maternalGrandsireName) names.add(g.maternalGrandsireName.trim());
       if (g.paternalGrandsireName) names.add(g.paternalGrandsireName.trim());
