@@ -319,6 +319,7 @@ export default function BreedingNew() {
               id: breeding.id,
               data: {
                 birthDate: new Date(data.kiddingDate).toISOString(),
+                skipHerdAdd: true,
                 kids: data.kids.map((k) => ({
                   name: k.name || undefined,
                   sex: k.sex,

@@ -413,6 +413,8 @@ export interface CreateKidBody {
 
 export interface AddKidsBody {
   birthDate?: string;
+  /** If true, kids are recorded but no goat records are created in The Herd. */
+  skipHerdAdd?: boolean;
   kids: CreateKidBody[];
 }
 

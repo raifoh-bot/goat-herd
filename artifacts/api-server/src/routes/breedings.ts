@@ -209,7 +209,8 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
   const insertedKids = await db.insert(kidsTable).values(kidRows).returning();
 
   // For each alive or sold kid, create a goat herd record with full pedigree
-  for (const kid of insertedKids) {
+  // Skip if skipHerdAdd is set (e.g. historical kidding records)
+  if (!parsed.data.skipHerdAdd) for (const kid of insertedKids) {
     if (kid.kidStatus !== "alive" && kid.kidStatus !== "sold") continue;
 
     const kidName = kid.name ?? (kid.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");

@@ -832,6 +832,9 @@ components:
         birthDate:
           type: string
           format: date-time
+        skipHerdAdd:
+          type: boolean
+          description: If true, kids are recorded but no goat records are created in The Herd.
         kids:
           type: array
           items:

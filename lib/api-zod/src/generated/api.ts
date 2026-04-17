@@ -700,6 +700,12 @@ export const AddKidsParams = zod.object({
 
 export const AddKidsBody = zod.object({
   birthDate: zod.coerce.date().optional(),
+  skipHerdAdd: zod
+    .boolean()
+    .optional()
+    .describe(
+      "If true, kids are recorded but no goat records are created in The Herd.",
+    ),
   kids: zod.array(
     zod.object({
       name: zod.string().optional(),
