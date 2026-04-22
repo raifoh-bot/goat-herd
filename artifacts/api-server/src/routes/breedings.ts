@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
-import { db, breedingsTable, kidsTable, goatsTable } from "@workspace/db";
+import { asc, desc, eq, max } from "drizzle-orm";
+import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable } from "@workspace/db";
 import {
   CreateBreedingBody,
   UpdateBreedingBody,
@@ -12,6 +12,9 @@ import {
   UpdateKidBody,
   UpdateKidParams,
   DeleteKidParams,
+  CreateBreedingEventBody,
+  CreateBreedingEventParams,
+  DeleteBreedingEventParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -103,10 +106,17 @@ router.get("/breedings/:id", async (req, res): Promise<void> => {
     .where(eq(kidsTable.breedingId, id))
     .orderBy(kidsTable.createdAt);
 
+  const events = await db
+    .select()
+    .from(breedingEventsTable)
+    .where(eq(breedingEventsTable.breedingId, id))
+    .orderBy(asc(breedingEventsTable.eventDate));
+
   res.json({
     ...rows[0].breedings,
     doe: rows[0].goats,
     kids,
+    events,
   });
 });
 
@@ -325,6 +335,107 @@ router.delete("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   res.status(204).send();
 });
 
+router.post("/breedings/:id/events", async (req, res): Promise<void> => {
+  const idParsed = CreateBreedingEventParams.safeParse({ id: Number(req.params.id) });
+  if (!idParsed.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = CreateBreedingEventBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [breeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, idParsed.data.id));
+  if (!breeding) {
+    res.status(404).json({ error: "Breeding not found" });
+    return;
+  }
+
+  const [event] = await db
+    .insert(breedingEventsTable)
+    .values({
+      breedingId: idParsed.data.id,
+      eventType: parsed.data.eventType,
+      eventDate: new Date(parsed.data.eventDate),
+      notes: parsed.data.notes,
+    })
+    .returning();
+
+  // If a cover event was logged, recalculate expectedKiddingDate from most recent cover
+  if (parsed.data.eventType === "cover") {
+    const coverEvents = await db
+      .select()
+      .from(breedingEventsTable)
+      .where(eq(breedingEventsTable.breedingId, idParsed.data.id));
+    const covers = coverEvents.filter((e) => e.eventType === "cover").sort(
+      (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+    );
+    if (covers.length > 0) {
+      const latestCover = new Date(covers[0].eventDate);
+      const newKiddingDate = new Date(latestCover.getTime() + 145 * 24 * 60 * 60 * 1000);
+      await db
+        .update(breedingsTable)
+        .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
+        .where(eq(breedingsTable.id, idParsed.data.id));
+    }
+  }
+
+  res.status(201).json(event);
+});
+
+router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> => {
+  const paramsParsed = DeleteBreedingEventParams.safeParse({
+    id: Number(req.params.id),
+    eventId: Number(req.params.eventId),
+  });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const [event] = await db
+    .select()
+    .from(breedingEventsTable)
+    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+
+  if (!event) {
+    res.status(404).json({ error: "Event not found" });
+    return;
+  }
+
+  await db.delete(breedingEventsTable).where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+
+  // If it was a cover event, recalculate expectedKiddingDate
+  if (event.eventType === "cover") {
+    const remainingCovers = await db
+      .select()
+      .from(breedingEventsTable)
+      .where(eq(breedingEventsTable.breedingId, paramsParsed.data.id));
+    const covers = remainingCovers.filter((e) => e.eventType === "cover").sort(
+      (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+    );
+    if (covers.length > 0) {
+      const latestCover = new Date(covers[0].eventDate);
+      const newKiddingDate = new Date(latestCover.getTime() + 145 * 24 * 60 * 60 * 1000);
+      await db
+        .update(breedingsTable)
+        .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
+        .where(eq(breedingsTable.id, paramsParsed.data.id));
+    } else {
+      // No more covers — clear the auto-set expectedKiddingDate
+      await db
+        .update(breedingsTable)
+        .set({ expectedKiddingDate: null, updatedAt: new Date() })
+        .where(eq(breedingsTable.id, paramsParsed.data.id));
+    }
+  }
+
+  res.status(204).send();
+});
+
 router.delete("/breedings/:id", async (req, res): Promise<void> => {
   const idParsed = DeleteBreedingParams.safeParse({ id: Number(req.params.id) });
   if (!idParsed.success) {
@@ -341,6 +452,7 @@ router.delete("/breedings/:id", async (req, res): Promise<void> => {
   }
 
   await db.delete(kidsTable).where(eq(kidsTable.breedingId, id));
+  await db.delete(breedingEventsTable).where(eq(breedingEventsTable.breedingId, id));
   await db.delete(breedingsTable).where(eq(breedingsTable.id, id));
 
   res.status(204).send();

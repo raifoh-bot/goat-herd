@@ -21,8 +21,10 @@ import type {
   BreedCount,
   Breeding,
   BreedingDetail,
+  BreedingEvent,
   BreedingWithDoe,
   CreateBreedingBody,
+  CreateBreedingEventBody,
   CreateGoatBody,
   DashboardSummary,
   ErrorEnvelope,
@@ -1405,6 +1407,178 @@ export const useAddKids = <
   TContext
 > => {
   return useMutation(getAddKidsMutationOptions(options));
+};
+
+/**
+ * @summary Log an exposure/cover/removal event for a breeding
+ */
+export const getCreateBreedingEventUrl = (id: number) => {
+  return `/api/breedings/${id}/events`;
+};
+
+export const createBreedingEvent = async (
+  id: number,
+  createBreedingEventBody: CreateBreedingEventBody,
+  options?: RequestInit,
+): Promise<BreedingEvent> => {
+  return customFetch<BreedingEvent>(getCreateBreedingEventUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBreedingEventBody),
+  });
+};
+
+export const getCreateBreedingEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBreedingEvent>>,
+    TError,
+    { id: number; data: BodyType<CreateBreedingEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBreedingEvent>>,
+  TError,
+  { id: number; data: BodyType<CreateBreedingEventBody> },
+  TContext
+> => {
+  const mutationKey = ["createBreedingEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBreedingEvent>>,
+    { id: number; data: BodyType<CreateBreedingEventBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createBreedingEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBreedingEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBreedingEvent>>
+>;
+export type CreateBreedingEventMutationBody = BodyType<CreateBreedingEventBody>;
+export type CreateBreedingEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Log an exposure/cover/removal event for a breeding
+ */
+export const useCreateBreedingEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBreedingEvent>>,
+    TError,
+    { id: number; data: BodyType<CreateBreedingEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBreedingEvent>>,
+  TError,
+  { id: number; data: BodyType<CreateBreedingEventBody> },
+  TContext
+> => {
+  return useMutation(getCreateBreedingEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete a breeding event
+ */
+export const getDeleteBreedingEventUrl = (id: number, eventId: number) => {
+  return `/api/breedings/${id}/events/${eventId}`;
+};
+
+export const deleteBreedingEvent = async (
+  id: number,
+  eventId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteBreedingEventUrl(id, eventId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBreedingEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBreedingEvent>>,
+    TError,
+    { id: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBreedingEvent>>,
+  TError,
+  { id: number; eventId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBreedingEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBreedingEvent>>,
+    { id: number; eventId: number }
+  > = (props) => {
+    const { id, eventId } = props ?? {};
+
+    return deleteBreedingEvent(id, eventId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBreedingEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBreedingEvent>>
+>;
+
+export type DeleteBreedingEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a breeding event
+ */
+export const useDeleteBreedingEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBreedingEvent>>,
+    TError,
+    { id: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBreedingEvent>>,
+  TError,
+  { id: number; eventId: number },
+  TContext
+> => {
+  return useMutation(getDeleteBreedingEventMutationOptions(options));
 };
 
 /**

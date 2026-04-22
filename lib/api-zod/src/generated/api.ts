@@ -654,6 +654,19 @@ export const GetBreedingResponse = zod
           }),
         )
         .optional(),
+      events: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            breedingId: zod.number(),
+            eventType: zod.enum(["exposed", "cover", "removed"]),
+            eventDate: zod.coerce.date(),
+            notes: zod.string().optional(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
     }),
   );
 
@@ -716,6 +729,27 @@ export const AddKidsBody = zod.object({
       notes: zod.string().optional(),
     }),
   ),
+});
+
+/**
+ * @summary Log an exposure/cover/removal event for a breeding
+ */
+export const CreateBreedingEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateBreedingEventBody = zod.object({
+  eventType: zod.enum(["exposed", "cover", "removed"]),
+  eventDate: zod.coerce.date(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a breeding event
+ */
+export const DeleteBreedingEventParams = zod.object({
+  id: zod.coerce.number(),
+  eventId: zod.coerce.number(),
 });
 
 /**

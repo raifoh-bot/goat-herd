@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Breeding } from "./breeding";
+import type { BreedingEvent } from "./breedingEvent";
 import type { Goat } from "./goat";
 import type { Kid } from "./kid";
 
 export type BreedingDetail = Breeding & {
   doe?: Goat;
   kids?: Kid[];
+  events?: BreedingEvent[];
 };

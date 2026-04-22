@@ -359,6 +359,55 @@ paths:
         "404":
           description: Breeding not found
 
+  /breedings/{id}/events:
+    post:
+      operationId: createBreedingEvent
+      tags: [breedings]
+      summary: Log an exposure/cover/removal event for a breeding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBreedingEventBody"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreedingEvent"
+        "404":
+          description: Breeding not found
+
+  /breedings/{id}/events/{eventId}:
+    delete:
+      operationId: deleteBreedingEvent
+      tags: [breedings]
+      summary: Delete a breeding event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Event deleted
+        "404":
+          description: Event not found
+
   /breedings/{id}/kids/{kidId}:
     put:
       operationId: updateKid
@@ -727,6 +776,54 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Kid"
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/BreedingEvent"
+
+    BreedingEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        breedingId:
+          type: integer
+        eventType:
+          type: string
+          enum: [exposed, cover, removed]
+        eventDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - breedingId
+        - eventType
+        - eventDate
+        - createdAt
+        - updatedAt
+
+    CreateBreedingEventBody:
+      type: object
+      properties:
+        eventType:
+          type: string
+          enum: [exposed, cover, removed]
+        eventDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+      required:
+        - eventType
+        - eventDate
 
     CreateBreedingBody:
       type: object

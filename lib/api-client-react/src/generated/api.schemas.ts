@@ -344,10 +344,45 @@ export type BreedingWithDoe = Breeding & {
   kids?: Kid[];
 };
 
+export type BreedingEventEventType =
+  (typeof BreedingEventEventType)[keyof typeof BreedingEventEventType];
+
+export const BreedingEventEventType = {
+  exposed: "exposed",
+  cover: "cover",
+  removed: "removed",
+} as const;
+
+export interface BreedingEvent {
+  id: number;
+  breedingId: number;
+  eventType: BreedingEventEventType;
+  eventDate: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type BreedingDetail = Breeding & {
   doe?: Goat;
   kids?: Kid[];
+  events?: BreedingEvent[];
 };
+
+export type CreateBreedingEventBodyEventType =
+  (typeof CreateBreedingEventBodyEventType)[keyof typeof CreateBreedingEventBodyEventType];
+
+export const CreateBreedingEventBodyEventType = {
+  exposed: "exposed",
+  cover: "cover",
+  removed: "removed",
+} as const;
+
+export interface CreateBreedingEventBody {
+  eventType: CreateBreedingEventBodyEventType;
+  eventDate: string;
+  notes?: string;
+}
 
 export type CreateBreedingBodyStatus =
   (typeof CreateBreedingBodyStatus)[keyof typeof CreateBreedingBodyStatus];

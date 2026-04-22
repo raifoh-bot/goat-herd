@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Plus, Trash2, XCircle } from "lucide-react";
+import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Eye, Heart, LogOut, Milk, Plus, Trash2, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,13 +22,15 @@ import {
   getListBreedingsQueryKey,
   getListGoatsQueryKey,
   useAddKids,
+  useCreateBreedingEvent,
   useDeleteBreeding,
+  useDeleteBreedingEvent,
   useDeleteKid,
   useGetBreeding,
   useUpdateBreeding,
   useUpdateKid,
 } from "@workspace/api-client-react";
-import type { Kid } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { BreedingEvent, Kid } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const statusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -267,6 +269,195 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
   );
 }
 
+const eventConfig = {
+  exposed: { label: "Exposure Start", fullLabel: "Doe placed with buck", icon: Eye, dotClass: "bg-blue-500/20 border-blue-300", iconClass: "text-blue-600", badgeClass: "bg-blue-100 text-blue-700 border-blue-200" },
+  cover: { label: "Cover Witnessed", fullLabel: "Breeding observed", icon: Heart, dotClass: "bg-rose-500/20 border-rose-300", iconClass: "text-rose-600", badgeClass: "bg-rose-100 text-rose-700 border-rose-200" },
+  removed: { label: "Doe Removed", fullLabel: "Doe removed from buck", icon: LogOut, dotClass: "bg-muted border-border", iconClass: "text-muted-foreground", badgeClass: "bg-muted text-muted-foreground border-border" },
+} as const;
+type EventType = keyof typeof eventConfig;
+
+const eventFormSchema = z.object({
+  eventType: z.enum(["exposed", "cover", "removed"]),
+  eventDate: z.string().min(1, "Date is required"),
+  notes: z.string().optional(),
+});
+type EventFormValues = z.infer<typeof eventFormSchema>;
+
+function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; breedingId: number }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const createEvent = useCreateBreedingEvent();
+  const deleteEvent = useDeleteBreedingEvent();
+
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      eventType: "exposed",
+      eventDate: new Date().toISOString().slice(0, 10),
+      notes: "",
+    },
+  });
+
+  const openDialog = (type: EventType) => {
+    form.reset({
+      eventType: type,
+      eventDate: new Date().toISOString().slice(0, 10),
+      notes: "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = (data: EventFormValues) => {
+    createEvent.mutate(
+      { id: breedingId, data: { eventType: data.eventType, eventDate: new Date(data.eventDate + "T12:00:00").toISOString(), notes: data.notes || undefined } },
+      {
+        onSuccess: () => {
+          toast({ title: `${eventConfig[data.eventType].label} logged` });
+          setDialogOpen(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to log event", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleDelete = (eventId: number) => {
+    deleteEvent.mutate(
+      { id: breedingId, eventId },
+      {
+        onSuccess: () => {
+          toast({ title: "Event removed" });
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to remove event", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <Card className="border-primary/10 shadow-md">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Eye className="h-5 w-5 text-primary" />
+            Exposure Timeline
+          </CardTitle>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => openDialog("exposed")}>
+              <Eye className="mr-1.5 h-3.5 w-3.5" /> Log Exposure
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => openDialog("cover")}>
+              <Heart className="mr-1.5 h-3.5 w-3.5" /> Log Cover
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => openDialog("removed")}>
+              <LogOut className="mr-1.5 h-3.5 w-3.5" /> Log Removal
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No events logged yet. Use the buttons above to track when the doe was exposed, covers were witnessed, or the doe was removed.
+          </p>
+        ) : (
+          <div className="space-y-0">
+            {events.map((event, idx) => {
+              const cfg = eventConfig[event.eventType as EventType] ?? eventConfig.exposed;
+              const Icon = cfg.icon;
+              const isLast = idx === events.length - 1;
+              return (
+                <div key={event.id} className="flex gap-3">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${cfg.dotClass}`}>
+                      <Icon className={`h-3.5 w-3.5 ${cfg.iconClass}`} />
+                    </div>
+                    {!isLast && <div className="w-px flex-1 bg-border my-1 min-h-[16px]" />}
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="font-medium text-sm text-foreground">{cfg.label}</span>
+                          <Badge className={`${cfg.badgeClass} text-xs px-2 py-0 border`}>{cfg.fullLabel}</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(event.eventDate, { month: "short", day: "numeric", year: "numeric" })}
+                          {event.notes && <> · <span className="italic">{event.notes}</span></>}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(event.id)}
+                        disabled={deleteEvent.isPending}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Log Timeline Event</DialogTitle>
+            <DialogDescription>Record an exposure, observed cover, or removal for this breeding.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-2">
+              <FormField control={form.control} name="eventType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="exposed">Exposure Start — doe placed with buck</SelectItem>
+                      <SelectItem value="cover">Cover Witnessed — breeding observed</SelectItem>
+                      <SelectItem value="removed">Doe Removed — taken out of buck's pen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="eventDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl><Input type="date" {...field} className="bg-background/50" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea className="bg-background/50 resize-none" rows={2} placeholder="e.g. Buck was attentive, observed 2 covers" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={createEvent.isPending}>
+                  {createEvent.isPending ? "Saving..." : "Log Event"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export default function BreedingDetail() {
   const params = useParams();
   const id = params.id ? parseInt(params.id, 10) : 0;
@@ -485,9 +676,13 @@ export default function BreedingDetail() {
               <div className="rounded-xl border border-border bg-primary/5 p-4">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Baby className="h-3 w-3" /> Estimated Kidding Date</div>
                 <div className="font-medium text-foreground">
-                  {formatDate(new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000))}
+                  {breeding.expectedKiddingDate
+                    ? formatDate(breeding.expectedKiddingDate)
+                    : formatDate(new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000))}
                 </div>
-                <div className="text-xs text-muted-foreground/70 mt-0.5">Breeding date + 145 days</div>
+                <div className="text-xs text-muted-foreground/70 mt-0.5">
+                  {breeding.expectedKiddingDate ? "Most recent cover + 145 days" : "Breeding date + 145 days"}
+                </div>
               </div>
               {breeding.doe?.breed && (
                 <div className="rounded-xl border border-border bg-card/50 p-4">
@@ -505,6 +700,8 @@ export default function BreedingDetail() {
             )}
           </CardContent>
         </Card>
+
+        <ExposureTimeline events={breeding.events ?? []} breedingId={id} />
 
         {isEditingStatus && (
           <Card className="border-primary/10 shadow-md">

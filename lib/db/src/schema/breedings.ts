@@ -3,6 +3,16 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { goatsTable } from "./goats";
 
+export const breedingEventsTable = pgTable("breeding_events", {
+  id: serial("id").primaryKey(),
+  breedingId: integer("breeding_id").notNull().references(() => breedingsTable.id),
+  eventType: text("event_type", { enum: ["exposed", "cover", "removed"] }).notNull(),
+  eventDate: timestamp("event_date").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const breedingsTable = pgTable("breedings", {
   id: serial("id").primaryKey(),
   doeId: integer("doe_id").notNull().references(() => goatsTable.id),
@@ -31,8 +41,11 @@ export const kidsTable = pgTable("kids", {
 
 export const insertBreedingSchema = createInsertSchema(breedingsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertBreedingEventSchema = createInsertSchema(breedingEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertBreeding = z.infer<typeof insertBreedingSchema>;
 export type Breeding = typeof breedingsTable.$inferSelect;
 export type InsertKid = z.infer<typeof insertKidSchema>;
 export type Kid = typeof kidsTable.$inferSelect;
+export type BreedingEvent = typeof breedingEventsTable.$inferSelect;
+export type InsertBreedingEvent = z.infer<typeof insertBreedingEventSchema>;
