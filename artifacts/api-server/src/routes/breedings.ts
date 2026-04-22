@@ -399,24 +399,26 @@ router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> 
   const [event] = await db
     .select()
     .from(breedingEventsTable)
-    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+    .where(
+      eq(breedingEventsTable.id, paramsParsed.data.eventId)
+    );
 
-  if (!event) {
+  if (!event || event.breedingId !== paramsParsed.data.id) {
     res.status(404).json({ error: "Event not found" });
     return;
   }
 
   await db.delete(breedingEventsTable).where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
 
-  // If it was a cover event, recalculate expectedKiddingDate
+  // If it was a cover event, recalculate expectedKiddingDate from remaining covers
   if (event.eventType === "cover") {
-    const remainingCovers = await db
+    const remainingEvents = await db
       .select()
       .from(breedingEventsTable)
       .where(eq(breedingEventsTable.breedingId, paramsParsed.data.id));
-    const covers = remainingCovers.filter((e) => e.eventType === "cover").sort(
-      (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
-    );
+    const covers = remainingEvents
+      .filter((e) => e.eventType === "cover")
+      .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
     if (covers.length > 0) {
       const latestCover = new Date(covers[0].eventDate);
       const newKiddingDate = new Date(latestCover.getTime() + 145 * 24 * 60 * 60 * 1000);
@@ -424,13 +426,8 @@ router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> 
         .update(breedingsTable)
         .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
         .where(eq(breedingsTable.id, paramsParsed.data.id));
-    } else {
-      // No more covers — clear the auto-set expectedKiddingDate
-      await db
-        .update(breedingsTable)
-        .set({ expectedKiddingDate: null, updatedAt: new Date() })
-        .where(eq(breedingsTable.id, paramsParsed.data.id));
     }
+    // If no covers remain, leave expectedKiddingDate as-is (preserve manually entered value)
   }
 
   res.status(204).send();
