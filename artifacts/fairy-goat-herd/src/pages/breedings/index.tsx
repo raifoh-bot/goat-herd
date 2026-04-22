@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap } from "lucide-react";
 import { getListBreedingsQueryKey, useListBreedings } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { formatDate } from "@/lib/date";
@@ -36,10 +36,18 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
               </h3>
               <p className="text-sm text-muted-foreground">× {breeding.sireName}</p>
             </div>
-            <Badge className={`${config.className} shrink-0 flex items-center gap-1.5 px-2.5 py-1`}>
-              <StatusIcon className="h-3 w-3" />
-              {config.label}
-            </Badge>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <Badge className={`${config.className} flex items-center gap-1.5 px-2.5 py-1`}>
+                <StatusIcon className="h-3 w-3" />
+                {config.label}
+              </Badge>
+              {breeding.hasActiveExposure && (
+                <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-amber-400 dark:bg-amber-500/10">
+                  <Zap className="h-3 w-3" />
+                  Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2 text-sm">

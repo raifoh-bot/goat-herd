@@ -34,11 +34,45 @@ router.get("/breedings", async (req, res): Promise<void> => {
     return acc;
   }, {});
 
-  const result = rows.map((row) => ({
-    ...row.breedings,
-    doe: row.goats,
-    kids: kidsByBreeding[row.breedings.id] ?? [],
-  }));
+  const allEvents = await db.select().from(breedingEventsTable);
+
+  const eventsByBreeding = allEvents.reduce<Record<number, typeof allEvents>>((acc, event) => {
+    if (!acc[event.breedingId]) acc[event.breedingId] = [];
+    acc[event.breedingId].push(event);
+    return acc;
+  }, {});
+
+  const now = Date.now();
+
+  const result = rows.map((row) => {
+    const events = eventsByBreeding[row.breedings.id] ?? [];
+
+    // Find the most recent "exposed" or "removed" event to determine current state
+    const latestRelevantEvent = events
+      .filter((e) => e.eventType === "exposed" || e.eventType === "removed")
+      .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0];
+
+    const hasActiveExposure = latestRelevantEvent?.eventType === "exposed";
+
+    let exposedDays: number | null = null;
+    if (hasActiveExposure) {
+      // Find the most recent "exposed" event (the one that started the current exposure run)
+      const currentExposedEvent = events
+        .filter((e) => e.eventType === "exposed")
+        .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0];
+      if (currentExposedEvent) {
+        exposedDays = Math.floor((now - new Date(currentExposedEvent.eventDate).getTime()) / (1000 * 60 * 60 * 24));
+      }
+    }
+
+    return {
+      ...row.breedings,
+      doe: row.goats,
+      kids: kidsByBreeding[row.breedings.id] ?? [],
+      hasActiveExposure,
+      exposedDays,
+    };
+  });
 
   res.json(result);
 });

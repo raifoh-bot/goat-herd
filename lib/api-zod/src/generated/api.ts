@@ -526,6 +526,18 @@ export const ListBreedingsResponseItem = zod
           }),
         )
         .optional(),
+      hasActiveExposure: zod
+        .boolean()
+        .optional()
+        .describe(
+          "True when an exposed event exists but no removed event has been recorded",
+        ),
+      exposedDays: zod
+        .number()
+        .nullish()
+        .describe(
+          "Number of days since the earliest exposed event (null when not actively exposed)",
+        ),
     }),
   );
 export const ListBreedingsResponse = zod.array(ListBreedingsResponseItem);

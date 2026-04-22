@@ -764,6 +764,13 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Kid"
+            hasActiveExposure:
+              type: boolean
+              description: True when an exposed event exists but no removed event has been recorded
+            exposedDays:
+              type: integer
+              nullable: true
+              description: Number of days since the earliest exposed event (null when not actively exposed)
 
     BreedingDetail:
       allOf:

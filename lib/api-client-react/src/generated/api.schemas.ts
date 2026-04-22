@@ -342,6 +342,10 @@ export interface Kid {
 export type BreedingWithDoe = Breeding & {
   doe?: Goat;
   kids?: Kid[];
+  /** True when an exposed event exists but no removed event has been recorded */
+  hasActiveExposure?: boolean;
+  /** Number of days since the earliest exposed event (null when not actively exposed) */
+  exposedDays?: number | null;
 };
 
 export type BreedingEventEventType =
