@@ -17,6 +17,8 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const doeLactationBreakdown = {
     milking: does.filter((g) => g.lactationStatus === "milking").length,
     dry: does.filter((g) => g.lactationStatus === "dry").length,
+    exposed: does.filter((g) => g.lactationStatus === "exposed").length,
+    serviced: does.filter((g) => g.lactationStatus === "serviced").length,
     pregnant: does.filter((g) => g.lactationStatus === "pregnant").length,
     kid: does.filter((g) => g.lactationStatus === "kid").length,
     retired: does.filter((g) => g.lactationStatus === "retired").length,

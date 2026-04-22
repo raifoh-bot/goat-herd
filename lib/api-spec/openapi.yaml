@@ -972,6 +972,10 @@ components:
           type: integer
         dry:
           type: integer
+        exposed:
+          type: integer
+        serviced:
+          type: integer
         pregnant:
           type: integer
         kid:
@@ -981,6 +985,8 @@ components:
       required:
         - milking
         - dry
+        - exposed
+        - serviced
         - pregnant
         - kid
         - retired

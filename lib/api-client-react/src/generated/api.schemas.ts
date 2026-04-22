@@ -495,6 +495,8 @@ export interface UpdateKidBody {
 export interface DoeLactationBreakdown {
   milking: number;
   dry: number;
+  exposed: number;
+  serviced: number;
   pregnant: number;
   kid: number;
   retired: number;

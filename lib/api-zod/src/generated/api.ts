@@ -890,6 +890,8 @@ export const GetDashboardSummaryResponse = zod.object({
   doeLactationBreakdown: zod.object({
     milking: zod.number(),
     dry: zod.number(),
+    exposed: zod.number(),
+    serviced: zod.number(),
     pregnant: zod.number(),
     kid: zod.number(),
     retired: zod.number(),

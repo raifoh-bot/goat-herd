@@ -30,6 +30,8 @@ const breedLabels: Record<string, string> = {
 const LACTATION_COLORS: Record<string, string> = {
   Milking: "hsl(var(--chart-1))",
   Dry: "hsl(var(--chart-2))",
+  Exposed: "hsl(217 91% 60%)",
+  Serviced: "hsl(262 83% 58%)",
   Pregnant: "hsl(var(--chart-3))",
   Kid: "hsl(var(--chart-4))",
   Retired: "hsl(var(--chart-5))",
@@ -43,6 +45,8 @@ export default function Dashboard() {
     ? [
         { name: "Milking", value: summary.doeLactationBreakdown.milking },
         { name: "Dry", value: summary.doeLactationBreakdown.dry },
+        { name: "Exposed", value: summary.doeLactationBreakdown.exposed },
+        { name: "Serviced", value: summary.doeLactationBreakdown.serviced },
         { name: "Pregnant", value: summary.doeLactationBreakdown.pregnant },
         { name: "Kid", value: summary.doeLactationBreakdown.kid },
         { name: "Retired", value: summary.doeLactationBreakdown.retired },
