@@ -47,6 +47,8 @@ export type GoatLactationStatus =
 export const GoatLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",
@@ -146,6 +148,8 @@ export type CreateGoatBodyLactationStatus =
 export const CreateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",
@@ -237,6 +241,8 @@ export type UpdateGoatBodyLactationStatus =
 export const UpdateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",
@@ -557,6 +563,8 @@ export type ImportGoatRowLactationStatus =
 export const ImportGoatRowLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",

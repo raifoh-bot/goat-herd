@@ -13,6 +13,8 @@ export type CreateGoatBodyLactationStatus =
 export const CreateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",

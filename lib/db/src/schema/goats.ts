@@ -21,7 +21,7 @@ export const goatsTable = pgTable("goats", {
   breed: text("breed", { enum: ["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"] }).notNull(),
   status: text("status", { enum: ["healthy", "watch", "treatment", "dry"] }).notNull().default("healthy"),
   milkPerDay: doublePrecision("milk_per_day").notNull().default(0),
-  lactationStatus: text("lactation_status", { enum: ["milking", "dry", "pregnant", "kid", "retired"] }),
+  lactationStatus: text("lactation_status", { enum: ["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"] }),
   age: integer("age"),
   description: text("description"),
   imageUrl: text("image_url"),

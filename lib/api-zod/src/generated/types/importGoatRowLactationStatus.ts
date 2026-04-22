@@ -12,6 +12,8 @@ export type ImportGoatRowLactationStatus =
 export const ImportGoatRowLactationStatus = {
   milking: "milking",
   dry: "dry",
+  exposed: "exposed",
+  serviced: "serviced",
   pregnant: "pregnant",
   kid: "kid",
   retired: "retired",

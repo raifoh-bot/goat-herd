@@ -253,6 +253,8 @@ export default function GoatDetails() {
                         <span className="font-medium text-foreground">
                           {goat.lactationStatus === "milking" ? "Milking"
                             : goat.lactationStatus === "dry" ? "Dry"
+                            : goat.lactationStatus === "exposed" ? "Exposed"
+                            : goat.lactationStatus === "serviced" ? "Serviced"
                             : goat.lactationStatus === "pregnant" ? "Pregnant"
                             : goat.lactationStatus === "kid" ? "Kid"
                             : goat.lactationStatus === "retired" ? "Retired"

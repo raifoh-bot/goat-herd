@@ -104,12 +104,10 @@ router.post("/breedings", async (req, res): Promise<void> => {
     })
     .returning();
 
-  if (initialStatus === "bred" || initialStatus === "confirmed-pregnant") {
-    await db
-      .update(goatsTable)
-      .set({ lactationStatus: "pregnant", updatedAt: new Date() })
-      .where(eq(goatsTable.id, parsed.data.doeId));
-  }
+  await db
+    .update(goatsTable)
+    .set({ lactationStatus: "exposed", updatedAt: new Date() })
+    .where(eq(goatsTable.id, parsed.data.doeId));
 
   res.status(201).json(breeding);
 });
@@ -185,13 +183,6 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
   if (!breeding) {
     res.status(404).json({ error: "Breeding not found" });
     return;
-  }
-
-  if (parsed.data.status === "confirmed-pregnant") {
-    await db
-      .update(goatsTable)
-      .set({ lactationStatus: "pregnant", updatedAt: new Date() })
-      .where(eq(goatsTable.id, breeding.doeId));
   }
 
   if (parsed.data.status === "open") {
@@ -398,7 +389,7 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
     })
     .returning();
 
-  // If a cover event was logged, recalculate expectedKiddingDate from most recent cover
+  // If a cover event was logged, recalculate expectedKiddingDate and set doe's status to "serviced"
   if (parsed.data.eventType === "cover") {
     const coverEvents = await db
       .select()
@@ -415,6 +406,11 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
         .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
         .where(eq(breedingsTable.id, idParsed.data.id));
     }
+
+    await db
+      .update(goatsTable)
+      .set({ lactationStatus: "serviced", updatedAt: new Date() })
+      .where(eq(goatsTable.id, breeding.doeId));
   }
 
   res.status(201).json(event);

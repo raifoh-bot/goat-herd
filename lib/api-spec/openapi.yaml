@@ -555,7 +555,7 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, pregnant, kid, retired]
+          enum: [milking, dry, exposed, serviced, pregnant, kid, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth
@@ -633,7 +633,7 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, pregnant, kid, retired]
+          enum: [milking, dry, exposed, serviced, pregnant, kid, retired]
         age:
           type: integer
           description: Legacy field, calculated from dateOfBirth
@@ -697,7 +697,7 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, pregnant, kid, retired]
+          enum: [milking, dry, exposed, serviced, pregnant, kid, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth
@@ -1091,7 +1091,7 @@ components:
           maxLength: 4
         lactationStatus:
           type: string
-          enum: [milking, dry, pregnant, kid, retired]
+          enum: [milking, dry, exposed, serviced, pregnant, kid, retired]
       required:
         - name
         - breed

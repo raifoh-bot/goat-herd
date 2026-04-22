@@ -27,6 +27,8 @@ export const breedLabels: Record<string, string> = {
 const lactationLabels: Record<string, string> = {
   milking: "Milking",
   dry: "Dry",
+  exposed: "Exposed",
+  serviced: "Serviced",
   pregnant: "Pregnant",
   kid: "Kid",
   retired: "Retired",

@@ -26,7 +26,7 @@ const formSchema = z.object({
   paternalGranddamName: z.string().optional(),
   paternalGrandsireName: z.string().optional(),
   breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
-  lactationStatus: z.enum(["milking", "dry", "pregnant", "kid", "retired"]).nullable().optional(),
+  lactationStatus: z.enum(["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
   herdStatus: z.enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"]).nullable().optional(),
@@ -74,8 +74,8 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       paternalGrandsireName: defaultValues?.paternalGrandsireName || "",
       breed: defaultValues?.breed || "mixed",
       lactationStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether")
-        ? ((defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | null | undefined) || null)
-        : (defaultValues?.lactationStatus as "milking" | "dry" | "pregnant" | "kid" | "retired" | undefined) || "milking",
+        ? ((defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | null | undefined) || null)
+        : (defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
       herdStatus: (defaultValues?.herdStatus as "dead" | "first-freshener" | "leased" | "on-farm" | "retired" | "sold" | null | undefined) ?? null,
@@ -295,6 +295,8 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     )}
                     <SelectItem value="milking">Milking</SelectItem>
                     <SelectItem value="dry">Dry</SelectItem>
+                    <SelectItem value="exposed">Exposed (with buck)</SelectItem>
+                    <SelectItem value="serviced">Serviced (cover witnessed)</SelectItem>
                     <SelectItem value="pregnant">Pregnant</SelectItem>
                     <SelectItem value="kid">Kid</SelectItem>
                     <SelectItem value="retired">Retired</SelectItem>

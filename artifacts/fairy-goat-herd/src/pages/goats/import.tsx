@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const BREEDS = ["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"] as const;
 const SEX_OPTIONS = ["doe", "buck", "wether"] as const;
-const LACTATION_OPTIONS = ["milking", "dry", "pregnant", "kid", "retired"] as const;
+const LACTATION_OPTIONS = ["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"] as const;
 
 const GOAT_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: "name", label: "Barn Name", required: true },
