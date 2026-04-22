@@ -283,6 +283,63 @@ const eventFormSchema = z.object({
 });
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
+function ExposureWindowSummary({ events }: { events: BreedingEvent[] }) {
+  const exposedEvents = events.filter((e) => e.eventType === "exposed");
+  const removedEvents = events.filter((e) => e.eventType === "removed");
+  const coverCount = events.filter((e) => e.eventType === "cover").length;
+
+  if (exposedEvents.length === 0) return null;
+
+  const firstExposure = exposedEvents.reduce((earliest, e) =>
+    new Date(e.eventDate) < new Date(earliest.eventDate) ? e : earliest
+  );
+  const lastRemoval = removedEvents.length > 0
+    ? removedEvents.reduce((latest, e) =>
+        new Date(e.eventDate) > new Date(latest.eventDate) ? e : latest
+      )
+    : null;
+
+  const toUtcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const startDate = new Date(firstExposure.eventDate);
+  const endDate = lastRemoval ? new Date(lastRemoval.eventDate) : new Date();
+  const totalDays = Math.max(0, Math.floor((toUtcDay(endDate) - toUtcDay(startDate)) / (1000 * 60 * 60 * 24)));
+
+  return (
+    <div className="mb-5 rounded-xl border border-blue-200/60 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800/40 p-4">
+      <div className="text-xs uppercase tracking-wide text-blue-700/70 dark:text-blue-400/70 mb-3 font-medium">Exposure Window Summary</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div>
+          <div className="text-xs text-muted-foreground mb-0.5">First Exposed</div>
+          <div className="text-sm font-medium text-foreground">
+            {formatDate(firstExposure.eventDate, { month: "short", day: "numeric", year: "numeric" })}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground mb-0.5">Last Removed</div>
+          <div className="text-sm font-medium text-foreground">
+            {lastRemoval
+              ? formatDate(lastRemoval.eventDate, { month: "short", day: "numeric", year: "numeric" })
+              : <span className="text-muted-foreground italic">Still in with buck</span>}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground mb-0.5">Days Exposed</div>
+          <div className="text-sm font-medium text-foreground">
+            {totalDays} day{totalDays !== 1 ? "s" : ""}
+            {!lastRemoval && <span className="text-xs text-muted-foreground ml-1">(ongoing)</span>}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground mb-0.5">Covers Witnessed</div>
+          <div className="text-sm font-medium text-foreground">
+            {coverCount === 0 ? <span className="text-muted-foreground">None logged</span> : `${coverCount} cover${coverCount !== 1 ? "s" : ""}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; breedingId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -358,6 +415,7 @@ function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; bre
         </div>
       </CardHeader>
       <CardContent>
+        <ExposureWindowSummary events={events} />
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             No events logged yet. Use the buttons above to track when the doe was exposed, covers were witnessed, or the doe was removed.
