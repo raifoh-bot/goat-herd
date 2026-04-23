@@ -129,7 +129,7 @@ function BreedingCard({
                     ? ` · ${breeding.coverCount} cover${breeding.coverCount !== 1 ? "s" : ""}`
                     : ""}
                   {!isExposed && breeding.lastRemovedDate
-                    ? ` (ended ${new Date(breeding.lastRemovedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
+                    ? ` · ${breeding.firstExposedDate ? `${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })} – ` : ""}${formatDate(breeding.lastRemovedDate, { month: "short", day: "numeric", year: "numeric" })}`
                     : ""}
                 </span>
               </div>
