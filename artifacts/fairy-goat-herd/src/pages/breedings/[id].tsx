@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Eye, Heart, LogOut, Milk, Plus, Trash2, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Eye, Heart, LogOut, Milk, Plus, RefreshCw, Trash2, XCircle, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -714,6 +714,18 @@ export default function BreedingDetail() {
     ? Math.floor((Date.now() - new Date(currentExposedEvent.eventDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  // Sync detection: compare stored expectedKiddingDate with what covers would predict
+  const latestCoverEvent = [...events]
+    .filter((e) => e.eventType === "cover")
+    .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0] ?? null;
+  const coverDerivedDate = latestCoverEvent
+    ? new Date(new Date(latestCoverEvent.eventDate).getTime() + GESTATION_DAYS * 24 * 60 * 60 * 1000)
+    : null;
+  const isKiddingDateOutOfSync =
+    breeding.expectedKiddingDate != null &&
+    coverDerivedDate != null &&
+    Math.abs(new Date(breeding.expectedKiddingDate).getTime() - coverDerivedDate.getTime()) > 24 * 60 * 60 * 1000;
+
   return (
     <Layout>
       <div className="space-y-6 animate-in fade-in duration-500 max-w-3xl mx-auto">
@@ -780,7 +792,7 @@ export default function BreedingDetail() {
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Breeding Date</div>
                 <div className="font-medium text-foreground">{formatDate(breeding.breedingDate)}</div>
               </div>
-              <div className="rounded-xl border border-border bg-primary/5 p-4">
+              <div className={`rounded-xl border p-4 ${isKiddingDateOutOfSync ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/10" : "border-border bg-primary/5"}`}>
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Baby className="h-3 w-3" /> Estimated Kidding Date</div>
                 <div className="font-medium text-foreground">
                   {breeding.expectedKiddingDate
@@ -790,6 +802,35 @@ export default function BreedingDetail() {
                 <div className="text-xs text-muted-foreground/70 mt-0.5">
                   {breeding.expectedKiddingDate ? `Most recent cover + ${GESTATION_DAYS} days` : `Breeding date + ${GESTATION_DAYS} days`}
                 </div>
+                {isKiddingDateOutOfSync && coverDerivedDate && (
+                  <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/40">
+                    <div className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400 mb-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span>Doesn't match latest cover (+{GESTATION_DAYS} days = <strong>{formatDate(coverDerivedDate)}</strong>)</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/30"
+                      disabled={updateBreeding.isPending}
+                      onClick={() =>
+                        updateBreeding.mutate(
+                          { id, data: { expectedKiddingDate: coverDerivedDate.toISOString() } },
+                          {
+                            onSuccess: () => {
+                              toast({ title: "Kidding date synced to latest cover" });
+                              queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(id) });
+                            },
+                            onError: () => toast({ title: "Update failed", variant: "destructive" }),
+                          }
+                        )
+                      }
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1.5" />
+                      {updateBreeding.isPending ? "Updating..." : "Sync to latest cover"}
+                    </Button>
+                  </div>
+                )}
               </div>
               {breeding.doe?.breed && (
                 <div className="rounded-xl border border-border bg-card/50 p-4">
