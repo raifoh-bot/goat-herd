@@ -269,6 +269,8 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
   );
 }
 
+const GESTATION_DAYS = 145;
+
 const eventConfig = {
   exposed: { label: "Exposure Start", fullLabel: "Doe placed with buck", icon: Eye, dotClass: "bg-blue-500/20 border-blue-300", iconClass: "text-blue-600", badgeClass: "bg-blue-100 text-blue-700 border-blue-200" },
   cover: { label: "Cover Witnessed", fullLabel: "Breeding observed", icon: Heart, dotClass: "bg-rose-500/20 border-rose-300", iconClass: "text-rose-600", badgeClass: "bg-rose-100 text-rose-700 border-rose-200" },
@@ -422,43 +424,68 @@ function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; bre
           </p>
         ) : (
           <div className="space-y-0">
-            {events.map((event, idx) => {
-              const cfg = eventConfig[event.eventType as EventType] ?? eventConfig.exposed;
-              const Icon = cfg.icon;
-              const isLast = idx === events.length - 1;
-              return (
-                <div key={event.id} className="flex gap-3">
-                  <div className="flex flex-col items-center shrink-0">
-                    <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${cfg.dotClass}`}>
-                      <Icon className={`h-3.5 w-3.5 ${cfg.iconClass}`} />
-                    </div>
-                    {!isLast && <div className="w-px flex-1 bg-border my-1 min-h-[16px]" />}
-                  </div>
-                  <div className="flex-1 pb-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <span className="font-medium text-sm text-foreground">{cfg.label}</span>
-                          <Badge className={`${cfg.badgeClass} text-xs px-2 py-0 border`}>{cfg.fullLabel}</Badge>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDate(event.eventDate, { month: "short", day: "numeric", year: "numeric" })}
-                          {event.notes && <> · <span className="italic">{event.notes}</span></>}
-                        </div>
+            {(() => {
+              const coverEvents = events.filter((e) => e.eventType === "cover");
+              const latestCoverId = coverEvents.length > 0
+                ? coverEvents.reduce((latest, e) =>
+                    new Date(e.eventDate) > new Date(latest.eventDate) ? e : latest
+                  ).id
+                : null;
+              return events.map((event, idx) => {
+                const cfg = eventConfig[event.eventType as EventType] ?? eventConfig.exposed;
+                const Icon = cfg.icon;
+                const isLast = idx === events.length - 1;
+                const isCover = event.eventType === "cover";
+                const isLatestCover = isCover && event.id === latestCoverId;
+                const projectedKiddingDate = isCover
+                  ? new Date(new Date(event.eventDate).getTime() + GESTATION_DAYS * 24 * 60 * 60 * 1000)
+                  : null;
+                return (
+                  <div key={event.id} className="flex gap-3">
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${isCover ? "bg-rose-500/25 border-rose-400" : cfg.dotClass}`}>
+                        <Icon className={`h-3.5 w-3.5 ${cfg.iconClass}`} />
                       </div>
-                      <Button
-                        variant="ghost" size="sm"
-                        className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(event.id)}
-                        disabled={deleteEvent.isPending}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {!isLast && <div className="w-px flex-1 bg-border my-1 min-h-[16px]" />}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className="font-medium text-sm text-foreground">{cfg.label}</span>
+                            <Badge className={`${cfg.badgeClass} text-xs px-2 py-0 border`}>{cfg.fullLabel}</Badge>
+                            {isLatestCover && (
+                              <Badge className="bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700 text-xs px-2 py-0 border">
+                                Active estimate
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDate(event.eventDate, { month: "short", day: "numeric", year: "numeric" })}
+                            {event.notes && <> · <span className="italic">{event.notes}</span></>}
+                          </div>
+                          {isCover && projectedKiddingDate && (
+                            <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-800/40 px-2 py-1 text-xs text-rose-700 dark:text-rose-300">
+                              <Baby className="h-3 w-3 shrink-0" />
+                              <span>Est. kidding: <span className="font-medium">{formatDate(projectedKiddingDate.toISOString(), { month: "short", day: "numeric", year: "numeric" })}</span></span>
+                              <span className="text-rose-400 dark:text-rose-500">(+{GESTATION_DAYS} days)</span>
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost" size="sm"
+                          className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(event.id)}
+                          disabled={deleteEvent.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         )}
       </CardContent>
@@ -758,10 +785,10 @@ export default function BreedingDetail() {
                 <div className="font-medium text-foreground">
                   {breeding.expectedKiddingDate
                     ? formatDate(breeding.expectedKiddingDate)
-                    : formatDate(new Date(new Date(breeding.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000))}
+                    : formatDate(new Date(new Date(breeding.breedingDate).getTime() + GESTATION_DAYS * 24 * 60 * 60 * 1000))}
                 </div>
                 <div className="text-xs text-muted-foreground/70 mt-0.5">
-                  {breeding.expectedKiddingDate ? "Most recent cover + 145 days" : "Breeding date + 145 days"}
+                  {breeding.expectedKiddingDate ? `Most recent cover + ${GESTATION_DAYS} days` : `Breeding date + ${GESTATION_DAYS} days`}
                 </div>
               </div>
               {breeding.doe?.breed && (
