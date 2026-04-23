@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Eye, Heart, LogOut, Milk, Plus, Trash2, XCircle } from "lucide-react";
+import { ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Eye, Heart, LogOut, Milk, Plus, Trash2, XCircle, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -673,6 +673,20 @@ export default function BreedingDetail() {
   const liveKids = breeding.kids?.filter((k) => k.kidStatus !== "doa") ?? [];
   const doaKids = breeding.kids?.filter((k) => k.kidStatus === "doa") ?? [];
 
+  const events = breeding.events ?? [];
+  const latestRelevantEvent = [...events]
+    .filter((e) => e.eventType === "exposed" || e.eventType === "removed")
+    .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0];
+  const hasActiveExposure = latestRelevantEvent?.eventType === "exposed";
+  const currentExposedEvent = hasActiveExposure
+    ? [...events]
+        .filter((e) => e.eventType === "exposed")
+        .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0]
+    : null;
+  const exposedDays = currentExposedEvent
+    ? Math.floor((Date.now() - new Date(currentExposedEvent.eventDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
   return (
     <Layout>
       <div className="space-y-6 animate-in fade-in duration-500 max-w-3xl mx-auto">
@@ -719,10 +733,18 @@ export default function BreedingDetail() {
                 <CardTitle className="font-serif text-2xl">{breeding.doe?.name ?? `Doe #${breeding.doeId}`}</CardTitle>
                 <p className="text-muted-foreground mt-1">× <span className="font-medium text-foreground">{breeding.sireName}</span></p>
               </div>
-              <Badge className={`${config.className} flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
-                <StatusIcon className="h-3.5 w-3.5" />
-                {config.label}
-              </Badge>
+              <div className="flex flex-col items-end gap-1.5">
+                <Badge className={`${config.className} flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
+                  <StatusIcon className="h-3.5 w-3.5" />
+                  {config.label}
+                </Badge>
+                {hasActiveExposure && (
+                  <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-3 py-1.5 text-sm dark:text-amber-400 dark:bg-amber-500/10">
+                    <Zap className="h-3.5 w-3.5" />
+                    Exposed{exposedDays > 0 ? ` · ${exposedDays}d` : ""}
+                  </Badge>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
