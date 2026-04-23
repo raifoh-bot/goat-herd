@@ -105,6 +105,20 @@ function BreedingCard({
               )}
             </div>
 
+            {breeding.hasExposureEvents && (
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <Zap className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {isExposed
+                    ? `Exposed${breeding.exposedDays != null && breeding.exposedDays > 0 ? ` ${breeding.exposedDays} days` : ""}`
+                    : "Exposure recorded"}
+                  {breeding.coverCount != null && breeding.coverCount > 0
+                    ? ` · ${breeding.coverCount} cover${breeding.coverCount !== 1 ? "s" : ""}`
+                    : ""}
+                </span>
+              </div>
+            )}
+
             {breeding.status !== "kidded" && breeding.status !== "open" && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 shrink-0" />

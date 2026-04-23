@@ -69,12 +69,17 @@ router.get("/breedings", async (req, res): Promise<void> => {
       }
     }
 
+    const coverCount = events.filter((e) => e.eventType === "cover").length;
+    const hasExposureEvents = events.some((e) => e.eventType === "exposed");
+
     return {
       ...row.breedings,
       doe: row.goats,
       kids: kidsByBreeding[row.breedings.id] ?? [],
       hasActiveExposure,
       exposedDays,
+      coverCount,
+      hasExposureEvents,
     };
   });
 

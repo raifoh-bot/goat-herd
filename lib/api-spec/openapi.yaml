@@ -771,6 +771,12 @@ components:
               type: integer
               nullable: true
               description: Number of days since the earliest exposed event (null when not actively exposed)
+            coverCount:
+              type: integer
+              description: Total number of witnessed cover events logged for this breeding
+            hasExposureEvents:
+              type: boolean
+              description: True when at least one exposed event has ever been logged for this breeding
 
     BreedingDetail:
       allOf:

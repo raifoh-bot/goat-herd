@@ -352,6 +352,10 @@ export type BreedingWithDoe = Breeding & {
   hasActiveExposure?: boolean;
   /** Number of days since the earliest exposed event (null when not actively exposed) */
   exposedDays?: number | null;
+  /** Total number of witnessed cover events logged for this breeding */
+  coverCount?: number;
+  /** True when at least one exposed event has ever been logged for this breeding */
+  hasExposureEvents?: boolean;
 };
 
 export type BreedingEventEventType =

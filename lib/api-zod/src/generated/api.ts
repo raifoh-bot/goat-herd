@@ -594,6 +594,18 @@ export const ListBreedingsResponseItem = zod
         .describe(
           "Number of days since the earliest exposed event (null when not actively exposed)",
         ),
+      coverCount: zod
+        .number()
+        .optional()
+        .describe(
+          "Total number of witnessed cover events logged for this breeding",
+        ),
+      hasExposureEvents: zod
+        .boolean()
+        .optional()
+        .describe(
+          "True when at least one exposed event has ever been logged for this breeding",
+        ),
     }),
   );
 export const ListBreedingsResponse = zod.array(ListBreedingsResponseItem);
