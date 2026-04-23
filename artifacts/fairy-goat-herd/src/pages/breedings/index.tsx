@@ -100,7 +100,7 @@ function BreedingCard({
               {isExposed && (
                 <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-amber-400 dark:bg-amber-500/10">
                   <Zap className="h-3 w-3" />
-                  Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}
+                  Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}{breeding.firstExposedDate ? ` · Since ${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })}` : ""}
                 </Badge>
               )}
             </div>
@@ -121,6 +121,9 @@ function BreedingCard({
                 <Zap className="h-3.5 w-3.5 shrink-0" />
                 <span>
                   {`Exposed${breeding.exposedDays != null && breeding.exposedDays > 0 ? ` ${breeding.exposedDays} days` : ""}`}
+                  {isExposed && breeding.firstExposedDate
+                    ? ` · Since ${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })}`
+                    : ""}
                   {breeding.coverCount != null && breeding.coverCount > 0
                     ? ` · ${breeding.coverCount} cover${breeding.coverCount !== 1 ? "s" : ""}`
                     : ""}
