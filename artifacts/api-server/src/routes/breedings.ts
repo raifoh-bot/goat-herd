@@ -48,9 +48,13 @@ router.get("/breedings", async (req, res): Promise<void> => {
     const events = eventsByBreeding[row.breedings.id] ?? [];
 
     // Find the most recent "exposed" or "removed" event to determine current state
+    // Use id as tiebreaker for same-date events (higher id = logged later)
     const latestRelevantEvent = events
       .filter((e) => e.eventType === "exposed" || e.eventType === "removed")
-      .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0];
+      .sort((a, b) => {
+        const dateDiff = new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime();
+        return dateDiff !== 0 ? dateDiff : b.id - a.id;
+      })[0];
 
     const hasActiveExposure = latestRelevantEvent?.eventType === "exposed";
 

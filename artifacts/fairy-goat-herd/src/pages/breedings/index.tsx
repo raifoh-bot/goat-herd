@@ -1,12 +1,29 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap } from "lucide-react";
-import { getListBreedingsQueryKey, useListBreedings } from "@workspace/api-client-react";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2 } from "lucide-react";
+import {
+  getListBreedingsQueryKey,
+  useListBreedings,
+  useCreateBreedingEvent,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { formatDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const statusConfig = {
@@ -16,7 +33,20 @@ const statusConfig = {
   open: { label: "Open", icon: XCircle, className: "bg-destructive text-destructive-foreground" },
 };
 
-function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
+interface ExposureDialogState {
+  breedingId: number;
+  doeName: string;
+  eventType: "exposed" | "removed";
+  date: string;
+}
+
+function BreedingCard({
+  breeding,
+  onExposureAction,
+}: {
+  breeding: BreedingWithDoe;
+  onExposureAction: (state: ExposureDialogState) => void;
+}) {
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
   const breedingDate = new Date(breeding.breedingDate);
@@ -25,6 +55,21 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
     : new Date(breedingDate.getTime() + 145 * 24 * 60 * 60 * 1000);
   const daysUntilKidding = Math.ceil((expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
+  const showExposureButton = breeding.status === "bred" || breeding.status === "confirmed-pregnant";
+  const isExposed = breeding.hasActiveExposure;
+  const doeName = breeding.doe?.name ?? `Doe #${breeding.doeId}`;
+
+  const handleExposureClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onExposureAction({
+      breedingId: breeding.id,
+      doeName,
+      eventType: isExposed ? "removed" : "exposed",
+      date: new Date().toISOString().slice(0, 10),
+    });
+  };
+
   return (
     <Link href={`/breedings/${breeding.id}`}>
       <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-primary/10 bg-card cursor-pointer h-full">
@@ -32,7 +77,7 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="font-serif text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                {breeding.doe?.name ?? `Doe #${breeding.doeId}`}
+                {doeName}
               </h3>
               <p className="text-sm text-muted-foreground">× {breeding.sireName}</p>
             </div>
@@ -41,7 +86,7 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
                 <StatusIcon className="h-3 w-3" />
                 {config.label}
               </Badge>
-              {breeding.hasActiveExposure && (
+              {isExposed && (
                 <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-amber-400 dark:bg-amber-500/10">
                   <Zap className="h-3 w-3" />
                   Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}
@@ -108,6 +153,33 @@ function BreedingCard({ breeding }: { breeding: BreedingWithDoe }) {
           {breeding.notes && !breeding.kids?.length && (
             <p className="mt-3 text-xs text-muted-foreground line-clamp-2 italic border-t border-border pt-3">{breeding.notes}</p>
           )}
+
+          {showExposureButton && (
+            <div className="mt-3 border-t border-border pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`w-full text-xs h-8 ${
+                  isExposed
+                    ? "border-muted-foreground/30 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+                    : "border-amber-400/40 text-amber-700 hover:bg-amber-50 hover:border-amber-500/60 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                }`}
+                onClick={handleExposureClick}
+              >
+                {isExposed ? (
+                  <>
+                    <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                    Log Removal
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                    Log Exposure
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
@@ -118,9 +190,49 @@ export default function BreedingsList() {
   const { data: breedings, isLoading } = useListBreedings({
     query: { queryKey: getListBreedingsQueryKey() },
   });
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const createEvent = useCreateBreedingEvent();
+
+  const [dialogState, setDialogState] = useState<ExposureDialogState | null>(null);
+  const [dialogDate, setDialogDate] = useState("");
 
   const active = breedings?.filter((b) => b.status === "bred" || b.status === "confirmed-pregnant") ?? [];
   const past = breedings?.filter((b) => b.status === "kidded" || b.status === "open") ?? [];
+
+  const openDialog = (state: ExposureDialogState) => {
+    setDialogState(state);
+    setDialogDate(state.date);
+  };
+
+  const closeDialog = () => {
+    setDialogState(null);
+    setDialogDate("");
+  };
+
+  const handleConfirm = () => {
+    if (!dialogState || !dialogDate) return;
+    createEvent.mutate(
+      {
+        id: dialogState.breedingId,
+        data: {
+          eventType: dialogState.eventType,
+          eventDate: new Date(dialogDate + "T12:00:00").toISOString(),
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.refetchQueries({ queryKey: getListBreedingsQueryKey() });
+          const label = dialogState.eventType === "exposed" ? "Exposure logged" : "Removal logged";
+          toast({ title: label });
+          closeDialog();
+        },
+        onError: () => {
+          toast({ title: "Failed to save event", variant: "destructive" });
+        },
+      }
+    );
+  };
 
   return (
     <Layout>
@@ -170,7 +282,7 @@ export default function BreedingsList() {
                   Active ({active.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {active.map((b) => <BreedingCard key={b.id} breeding={b} />)}
+                  {active.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} />)}
                 </div>
               </section>
             )}
@@ -182,13 +294,59 @@ export default function BreedingsList() {
                   Past Kiddings ({past.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {past.map((b) => <BreedingCard key={b.id} breeding={b} />)}
+                  {past.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} />)}
                 </div>
               </section>
             )}
           </div>
         )}
       </div>
+
+      <Dialog open={dialogState !== null} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+        <DialogContent className="sm:max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif flex items-center gap-2">
+              {dialogState?.eventType === "exposed" ? (
+                <><LogIn className="h-4 w-4 text-amber-600" /> Log Exposure</>
+              ) : (
+                <><LogOut className="h-4 w-4 text-muted-foreground" /> Log Removal</>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogState?.eventType === "exposed"
+                ? `Record when ${dialogState?.doeName} was put in with the buck.`
+                : `Record when ${dialogState?.doeName} was removed from the buck.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="event-date" className="text-sm mb-1.5 block">Date</Label>
+            <Input
+              id="event-date"
+              type="date"
+              value={dialogDate}
+              onChange={(e) => setDialogDate(e.target.value)}
+              className="bg-background/50"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={closeDialog} disabled={createEvent.isPending}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirm}
+              disabled={!dialogDate || createEvent.isPending}
+              className={dialogState?.eventType === "exposed" ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}
+            >
+              {createEvent.isPending ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
+              ) : (
+                dialogState?.eventType === "exposed" ? "Log Exposure" : "Log Removal"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
