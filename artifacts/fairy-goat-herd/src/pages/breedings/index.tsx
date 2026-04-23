@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2 } from "lucide-react";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame } from "lucide-react";
 import {
   getListBreedingsQueryKey,
   useListBreedings,
@@ -36,7 +36,7 @@ const statusConfig = {
 interface ExposureDialogState {
   breedingId: number;
   doeName: string;
-  eventType: "exposed" | "removed";
+  eventType: "exposed" | "removed" | "cover";
   date: string;
 }
 
@@ -66,6 +66,17 @@ function BreedingCard({
       breedingId: breeding.id,
       doeName,
       eventType: isExposed ? "removed" : "exposed",
+      date: new Date().toISOString().slice(0, 10),
+    });
+  };
+
+  const handleCoverClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onExposureAction({
+      breedingId: breeding.id,
+      doeName,
+      eventType: "cover",
       date: new Date().toISOString().slice(0, 10),
     });
   };
@@ -170,28 +181,38 @@ function BreedingCard({
 
           {showExposureButton && (
             <div className="mt-3 border-t border-border pt-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`w-full text-xs h-8 ${
-                  isExposed
-                    ? "border-muted-foreground/30 text-muted-foreground hover:text-destructive hover:border-destructive/40"
-                    : "border-amber-400/40 text-amber-700 hover:bg-amber-50 hover:border-amber-500/60 dark:text-amber-400 dark:hover:bg-amber-500/10"
-                }`}
-                onClick={handleExposureClick}
-              >
-                {isExposed ? (
-                  <>
+              {isExposed ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs h-8 border-rose-400/40 text-rose-700 hover:bg-rose-50 hover:border-rose-500/60 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                    onClick={handleCoverClick}
+                  >
+                    <Flame className="h-3.5 w-3.5 mr-1.5" />
+                    Log Cover
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs h-8 border-muted-foreground/30 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+                    onClick={handleExposureClick}
+                  >
                     <LogOut className="h-3.5 w-3.5 mr-1.5" />
                     Log Removal
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="h-3.5 w-3.5 mr-1.5" />
-                    Log Exposure
-                  </>
-                )}
-              </Button>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-8 border-amber-400/40 text-amber-700 hover:bg-amber-50 hover:border-amber-500/60 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                  onClick={handleExposureClick}
+                >
+                  <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                  Log Exposure
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -237,7 +258,12 @@ export default function BreedingsList() {
       {
         onSuccess: async () => {
           await queryClient.refetchQueries({ queryKey: getListBreedingsQueryKey() });
-          const label = dialogState.eventType === "exposed" ? "Exposure logged" : "Removal logged";
+          const label =
+            dialogState.eventType === "exposed"
+              ? "Exposure logged"
+              : dialogState.eventType === "cover"
+              ? "Cover logged"
+              : "Removal logged";
           toast({ title: label });
           closeDialog();
         },
@@ -322,6 +348,8 @@ export default function BreedingsList() {
             <DialogTitle className="font-serif flex items-center gap-2">
               {dialogState?.eventType === "exposed" ? (
                 <><LogIn className="h-4 w-4 text-amber-600" /> Log Exposure</>
+              ) : dialogState?.eventType === "cover" ? (
+                <><Flame className="h-4 w-4 text-rose-600" /> Log Cover</>
               ) : (
                 <><LogOut className="h-4 w-4 text-muted-foreground" /> Log Removal</>
               )}
@@ -329,6 +357,8 @@ export default function BreedingsList() {
             <DialogDescription>
               {dialogState?.eventType === "exposed"
                 ? `Record when ${dialogState?.doeName} was put in with the buck.`
+                : dialogState?.eventType === "cover"
+                ? `Record a witnessed breeding (cover) for ${dialogState?.doeName}.`
                 : `Record when ${dialogState?.doeName} was removed from the buck.`}
             </DialogDescription>
           </DialogHeader>
@@ -350,12 +380,22 @@ export default function BreedingsList() {
               size="sm"
               onClick={handleConfirm}
               disabled={!dialogDate || createEvent.isPending}
-              className={dialogState?.eventType === "exposed" ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}
+              className={
+                dialogState?.eventType === "exposed"
+                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                  : dialogState?.eventType === "cover"
+                  ? "bg-rose-600 hover:bg-rose-700 text-white"
+                  : ""
+              }
             >
               {createEvent.isPending ? (
                 <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
+              ) : dialogState?.eventType === "exposed" ? (
+                "Log Exposure"
+              ) : dialogState?.eventType === "cover" ? (
+                "Log Cover"
               ) : (
-                dialogState?.eventType === "exposed" ? "Log Exposure" : "Log Removal"
+                "Log Removal"
               )}
             </Button>
           </DialogFooter>
