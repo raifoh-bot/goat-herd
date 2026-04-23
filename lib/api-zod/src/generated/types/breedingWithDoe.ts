@@ -14,10 +14,14 @@ export type BreedingWithDoe = Breeding & {
   kids?: Kid[];
   /** True when an exposed event exists but no removed event has been recorded */
   hasActiveExposure?: boolean;
-  /** Number of days since the earliest exposed event (null when not actively exposed) */
+  /** Days of exposure — when actively exposed, days since most recent exposed event; when removed, days between firstExposedDate and lastRemovedDate; null when no exposure events exist */
   exposedDays?: number | null;
   /** Total number of witnessed cover events logged for this breeding */
   coverCount?: number;
   /** True when at least one exposed event has ever been logged for this breeding */
   hasExposureEvents?: boolean;
+  /** Date of the earliest exposed event for this breeding */
+  firstExposedDate?: string | null;
+  /** Date of the most recent removed event for this breeding */
+  lastRemovedDate?: string | null;
 };

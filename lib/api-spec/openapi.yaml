@@ -770,13 +770,23 @@ components:
             exposedDays:
               type: integer
               nullable: true
-              description: Number of days since the earliest exposed event (null when not actively exposed)
+              description: Days of exposure — when actively exposed, days since most recent exposed event; when removed, days between firstExposedDate and lastRemovedDate; null when no exposure events exist
             coverCount:
               type: integer
               description: Total number of witnessed cover events logged for this breeding
             hasExposureEvents:
               type: boolean
               description: True when at least one exposed event has ever been logged for this breeding
+            firstExposedDate:
+              type: string
+              format: date-time
+              nullable: true
+              description: Date of the earliest exposed event for this breeding
+            lastRemovedDate:
+              type: string
+              format: date-time
+              nullable: true
+              description: Date of the most recent removed event for this breeding
 
     BreedingDetail:
       allOf:

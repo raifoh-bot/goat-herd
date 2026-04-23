@@ -58,15 +58,28 @@ router.get("/breedings", async (req, res): Promise<void> => {
 
     const hasActiveExposure = latestRelevantEvent?.eventType === "exposed";
 
+    const exposedEvents = events
+      .filter((e) => e.eventType === "exposed")
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+    const removedEvents = events
+      .filter((e) => e.eventType === "removed")
+      .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+
+    const firstExposedDate = exposedEvents[0]?.eventDate ?? null;
+    const lastRemovedDate = removedEvents[0]?.eventDate ?? null;
+
     let exposedDays: number | null = null;
     if (hasActiveExposure) {
       // Find the most recent "exposed" event (the one that started the current exposure run)
-      const currentExposedEvent = events
-        .filter((e) => e.eventType === "exposed")
-        .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())[0];
+      const currentExposedEvent = exposedEvents[exposedEvents.length - 1];
       if (currentExposedEvent) {
         exposedDays = Math.floor((now - new Date(currentExposedEvent.eventDate).getTime()) / (1000 * 60 * 60 * 24));
       }
+    } else if (firstExposedDate && lastRemovedDate) {
+      // Was exposed but has since been removed — compute window from first exposed to last removed
+      exposedDays = Math.floor(
+        (new Date(lastRemovedDate).getTime() - new Date(firstExposedDate).getTime()) / (1000 * 60 * 60 * 24)
+      );
     }
 
     const coverCount = events.filter((e) => e.eventType === "cover").length;
@@ -80,6 +93,8 @@ router.get("/breedings", async (req, res): Promise<void> => {
       exposedDays,
       coverCount,
       hasExposureEvents,
+      firstExposedDate,
+      lastRemovedDate,
     };
   });
 

@@ -120,11 +120,12 @@ function BreedingCard({
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <Zap className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {isExposed
-                    ? `Exposed${breeding.exposedDays != null && breeding.exposedDays > 0 ? ` ${breeding.exposedDays} days` : ""}`
-                    : "Exposure recorded"}
+                  {`Exposed${breeding.exposedDays != null && breeding.exposedDays > 0 ? ` ${breeding.exposedDays} days` : ""}`}
                   {breeding.coverCount != null && breeding.coverCount > 0
                     ? ` · ${breeding.coverCount} cover${breeding.coverCount !== 1 ? "s" : ""}`
+                    : ""}
+                  {!isExposed && breeding.lastRemovedDate
+                    ? ` (ended ${new Date(breeding.lastRemovedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
                     : ""}
                 </span>
               </div>
