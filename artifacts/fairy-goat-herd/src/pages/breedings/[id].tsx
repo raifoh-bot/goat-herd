@@ -741,7 +741,7 @@ export default function BreedingDetail() {
                 {hasActiveExposure && (
                   <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-3 py-1.5 text-sm dark:text-amber-400 dark:bg-amber-500/10">
                     <Zap className="h-3.5 w-3.5" />
-                    Exposed{exposedDays > 0 ? ` · ${exposedDays}d` : ""}
+                    Exposed{exposedDays > 0 ? ` ${exposedDays} day${exposedDays !== 1 ? "s" : ""}` : ""}{currentExposedEvent ? ` · Since ${formatDate(currentExposedEvent.eventDate, { month: "short", day: "numeric", year: "numeric" })}` : ""}
                   </Badge>
                 )}
               </div>
