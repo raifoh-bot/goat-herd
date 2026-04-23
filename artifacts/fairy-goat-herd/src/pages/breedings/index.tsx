@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
@@ -235,6 +236,7 @@ export default function BreedingsList() {
 
   const [dialogState, setDialogState] = useState<ExposureDialogState | null>(null);
   const [dialogDate, setDialogDate] = useState("");
+  const [dialogNotes, setDialogNotes] = useState("");
 
   const active = breedings?.filter((b) => b.status === "bred" || b.status === "confirmed-pregnant") ?? [];
   const past = breedings?.filter((b) => b.status === "kidded" || b.status === "open") ?? [];
@@ -242,11 +244,13 @@ export default function BreedingsList() {
   const openDialog = (state: ExposureDialogState) => {
     setDialogState(state);
     setDialogDate(state.date);
+    setDialogNotes("");
   };
 
   const closeDialog = () => {
     setDialogState(null);
     setDialogDate("");
+    setDialogNotes("");
   };
 
   const handleConfirm = () => {
@@ -257,6 +261,7 @@ export default function BreedingsList() {
         data: {
           eventType: dialogState.eventType,
           eventDate: new Date(dialogDate + "T12:00:00").toISOString(),
+          notes: dialogState.eventType === "cover" && dialogNotes.trim() ? dialogNotes.trim() : undefined,
         },
       },
       {
@@ -366,15 +371,30 @@ export default function BreedingsList() {
                 : `Record when ${dialogState?.doeName} was removed from the buck.`}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-2">
-            <Label htmlFor="event-date" className="text-sm mb-1.5 block">Date</Label>
-            <Input
-              id="event-date"
-              type="date"
-              value={dialogDate}
-              onChange={(e) => setDialogDate(e.target.value)}
-              className="bg-background/50"
-            />
+          <div className="py-2 space-y-3">
+            <div>
+              <Label htmlFor="event-date" className="text-sm mb-1.5 block">Date</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={dialogDate}
+                onChange={(e) => setDialogDate(e.target.value)}
+                className="bg-background/50"
+              />
+            </div>
+            {dialogState?.eventType === "cover" && (
+              <div>
+                <Label htmlFor="cover-notes" className="text-sm mb-1.5 block">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Textarea
+                  id="cover-notes"
+                  placeholder="e.g. Very vigorous mating, observed twice"
+                  value={dialogNotes}
+                  onChange={(e) => setDialogNotes(e.target.value)}
+                  className="bg-background/50 resize-none"
+                  rows={2}
+                />
+              </div>
+            )}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" onClick={closeDialog} disabled={createEvent.isPending}>
