@@ -125,13 +125,17 @@ function BreedingCard({
                   {isExposed && breeding.firstExposedDate
                     ? ` · Since ${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })}`
                     : ""}
-                  {breeding.coverCount != null && breeding.coverCount > 0
-                    ? ` · ${breeding.coverCount} cover${breeding.coverCount !== 1 ? "s" : ""}`
-                    : ""}
                   {!isExposed && breeding.lastRemovedDate
                     ? ` · ${breeding.firstExposedDate ? `${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })} – ` : ""}${formatDate(breeding.lastRemovedDate, { month: "short", day: "numeric", year: "numeric" })}`
                     : ""}
                 </span>
+              </div>
+            )}
+
+            {breeding.coverCount != null && breeding.coverCount > 0 && (
+              <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                <Heart className="h-3.5 w-3.5 shrink-0" />
+                <span>{breeding.coverCount} cover{breeding.coverCount !== 1 ? "s" : ""} witnessed</span>
               </div>
             )}
 
