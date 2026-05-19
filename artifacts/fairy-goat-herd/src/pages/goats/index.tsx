@@ -174,7 +174,7 @@ export default function GoatsList() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-serif font-bold text-foreground mb-2">The Herd</h2>
-            <p className="text-muted-foreground">Manage your dairy goats, production records, and health status.</p>
+            <p className="text-muted-foreground">Manage your goats, production records, and health status.</p>
           </div>
           <div className="flex gap-2">
             <Link href="/goats/import">
@@ -329,7 +329,7 @@ export default function GoatsList() {
               <Filter className="h-8 w-8 text-primary/60" />
             </div>
             <h3 className="text-xl font-serif font-medium text-foreground mb-2">No goats found</h3>
-            <p className="text-muted-foreground max-w-md">We couldn't find any dairy goats matching your current filters. Try adjusting them or add a new goat to the herd.</p>
+            <p className="text-muted-foreground max-w-md">We couldn't find any goats matching your current filters. Try adjusting them or add a new goat to the herd.</p>
             <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter(undefined); setSortKey(null); }}>
               Clear Filters
             </Button>

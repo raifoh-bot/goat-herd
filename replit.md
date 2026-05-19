@@ -1,8 +1,8 @@
-# Dairy Goat Herd Manager
+# MyGoatHerd
 
 ## Overview
 
-A practical dairy goat herd management application. Users can track goats, manage individual records with breed, breeding pedigree (dam, sire, grandparents), health status, lactation status, milk production, date of birth (age auto-calculated), and notes — plus a full breeding workflow: record breedings, confirm pregnancies, and log kidding outcomes (doe/buck/DOA) with birth weights.
+A practical goat herd management application. Users can track goats, manage individual records with breed, breeding pedigree (dam, sire, grandparents), health status, lactation status, milk production, date of birth (age auto-calculated), and notes — plus a full breeding workflow: record breedings, confirm pregnancies, and log kidding outcomes (doe/buck/DOA) with birth weights.
 
 ## Stack
 

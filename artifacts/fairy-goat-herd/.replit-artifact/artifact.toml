@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Fairy Goat Herd Manager"
+title = "MyGoatHerd"
 version = "1.0.0"
 id = "artifacts/fairy-goat-herd"
 router = "path"

@@ -58,7 +58,7 @@ export default function Dashboard() {
       <div className="space-y-8 animate-in fade-in duration-500">
         <div>
           <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
-          <p className="text-muted-foreground">Track production, health, and composition across your dairy goat herd.</p>
+          <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

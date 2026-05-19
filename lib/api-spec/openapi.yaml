@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Api
   version: 0.1.0
-  description: Dairy Goat Herd Management API
+  description: MyGoatHerd API
 servers:
   - url: /api
     description: Base API path
@@ -10,7 +10,7 @@ tags:
   - name: health
     description: Health operations
   - name: goats
-    description: Dairy goat management
+    description: Goat management
   - name: breedings
     description: Breeding and kidding records
   - name: dashboard

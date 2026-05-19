@@ -27,8 +27,7 @@ export function Layout({ children }: LayoutProps) {
               <Sprout className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">Dairy Goat</h1>
-              <p className="text-xs text-sidebar-primary font-medium tracking-wider uppercase">Herd Manager</p>
+              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">MyGoatHerd</h1>
             </div>
           </div>
 

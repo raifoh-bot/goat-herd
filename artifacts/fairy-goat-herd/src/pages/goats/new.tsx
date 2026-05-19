@@ -44,7 +44,7 @@ export default function GoatNew() {
         </Button>
 
         <div>
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Add Dairy Goat</h2>
+          <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Add Goat</h2>
           <p className="text-muted-foreground">Record breed, production, health, and herd notes for a new goat.</p>
         </div>
 
