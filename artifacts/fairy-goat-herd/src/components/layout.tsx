@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, GitBranch, Heart, List, Milk, Sprout } from "lucide-react";
+import { ClipboardList, GitBranch, Heart, List, Milk } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GoatIcon } from "@/components/goat-icon";
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <div className="h-10 w-10 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground shadow-inner">
-              <Sprout className="h-5 w-5" />
+              <GoatIcon className="h-6 w-6" />
             </div>
             <div>
               <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">MyGoatHerd</h1>
