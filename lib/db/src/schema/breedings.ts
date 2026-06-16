@@ -17,6 +17,8 @@ export const breedingsTable = pgTable("breedings", {
   id: serial("id").primaryKey(),
   doeId: integer("doe_id").notNull().references(() => goatsTable.id),
   sireName: text("sire_name").notNull(),
+  breedingMethod: text("breeding_method", { enum: ["natural", "ai"] }).notNull().default("natural"),
+  semenSource: text("semen_source"),
   breedingDate: timestamp("breeding_date").notNull(),
   expectedKiddingDate: timestamp("expected_kidding_date"),
   status: text("status", { enum: ["bred", "confirmed-pregnant", "kidded", "open"] }).notNull().default("bred"),

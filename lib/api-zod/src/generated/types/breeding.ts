@@ -5,12 +5,17 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { BreedingBreedingMethod } from "./breedingBreedingMethod";
 import type { BreedingStatus } from "./breedingStatus";
 
 export interface Breeding {
   id: number;
   doeId: number;
   sireName: string;
+  /** Breeding method — natural service (buck placed with doe) or artificial insemination */
+  breedingMethod: BreedingBreedingMethod;
+  /** Optional free-text semen source/supplier note (AI breedings) */
+  semenSource?: string | null;
   breedingDate: Date;
   expectedKiddingDate?: Date;
   status: BreedingStatus;

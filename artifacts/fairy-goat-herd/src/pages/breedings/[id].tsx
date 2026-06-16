@@ -342,7 +342,7 @@ function ExposureWindowSummary({ events }: { events: BreedingEvent[] }) {
   );
 }
 
-function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; breedingId: number }) {
+function ExposureTimeline({ events, breedingId, isAi = false }: { events: BreedingEvent[]; breedingId: number; isAi?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -400,27 +400,33 @@ function ExposureTimeline({ events, breedingId }: { events: BreedingEvent[]; bre
       <CardHeader>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <CardTitle className="font-serif flex items-center gap-2">
-            <Eye className="h-5 w-5 text-primary" />
-            Exposure Timeline
+            {isAi ? <Heart className="h-5 w-5 text-primary" /> : <Eye className="h-5 w-5 text-primary" />}
+            {isAi ? "Insemination & Covers" : "Exposure Timeline"}
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => openDialog("exposed")}>
-              <Eye className="mr-1.5 h-3.5 w-3.5" /> Log Exposure
-            </Button>
+            {!isAi && (
+              <Button variant="outline" size="sm" onClick={() => openDialog("exposed")}>
+                <Eye className="mr-1.5 h-3.5 w-3.5" /> Log Exposure
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => openDialog("cover")}>
               <Heart className="mr-1.5 h-3.5 w-3.5" /> Log Cover
             </Button>
-            <Button variant="outline" size="sm" onClick={() => openDialog("removed")}>
-              <LogOut className="mr-1.5 h-3.5 w-3.5" /> Log Removal
-            </Button>
+            {!isAi && (
+              <Button variant="outline" size="sm" onClick={() => openDialog("removed")}>
+                <LogOut className="mr-1.5 h-3.5 w-3.5" /> Log Removal
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <ExposureWindowSummary events={events} />
+        {!isAi && <ExposureWindowSummary events={events} />}
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
-            No events logged yet. Use the buttons above to track when the doe was exposed, covers were witnessed, or the doe was removed.
+            {isAi
+              ? "No covers logged yet. Use “Log Cover” to record the insemination/breeding date."
+              : "No events logged yet. Use the buttons above to track when the doe was exposed, covers were witnessed, or the doe was removed."}
           </p>
         ) : (
           <div className="space-y-0">
@@ -697,6 +703,7 @@ export default function BreedingDetail() {
 
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
+  const isAi = breeding.breedingMethod === "ai";
   const liveKids = breeding.kids?.filter((k) => k.kidStatus !== "doa") ?? [];
   const doaKids = breeding.kids?.filter((k) => k.kidStatus === "doa") ?? [];
 
@@ -777,7 +784,13 @@ export default function BreedingDetail() {
                   <StatusIcon className="h-3.5 w-3.5" />
                   {config.label}
                 </Badge>
-                {hasActiveExposure && (
+                {isAi && (
+                  <Badge className="bg-violet-500/15 text-violet-700 border border-violet-400/40 flex items-center gap-1.5 px-3 py-1.5 text-sm dark:text-violet-300 dark:bg-violet-500/10">
+                    <Zap className="h-3.5 w-3.5" />
+                    AI
+                  </Badge>
+                )}
+                {!isAi && hasActiveExposure && (
                   <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-3 py-1.5 text-sm dark:text-amber-400 dark:bg-amber-500/10">
                     <Zap className="h-3.5 w-3.5" />
                     Exposed{exposedDays > 0 ? ` ${exposedDays} day${exposedDays !== 1 ? "s" : ""}` : ""}{currentExposedEvent ? ` · Since ${formatDate(currentExposedEvent.eventDate, { month: "short", day: "numeric", year: "numeric" })}` : ""}
@@ -789,7 +802,7 @@ export default function BreedingDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-border bg-card/50 p-4">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Breeding Date</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Calendar className="h-3 w-3" /> {isAi ? "Insemination Date" : "Breeding Date"}</div>
                 <div className="font-medium text-foreground">{formatDate(breeding.breedingDate)}</div>
               </div>
               <div className={`rounded-xl border p-4 ${isKiddingDateOutOfSync ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/10" : "border-border bg-primary/5"}`}>
@@ -838,6 +851,12 @@ export default function BreedingDetail() {
                   <div className="font-medium text-foreground capitalize">{breeding.doe.breed}</div>
                 </div>
               )}
+              {isAi && breeding.semenSource && (
+                <div className="rounded-xl border border-border bg-card/50 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5"><Zap className="h-3 w-3" /> Semen Source</div>
+                  <div className="font-medium text-foreground">{breeding.semenSource}</div>
+                </div>
+              )}
             </div>
 
             {breeding.notes && (
@@ -849,7 +868,7 @@ export default function BreedingDetail() {
           </CardContent>
         </Card>
 
-        <ExposureTimeline events={breeding.events ?? []} breedingId={id} />
+        <ExposureTimeline events={breeding.events ?? []} breedingId={id} isAi={isAi} />
 
         {isEditingStatus && (
           <Card className="border-primary/10 shadow-md">

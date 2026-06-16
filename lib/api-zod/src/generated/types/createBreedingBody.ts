@@ -5,11 +5,14 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateBreedingBodyBreedingMethod } from "./createBreedingBodyBreedingMethod";
 import type { CreateBreedingBodyStatus } from "./createBreedingBodyStatus";
 
 export interface CreateBreedingBody {
   doeId: number;
   sireName: string;
+  breedingMethod?: CreateBreedingBodyBreedingMethod;
+  semenSource?: string;
   breedingDate: Date;
   expectedKiddingDate?: Date;
   status?: CreateBreedingBodyStatus;

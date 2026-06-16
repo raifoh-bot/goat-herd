@@ -166,7 +166,9 @@ function GoatNameSelect({
 
 const breedingSchema = z.object({
   doeId: z.coerce.number().int().positive("Please select a doe"),
+  breedingMethod: z.enum(["natural", "ai"]),
   sireName: z.string().min(1, "Sire name is required"),
+  semenSource: z.string().optional(),
   breedingDate: z.string().min(1, "Breeding date is required"),
   expectedKiddingDate: z.string().optional(),
   notes: z.string().optional(),
@@ -203,10 +205,9 @@ export default function BreedingNew() {
     { query: { queryKey: getListGoatsQueryKey() } }
   );
 
-  const { data: breedings } = useListBreedings(
-    {},
-    { query: { queryKey: getListBreedingsQueryKey() } }
-  );
+  const { data: breedings } = useListBreedings({
+    query: { queryKey: getListBreedingsQueryKey() },
+  });
 
   const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
 
@@ -234,7 +235,9 @@ export default function BreedingNew() {
   const breedingForm = useForm<BreedingValues>({
     resolver: zodResolver(breedingSchema),
     defaultValues: {
+      breedingMethod: "natural",
       sireName: "",
+      semenSource: "",
       breedingDate: new Date().toISOString().slice(0, 10),
       expectedKiddingDate: "",
       notes: "",
@@ -258,6 +261,8 @@ export default function BreedingNew() {
   });
 
   const breedingDate = breedingForm.watch("breedingDate");
+  const breedingMethod = breedingForm.watch("breedingMethod");
+  const isAi = breedingMethod === "ai";
   const kiddingDate = historicalForm.watch("kiddingDate");
 
   const computedExpected = (() => {
@@ -279,7 +284,9 @@ export default function BreedingNew() {
       {
         data: {
           doeId: data.doeId,
+          breedingMethod: data.breedingMethod,
           sireName: data.sireName,
+          semenSource: data.breedingMethod === "ai" && data.semenSource ? data.semenSource : undefined,
           breedingDate: new Date(data.breedingDate).toISOString(),
           expectedKiddingDate: data.expectedKiddingDate
             ? new Date(data.expectedKiddingDate).toISOString()
@@ -394,6 +401,36 @@ export default function BreedingNew() {
             <CardContent>
               <Form {...breedingForm}>
                 <form onSubmit={breedingForm.handleSubmit(handleBreedingSubmit)} className="space-y-6">
+                  <FormField control={breedingForm.control} name="breedingMethod" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Breeding Method</FormLabel>
+                      <FormControl>
+                        <div className="flex rounded-lg border border-border overflow-hidden bg-background/50 w-full sm:w-fit">
+                          <button
+                            type="button"
+                            onClick={() => field.onChange("natural")}
+                            className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium transition-colors ${field.value === "natural" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+                          >
+                            Natural Service
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => field.onChange("ai")}
+                            className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium transition-colors ${field.value === "ai" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+                          >
+                            Artificial Insemination
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        {isAi
+                          ? "AI — no buck on the property. The breeding date is the insemination date."
+                          : "Natural service — a buck is placed with the doe."}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={breedingForm.control} name="doeId" render={({ field }) => (
                       <FormItem>
@@ -422,7 +459,7 @@ export default function BreedingNew() {
 
                     <FormField control={breedingForm.control} name="sireName" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sire (Buck)</FormLabel>
+                        <FormLabel>{isAi ? "Sire / Straw ID" : "Sire (Buck)"}</FormLabel>
                         <FormControl>
                           <SireSelect
                             value={field.value}
@@ -434,9 +471,22 @@ export default function BreedingNew() {
                       </FormItem>
                     )} />
 
+                    {isAi && (
+                      <FormField control={breedingForm.control} name="semenSource" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Semen Source (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Supplier, lot/straw #, etc." {...field} className="bg-background/50" />
+                          </FormControl>
+                          <FormDescription>Where the straw came from — supplier or stud service.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    )}
+
                     <FormField control={breedingForm.control} name="breedingDate" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Breeding Date</FormLabel>
+                        <FormLabel>{isAi ? "Insemination Date" : "Breeding Date"}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} className="bg-background/50" />
                         </FormControl>

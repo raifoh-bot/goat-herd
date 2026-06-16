@@ -135,8 +135,8 @@ export default function ImportGoats() {
     const ws = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { header: 1, defval: null });
     if (raw.length === 0) return;
-    const headerRow = (raw[0] as unknown[]).map((h) => (h !== null && h !== undefined ? String(h) : "")).filter(Boolean);
-    const dataRows = (raw.slice(1) as unknown[][])
+    const headerRow = (raw[0] as unknown as unknown[]).map((h) => (h !== null && h !== undefined ? String(h) : "")).filter(Boolean);
+    const dataRows = (raw.slice(1) as unknown as unknown[][])
       .filter((r) => r.some((c) => c !== null && c !== undefined && c !== ""))
       .map((r) => {
         const obj: Record<string, unknown> = {};
@@ -196,7 +196,7 @@ export default function ImportGoats() {
     }
 
     importGoats.mutate(
-      { data: { goats: goats as Parameters<typeof importGoats.mutate>[0]["data"]["goats"] } },
+      { data: { goats: goats as unknown as Parameters<typeof importGoats.mutate>[0]["data"]["goats"] } },
       {
         onSuccess: (res) => {
           setResult(res);

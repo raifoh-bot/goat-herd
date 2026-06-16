@@ -56,6 +56,7 @@ function BreedingCard({
     : new Date(breedingDate.getTime() + 145 * 24 * 60 * 60 * 1000);
   const daysUntilKidding = Math.ceil((expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
+  const isAi = breeding.breedingMethod === "ai";
   const showExposureButton = breeding.status === "bred" || breeding.status === "confirmed-pregnant";
   const isExposed = breeding.hasActiveExposure;
   const doeName = breeding.doe?.name ?? `Doe #${breeding.doeId}`;
@@ -98,7 +99,13 @@ function BreedingCard({
                 <StatusIcon className="h-3 w-3" />
                 {config.label}
               </Badge>
-              {isExposed && (
+              {isAi && (
+                <Badge className="bg-violet-500/15 text-violet-700 border border-violet-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-violet-300 dark:bg-violet-500/10">
+                  <Zap className="h-3 w-3" />
+                  AI
+                </Badge>
+              )}
+              {!isAi && isExposed && (
                 <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-amber-400 dark:bg-amber-500/10">
                   <Zap className="h-3 w-3" />
                   Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}{breeding.firstExposedDate ? ` · Since ${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })}` : ""}
@@ -188,7 +195,21 @@ function BreedingCard({
             <p className="mt-3 text-xs text-muted-foreground line-clamp-2 italic border-t border-border pt-3">{breeding.notes}</p>
           )}
 
-          {showExposureButton && (
+          {showExposureButton && isAi && (
+            <div className="mt-3 border-t border-border pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs h-8 border-rose-400/40 text-rose-700 hover:bg-rose-50 hover:border-rose-500/60 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                onClick={handleCoverClick}
+              >
+                <Flame className="h-3.5 w-3.5 mr-1.5" />
+                Log Cover
+              </Button>
+            </div>
+          )}
+
+          {showExposureButton && !isAi && (
             <div className="mt-3 border-t border-border pt-3">
               {isExposed ? (
                 <div className="flex gap-2">

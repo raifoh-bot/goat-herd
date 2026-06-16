@@ -1,0 +1,1 @@
+- [Typecheck & codegen pitfalls](typecheck-codegen-pitfalls.md) — codegen regen forces tsc rebuild, surfacing 3 latent failures (api-zod barrel TS2308, deep api-client-react imports TS2307, composite lib TS6306); full `pnpm run typecheck` short-circuits at libs.

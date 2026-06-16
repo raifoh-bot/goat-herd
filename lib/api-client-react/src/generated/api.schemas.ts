@@ -293,6 +293,17 @@ export interface UpdateGoatBody {
   leftEarTattoo?: string;
 }
 
+/**
+ * Breeding method — natural service (buck placed with doe) or artificial insemination
+ */
+export type BreedingBreedingMethod =
+  (typeof BreedingBreedingMethod)[keyof typeof BreedingBreedingMethod];
+
+export const BreedingBreedingMethod = {
+  natural: "natural",
+  ai: "ai",
+} as const;
+
 export type BreedingStatus =
   (typeof BreedingStatus)[keyof typeof BreedingStatus];
 
@@ -307,6 +318,10 @@ export interface Breeding {
   id: number;
   doeId: number;
   sireName: string;
+  /** Breeding method — natural service (buck placed with doe) or artificial insemination */
+  breedingMethod: BreedingBreedingMethod;
+  /** Optional free-text semen source/supplier note (AI breedings) */
+  semenSource?: string | null;
   breedingDate: string;
   expectedKiddingDate?: string;
   status: BreedingStatus;
@@ -402,6 +417,14 @@ export interface CreateBreedingEventBody {
   notes?: string;
 }
 
+export type CreateBreedingBodyBreedingMethod =
+  (typeof CreateBreedingBodyBreedingMethod)[keyof typeof CreateBreedingBodyBreedingMethod];
+
+export const CreateBreedingBodyBreedingMethod = {
+  natural: "natural",
+  ai: "ai",
+} as const;
+
 export type CreateBreedingBodyStatus =
   (typeof CreateBreedingBodyStatus)[keyof typeof CreateBreedingBodyStatus];
 
@@ -415,11 +438,21 @@ export const CreateBreedingBodyStatus = {
 export interface CreateBreedingBody {
   doeId: number;
   sireName: string;
+  breedingMethod?: CreateBreedingBodyBreedingMethod;
+  semenSource?: string;
   breedingDate: string;
   expectedKiddingDate?: string;
   status?: CreateBreedingBodyStatus;
   notes?: string;
 }
+
+export type UpdateBreedingBodyBreedingMethod =
+  (typeof UpdateBreedingBodyBreedingMethod)[keyof typeof UpdateBreedingBodyBreedingMethod];
+
+export const UpdateBreedingBodyBreedingMethod = {
+  natural: "natural",
+  ai: "ai",
+} as const;
 
 export type UpdateBreedingBodyStatus =
   (typeof UpdateBreedingBodyStatus)[keyof typeof UpdateBreedingBodyStatus];
@@ -433,6 +466,8 @@ export const UpdateBreedingBodyStatus = {
 
 export interface UpdateBreedingBody {
   sireName?: string;
+  breedingMethod?: UpdateBreedingBodyBreedingMethod;
+  semenSource?: string;
   breedingDate?: string;
   expectedKiddingDate?: string;
   status?: UpdateBreedingBodyStatus;

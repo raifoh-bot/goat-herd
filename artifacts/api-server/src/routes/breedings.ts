@@ -115,12 +115,15 @@ router.post("/breedings", async (req, res): Promise<void> => {
   }
 
   const initialStatus = parsed.data.status ?? "bred";
+  const breedingMethod = parsed.data.breedingMethod ?? "natural";
 
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
       doeId: parsed.data.doeId,
       sireName: parsed.data.sireName,
+      breedingMethod,
+      semenSource: parsed.data.semenSource,
       breedingDate: new Date(parsed.data.breedingDate),
       expectedKiddingDate: parsed.data.expectedKiddingDate ? new Date(parsed.data.expectedKiddingDate) : null,
       notes: parsed.data.notes,
@@ -128,9 +131,11 @@ router.post("/breedings", async (req, res): Promise<void> => {
     })
     .returning();
 
+  // Natural service starts with the doe exposed to the buck. AI has no exposure —
+  // the breeding date is the insemination, so the doe is already serviced.
   await db
     .update(goatsTable)
-    .set({ lactationStatus: "exposed", updatedAt: new Date() })
+    .set({ lactationStatus: breedingMethod === "ai" ? "serviced" : "exposed", updatedAt: new Date() })
     .where(eq(goatsTable.id, parsed.data.doeId));
 
   res.status(201).json(breeding);
@@ -193,6 +198,8 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.sireName !== undefined) updateData.sireName = parsed.data.sireName;
+  if (parsed.data.breedingMethod !== undefined) updateData.breedingMethod = parsed.data.breedingMethod;
+  if (parsed.data.semenSource !== undefined) updateData.semenSource = parsed.data.semenSource;
   if (parsed.data.breedingDate !== undefined) updateData.breedingDate = new Date(parsed.data.breedingDate);
   if (parsed.data.expectedKiddingDate !== undefined) updateData.expectedKiddingDate = new Date(parsed.data.expectedKiddingDate);
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;

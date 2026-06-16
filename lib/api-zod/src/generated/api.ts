@@ -481,6 +481,17 @@ export const ListBreedingsResponseItem = zod
     id: zod.number(),
     doeId: zod.number(),
     sireName: zod.string(),
+    breedingMethod: zod
+      .enum(["natural", "ai"])
+      .describe(
+        "Breeding method — natural service (buck placed with doe) or artificial insemination",
+      ),
+    semenSource: zod
+      .string()
+      .nullish()
+      .describe(
+        "Optional free-text semen source\/supplier note (AI breedings)",
+      ),
     breedingDate: zod.coerce.date(),
     expectedKiddingDate: zod.coerce.date().optional(),
     status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -624,6 +635,8 @@ export const ListBreedingsResponse = zod.array(ListBreedingsResponseItem);
 export const CreateBreedingBody = zod.object({
   doeId: zod.number(),
   sireName: zod.string(),
+  breedingMethod: zod.enum(["natural", "ai"]).optional(),
+  semenSource: zod.string().optional(),
   breedingDate: zod.coerce.date(),
   expectedKiddingDate: zod.coerce.date().optional(),
   status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]).optional(),
@@ -649,6 +662,17 @@ export const GetBreedingResponse = zod
     id: zod.number(),
     doeId: zod.number(),
     sireName: zod.string(),
+    breedingMethod: zod
+      .enum(["natural", "ai"])
+      .describe(
+        "Breeding method — natural service (buck placed with doe) or artificial insemination",
+      ),
+    semenSource: zod
+      .string()
+      .nullish()
+      .describe(
+        "Optional free-text semen source\/supplier note (AI breedings)",
+      ),
     breedingDate: zod.coerce.date(),
     expectedKiddingDate: zod.coerce.date().optional(),
     status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -775,6 +799,8 @@ export const UpdateBreedingParams = zod.object({
 
 export const UpdateBreedingBody = zod.object({
   sireName: zod.string().optional(),
+  breedingMethod: zod.enum(["natural", "ai"]).optional(),
+  semenSource: zod.string().optional(),
   breedingDate: zod.coerce.date().optional(),
   expectedKiddingDate: zod.coerce.date().optional(),
   status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]).optional(),
@@ -785,6 +811,15 @@ export const UpdateBreedingResponse = zod.object({
   id: zod.number(),
   doeId: zod.number(),
   sireName: zod.string(),
+  breedingMethod: zod
+    .enum(["natural", "ai"])
+    .describe(
+      "Breeding method — natural service (buck placed with doe) or artificial insemination",
+    ),
+  semenSource: zod
+    .string()
+    .nullish()
+    .describe("Optional free-text semen source\/supplier note (AI breedings)"),
   breedingDate: zod.coerce.date(),
   expectedKiddingDate: zod.coerce.date().optional(),
   status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),

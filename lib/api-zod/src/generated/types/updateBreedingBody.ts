@@ -5,10 +5,13 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateBreedingBodyBreedingMethod } from "./updateBreedingBodyBreedingMethod";
 import type { UpdateBreedingBodyStatus } from "./updateBreedingBodyStatus";
 
 export interface UpdateBreedingBody {
   sireName?: string;
+  breedingMethod?: UpdateBreedingBodyBreedingMethod;
+  semenSource?: string;
   breedingDate?: Date;
   expectedKiddingDate?: Date;
   status?: UpdateBreedingBodyStatus;

@@ -727,6 +727,14 @@ components:
           type: integer
         sireName:
           type: string
+        breedingMethod:
+          type: string
+          enum: [natural, ai]
+          description: Breeding method — natural service (buck placed with doe) or artificial insemination
+        semenSource:
+          type: string
+          nullable: true
+          description: Optional free-text semen source/supplier note (AI breedings)
         breedingDate:
           type: string
           format: date-time
@@ -748,6 +756,7 @@ components:
         - id
         - doeId
         - sireName
+        - breedingMethod
         - breedingDate
         - status
         - createdAt
@@ -855,6 +864,11 @@ components:
           type: integer
         sireName:
           type: string
+        breedingMethod:
+          type: string
+          enum: [natural, ai]
+        semenSource:
+          type: string
         breedingDate:
           type: string
           format: date-time
@@ -875,6 +889,11 @@ components:
       type: object
       properties:
         sireName:
+          type: string
+        breedingMethod:
+          type: string
+          enum: [natural, ai]
+        semenSource:
           type: string
         breedingDate:
           type: string
