@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedAdmin } from "./lib/seedAdmin";
+import { ensureSessionTable } from "./lib/ensureSessionTable";
 
 const rawPort = process.env["PORT"];
 
@@ -16,15 +17,26 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+async function start(): Promise<void> {
+  // Provision the session table before serving traffic so the very first
+  // login can persist a session.
+  await ensureSessionTable();
 
-  logger.info({ port }, "Server listening");
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-  seedAdmin().catch((err) => {
-    logger.error({ err }, "Admin seed failed");
+    logger.info({ port }, "Server listening");
+
+    seedAdmin().catch((err) => {
+      logger.error({ err }, "Admin seed failed");
+    });
   });
+}
+
+start().catch((err) => {
+  logger.error({ err }, "Failed to start server");
+  process.exit(1);
 });

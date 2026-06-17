@@ -21,10 +21,14 @@ export function createSessionMiddleware(): RequestHandler {
   }
 
   const PgStore = connectPgSimple(session);
+  // Do NOT use createTableIfMissing — connect-pg-simple reads a `table.sql`
+  // file relative to its module dir, which breaks once the server is bundled
+  // (esbuild rewrites __dirname to dist/). The table is provisioned explicitly
+  // at boot via ensureSessionTable() instead.
   const store = new PgStore({
     pool,
     tableName: "user_sessions",
-    createTableIfMissing: true,
+    createTableIfMissing: false,
   });
 
   const isProduction = process.env.NODE_ENV === "production";

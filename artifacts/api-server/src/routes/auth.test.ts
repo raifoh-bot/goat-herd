@@ -4,6 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, usersTable, goatsTable } from "@workspace/db";
 import app from "../app";
+import { ensureSessionTable } from "../lib/ensureSessionTable";
 
 // Exercises the authentication and role-enforcement layer end-to-end against the
 // live database. Three users (admin, farmhand, deactivated) are seeded up front
@@ -40,6 +41,7 @@ async function login(creds: { username: string; password: string }): Promise<Age
 }
 
 beforeAll(async () => {
+  await ensureSessionTable();
   await seedUser(ADMIN.username, ADMIN.password, "admin");
   await seedUser(HAND.username, HAND.password, "farmhand");
   await seedUser(INACTIVE.username, INACTIVE.password, "admin", false);
