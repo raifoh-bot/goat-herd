@@ -13,6 +13,8 @@ export interface CreateBreedingBody {
   sireName: string;
   breedingMethod?: CreateBreedingBodyBreedingMethod;
   semenSource?: string;
+  /** Optional semen straw inventory entry to draw from — decrements its count by one (AI breedings) */
+  semenStrawId?: number;
   breedingDate: Date;
   expectedKiddingDate?: Date;
   status?: CreateBreedingBodyStatus;

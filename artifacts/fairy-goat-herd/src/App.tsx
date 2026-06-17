@@ -11,6 +11,7 @@ import GoatDetails from "@/pages/goats/[id]";
 import BreedingsList from "@/pages/breedings/index";
 import BreedingNew from "@/pages/breedings/new";
 import BreedingDetail from "@/pages/breedings/[id]";
+import InventoryList from "@/pages/inventory/index";
 import LineageReports from "@/pages/lineage";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/breedings" component={BreedingsList} />
       <Route path="/breedings/new" component={BreedingNew} />
       <Route path="/breedings/:id" component={BreedingDetail} />
+      <Route path="/inventory" component={InventoryList} />
       <Route path="/lineage" component={LineageReports} />
       <Route component={NotFound} />
     </Switch>

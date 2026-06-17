@@ -17,10 +17,12 @@ import {
   getListBreedingsQueryKey,
   getListGoatsQueryKey,
   getGetBreedingQueryKey,
+  getListSemenStrawsQueryKey,
   useAddKids,
   useCreateBreeding,
   useListGoats,
   useListBreedings,
+  useListSemenStraws,
 } from "@workspace/api-client-react";
 
 const NEW_SENTINEL = "__new__";
@@ -169,6 +171,7 @@ const breedingSchema = z.object({
   breedingMethod: z.enum(["natural", "ai"]),
   sireName: z.string().min(1, "Sire name is required"),
   semenSource: z.string().optional(),
+  semenStrawId: z.string().optional(),
   breedingDate: z.string().min(1, "Breeding date is required"),
   expectedKiddingDate: z.string().optional(),
   notes: z.string().optional(),
@@ -209,6 +212,15 @@ export default function BreedingNew() {
     query: { queryKey: getListBreedingsQueryKey() },
   });
 
+  const { data: semenStraws } = useListSemenStraws({
+    query: { queryKey: getListSemenStrawsQueryKey() },
+  });
+
+  const availableStraws = useMemo(
+    () => (semenStraws ?? []).filter((s) => s.count > 0),
+    [semenStraws]
+  );
+
   const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
 
   const goatNames = useMemo(() => {
@@ -238,6 +250,7 @@ export default function BreedingNew() {
       breedingMethod: "natural",
       sireName: "",
       semenSource: "",
+      semenStrawId: "",
       breedingDate: new Date().toISOString().slice(0, 10),
       expectedKiddingDate: "",
       notes: "",
@@ -287,6 +300,10 @@ export default function BreedingNew() {
           breedingMethod: data.breedingMethod,
           sireName: data.sireName,
           semenSource: data.breedingMethod === "ai" && data.semenSource ? data.semenSource : undefined,
+          semenStrawId:
+            data.breedingMethod === "ai" && data.semenStrawId
+              ? Number(data.semenStrawId)
+              : undefined,
           breedingDate: new Date(data.breedingDate).toISOString(),
           expectedKiddingDate: data.expectedKiddingDate
             ? new Date(data.expectedKiddingDate).toISOString()
@@ -479,6 +496,35 @@ export default function BreedingNew() {
                             <Input placeholder="Supplier, lot/straw #, etc." {...field} className="bg-background/50" />
                           </FormControl>
                           <FormDescription>Where the straw came from — supplier or stud service.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    )}
+
+                    {isAi && availableStraws.length > 0 && (
+                      <FormField control={breedingForm.control} name="semenStrawId" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Draw From Inventory (Optional)</FormLabel>
+                          <Select
+                            onValueChange={(v) => field.onChange(v === NEW_SENTINEL ? "" : v)}
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue placeholder="Don't draw from inventory" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value={NEW_SENTINEL}>Don't draw from inventory</SelectItem>
+                              {availableStraws.map((s) => (
+                                <SelectItem key={s.id} value={s.id.toString()}>
+                                  {s.sireName}
+                                  {s.strawId ? ` · ${s.strawId}` : ""} ({s.count} left)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Selecting a straw will decrement its count by one.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />

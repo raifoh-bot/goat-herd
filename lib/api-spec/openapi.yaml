@@ -15,6 +15,8 @@ tags:
     description: Breeding and kidding records
   - name: dashboard
     description: Herd dashboard and stats
+  - name: semen
+    description: Frozen semen straw inventory
   - name: Storage
     description: Object storage upload and serving endpoints.
 
@@ -460,6 +462,80 @@ paths:
         "404":
           description: Kid not found
 
+  /semen-straws:
+    get:
+      operationId: listSemenStraws
+      tags: [semen]
+      summary: List semen straw inventory
+      responses:
+        "200":
+          description: List of semen straw inventory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SemenStraw"
+    post:
+      operationId: createSemenStraw
+      tags: [semen]
+      summary: Add semen straws to inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSemenStrawBody"
+      responses:
+        "201":
+          description: Created semen straw inventory entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemenStraw"
+
+  /semen-straws/{id}:
+    put:
+      operationId: updateSemenStraw
+      tags: [semen]
+      summary: Update a semen straw inventory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSemenStrawBody"
+      responses:
+        "200":
+          description: Updated semen straw inventory entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemenStraw"
+        "404":
+          description: Semen straw entry not found
+    delete:
+      operationId: deleteSemenStraw
+      tags: [semen]
+      summary: Delete a semen straw inventory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Semen straw entry deleted
+        "404":
+          description: Semen straw entry not found
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -869,6 +945,9 @@ components:
           enum: [natural, ai]
         semenSource:
           type: string
+        semenStrawId:
+          type: integer
+          description: Optional semen straw inventory entry to draw from — decrements its count by one (AI breedings)
         breedingDate:
           type: string
           format: date-time
@@ -904,6 +983,78 @@ components:
         status:
           type: string
           enum: [bred, confirmed-pregnant, kidded, open]
+        notes:
+          type: string
+
+    SemenStraw:
+      type: object
+      properties:
+        id:
+          type: integer
+        sireName:
+          type: string
+        strawId:
+          type: string
+          nullable: true
+          description: Optional straw or batch identifier
+        supplier:
+          type: string
+          nullable: true
+        count:
+          type: integer
+          description: Number of straws remaining on hand
+        tankLocation:
+          type: string
+          nullable: true
+          description: Location in the storage tank (e.g. canister/cane)
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sireName
+        - count
+        - createdAt
+        - updatedAt
+
+    CreateSemenStrawBody:
+      type: object
+      properties:
+        sireName:
+          type: string
+        strawId:
+          type: string
+        supplier:
+          type: string
+        count:
+          type: integer
+        tankLocation:
+          type: string
+        notes:
+          type: string
+      required:
+        - sireName
+        - count
+
+    UpdateSemenStrawBody:
+      type: object
+      properties:
+        sireName:
+          type: string
+        strawId:
+          type: string
+        supplier:
+          type: string
+        count:
+          type: integer
+        tankLocation:
+          type: string
         notes:
           type: string
 

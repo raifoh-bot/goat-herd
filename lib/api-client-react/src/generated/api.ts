@@ -26,6 +26,7 @@ import type {
   CreateBreedingBody,
   CreateBreedingEventBody,
   CreateGoatBody,
+  CreateSemenStrawBody,
   DashboardSummary,
   ErrorEnvelope,
   Goat,
@@ -34,9 +35,11 @@ import type {
   ImportGoatsResult,
   Kid,
   ListGoatsParams,
+  SemenStraw,
   UpdateBreedingBody,
   UpdateGoatBody,
   UpdateKidBody,
+  UpdateSemenStrawBody,
   UploadUrlRequest,
   UploadUrlResponse,
 } from "./api.schemas";
@@ -1752,6 +1755,338 @@ export const useDeleteKid = <
   TContext
 > => {
   return useMutation(getDeleteKidMutationOptions(options));
+};
+
+/**
+ * @summary List semen straw inventory
+ */
+export const getListSemenStrawsUrl = () => {
+  return `/api/semen-straws`;
+};
+
+export const listSemenStraws = async (
+  options?: RequestInit,
+): Promise<SemenStraw[]> => {
+  return customFetch<SemenStraw[]>(getListSemenStrawsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSemenStrawsQueryKey = () => {
+  return [`/api/semen-straws`] as const;
+};
+
+export const getListSemenStrawsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSemenStraws>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenStraws>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSemenStrawsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSemenStraws>>> = ({
+    signal,
+  }) => listSemenStraws({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenStraws>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSemenStrawsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSemenStraws>>
+>;
+export type ListSemenStrawsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List semen straw inventory
+ */
+
+export function useListSemenStraws<
+  TData = Awaited<ReturnType<typeof listSemenStraws>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenStraws>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSemenStrawsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add semen straws to inventory
+ */
+export const getCreateSemenStrawUrl = () => {
+  return `/api/semen-straws`;
+};
+
+export const createSemenStraw = async (
+  createSemenStrawBody: CreateSemenStrawBody,
+  options?: RequestInit,
+): Promise<SemenStraw> => {
+  return customFetch<SemenStraw>(getCreateSemenStrawUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSemenStrawBody),
+  });
+};
+
+export const getCreateSemenStrawMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSemenStraw>>,
+    TError,
+    { data: BodyType<CreateSemenStrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSemenStraw>>,
+  TError,
+  { data: BodyType<CreateSemenStrawBody> },
+  TContext
+> => {
+  const mutationKey = ["createSemenStraw"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSemenStraw>>,
+    { data: BodyType<CreateSemenStrawBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSemenStraw(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSemenStrawMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSemenStraw>>
+>;
+export type CreateSemenStrawMutationBody = BodyType<CreateSemenStrawBody>;
+export type CreateSemenStrawMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add semen straws to inventory
+ */
+export const useCreateSemenStraw = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSemenStraw>>,
+    TError,
+    { data: BodyType<CreateSemenStrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSemenStraw>>,
+  TError,
+  { data: BodyType<CreateSemenStrawBody> },
+  TContext
+> => {
+  return useMutation(getCreateSemenStrawMutationOptions(options));
+};
+
+/**
+ * @summary Update a semen straw inventory entry
+ */
+export const getUpdateSemenStrawUrl = (id: number) => {
+  return `/api/semen-straws/${id}`;
+};
+
+export const updateSemenStraw = async (
+  id: number,
+  updateSemenStrawBody: UpdateSemenStrawBody,
+  options?: RequestInit,
+): Promise<SemenStraw> => {
+  return customFetch<SemenStraw>(getUpdateSemenStrawUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSemenStrawBody),
+  });
+};
+
+export const getUpdateSemenStrawMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSemenStraw>>,
+    TError,
+    { id: number; data: BodyType<UpdateSemenStrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSemenStraw>>,
+  TError,
+  { id: number; data: BodyType<UpdateSemenStrawBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSemenStraw"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSemenStraw>>,
+    { id: number; data: BodyType<UpdateSemenStrawBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSemenStraw(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSemenStrawMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSemenStraw>>
+>;
+export type UpdateSemenStrawMutationBody = BodyType<UpdateSemenStrawBody>;
+export type UpdateSemenStrawMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a semen straw inventory entry
+ */
+export const useUpdateSemenStraw = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSemenStraw>>,
+    TError,
+    { id: number; data: BodyType<UpdateSemenStrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSemenStraw>>,
+  TError,
+  { id: number; data: BodyType<UpdateSemenStrawBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSemenStrawMutationOptions(options));
+};
+
+/**
+ * @summary Delete a semen straw inventory entry
+ */
+export const getDeleteSemenStrawUrl = (id: number) => {
+  return `/api/semen-straws/${id}`;
+};
+
+export const deleteSemenStraw = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteSemenStrawUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteSemenStrawMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSemenStraw>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSemenStraw>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteSemenStraw"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSemenStraw>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteSemenStraw(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteSemenStrawMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSemenStraw>>
+>;
+
+export type DeleteSemenStrawMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a semen straw inventory entry
+ */
+export const useDeleteSemenStraw = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSemenStraw>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteSemenStraw>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteSemenStrawMutationOptions(options));
 };
 
 /**

@@ -11,8 +11,10 @@ export {
   CreateBreedingBody,
   CreateBreedingEventBody,
   CreateGoatBody,
+  CreateSemenStrawBody,
   ImportGoatsBody,
   UpdateBreedingBody,
   UpdateGoatBody,
   UpdateKidBody,
+  UpdateSemenStrawBody,
 } from "./generated/api";

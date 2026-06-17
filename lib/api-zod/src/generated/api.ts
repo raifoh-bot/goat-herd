@@ -637,6 +637,12 @@ export const CreateBreedingBody = zod.object({
   sireName: zod.string(),
   breedingMethod: zod.enum(["natural", "ai"]).optional(),
   semenSource: zod.string().optional(),
+  semenStrawId: zod
+    .number()
+    .optional()
+    .describe(
+      "Optional semen straw inventory entry to draw from — decrements its count by one (AI breedings)",
+    ),
   breedingDate: zod.coerce.date(),
   expectedKiddingDate: zod.coerce.date().optional(),
   status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]).optional(),
@@ -920,6 +926,81 @@ export const UpdateKidResponse = zod.object({
 export const DeleteKidParams = zod.object({
   id: zod.coerce.number(),
   kidId: zod.coerce.number(),
+});
+
+/**
+ * @summary List semen straw inventory
+ */
+export const ListSemenStrawsResponseItem = zod.object({
+  id: zod.number(),
+  sireName: zod.string(),
+  strawId: zod
+    .string()
+    .nullish()
+    .describe("Optional straw or batch identifier"),
+  supplier: zod.string().nullish(),
+  count: zod.number().describe("Number of straws remaining on hand"),
+  tankLocation: zod
+    .string()
+    .nullish()
+    .describe("Location in the storage tank (e.g. canister\/cane)"),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSemenStrawsResponse = zod.array(ListSemenStrawsResponseItem);
+
+/**
+ * @summary Add semen straws to inventory
+ */
+export const CreateSemenStrawBody = zod.object({
+  sireName: zod.string(),
+  strawId: zod.string().optional(),
+  supplier: zod.string().optional(),
+  count: zod.number(),
+  tankLocation: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a semen straw inventory entry
+ */
+export const UpdateSemenStrawParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateSemenStrawBody = zod.object({
+  sireName: zod.string().optional(),
+  strawId: zod.string().optional(),
+  supplier: zod.string().optional(),
+  count: zod.number().optional(),
+  tankLocation: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateSemenStrawResponse = zod.object({
+  id: zod.number(),
+  sireName: zod.string(),
+  strawId: zod
+    .string()
+    .nullish()
+    .describe("Optional straw or batch identifier"),
+  supplier: zod.string().nullish(),
+  count: zod.number().describe("Number of straws remaining on hand"),
+  tankLocation: zod
+    .string()
+    .nullish()
+    .describe("Location in the storage tank (e.g. canister\/cane)"),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a semen straw inventory entry
+ */
+export const DeleteSemenStrawParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

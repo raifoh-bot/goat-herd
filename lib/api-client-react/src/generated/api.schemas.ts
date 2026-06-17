@@ -440,6 +440,8 @@ export interface CreateBreedingBody {
   sireName: string;
   breedingMethod?: CreateBreedingBodyBreedingMethod;
   semenSource?: string;
+  /** Optional semen straw inventory entry to draw from — decrements its count by one (AI breedings) */
+  semenStrawId?: number;
   breedingDate: string;
   expectedKiddingDate?: string;
   status?: CreateBreedingBodyStatus;
@@ -471,6 +473,39 @@ export interface UpdateBreedingBody {
   breedingDate?: string;
   expectedKiddingDate?: string;
   status?: UpdateBreedingBodyStatus;
+  notes?: string;
+}
+
+export interface SemenStraw {
+  id: number;
+  sireName: string;
+  /** Optional straw or batch identifier */
+  strawId?: string | null;
+  supplier?: string | null;
+  /** Number of straws remaining on hand */
+  count: number;
+  /** Location in the storage tank (e.g. canister/cane) */
+  tankLocation?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSemenStrawBody {
+  sireName: string;
+  strawId?: string;
+  supplier?: string;
+  count: number;
+  tankLocation?: string;
+  notes?: string;
+}
+
+export interface UpdateSemenStrawBody {
+  sireName?: string;
+  strawId?: string;
+  supplier?: string;
+  count?: number;
+  tankLocation?: string;
   notes?: string;
 }
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { asc, desc, eq, max } from "drizzle-orm";
-import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable } from "@workspace/db";
+import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable, semenStrawsTable } from "@workspace/db";
 import {
   CreateBreedingBody,
   UpdateBreedingBody,
@@ -117,6 +117,23 @@ router.post("/breedings", async (req, res): Promise<void> => {
   const initialStatus = parsed.data.status ?? "bred";
   const breedingMethod = parsed.data.breedingMethod ?? "natural";
 
+  // If drawing from semen inventory, verify the straw exists and has stock before recording.
+  let drawStraw: typeof semenStrawsTable.$inferSelect | undefined;
+  if (parsed.data.semenStrawId != null) {
+    [drawStraw] = await db
+      .select()
+      .from(semenStrawsTable)
+      .where(eq(semenStrawsTable.id, parsed.data.semenStrawId));
+    if (!drawStraw) {
+      res.status(404).json({ error: "Semen straw not found" });
+      return;
+    }
+    if (drawStraw.count <= 0) {
+      res.status(400).json({ error: "No straws remaining for this inventory entry" });
+      return;
+    }
+  }
+
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
@@ -137,6 +154,14 @@ router.post("/breedings", async (req, res): Promise<void> => {
     .update(goatsTable)
     .set({ lactationStatus: breedingMethod === "ai" ? "serviced" : "exposed", updatedAt: new Date() })
     .where(eq(goatsTable.id, parsed.data.doeId));
+
+  // Decrement the drawn straw from inventory (one straw per insemination).
+  if (drawStraw) {
+    await db
+      .update(semenStrawsTable)
+      .set({ count: drawStraw.count - 1, updatedAt: new Date() })
+      .where(eq(semenStrawsTable.id, drawStraw.id));
+  }
 
   res.status(201).json(breeding);
 });
