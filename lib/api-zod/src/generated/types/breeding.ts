@@ -16,6 +16,8 @@ export interface Breeding {
   breedingMethod: BreedingBreedingMethod;
   /** Optional free-text semen source/supplier note (AI breedings) */
   semenSource?: string | null;
+  /** The semen straw inventory entry this AI breeding was drawn from, if any */
+  semenStrawId?: number | null;
   breedingDate: Date;
   expectedKiddingDate?: Date;
   status: BreedingStatus;

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, goatsTable, breedingsTable, kidsTable, usersTable } from "@workspace/db";
+import { db, goatsTable, breedingsTable, kidsTable, usersTable, semenStrawsTable } from "@workspace/db";
 import app from "../app";
 
 // These integration tests exercise the doe lactation-status side effects driven by
@@ -13,6 +13,7 @@ import app from "../app";
 
 const createdGoatIds: number[] = [];
 const createdBreedingIds: number[] = [];
+const createdStrawIds: number[] = [];
 
 const TEST_USERNAME = `test-admin-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const TEST_PASSWORD = "test-password-123";
@@ -48,6 +49,39 @@ async function createBreeding(doeId: number, status: "bred" | "confirmed-pregnan
   return breeding;
 }
 
+async function createStraw(pedigree?: {
+  sireDamName?: string;
+  sireSireName?: string;
+}) {
+  const [straw] = await db
+    .insert(semenStrawsTable)
+    .values({
+      sireName: `Test AI Sire ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      count: 5,
+      sireDamName: pedigree?.sireDamName ?? null,
+      sireSireName: pedigree?.sireSireName ?? null,
+    })
+    .returning();
+  createdStrawIds.push(straw.id);
+  return straw;
+}
+
+async function createAiBreeding(doeId: number, sireName: string, semenStrawId: number | null) {
+  const [breeding] = await db
+    .insert(breedingsTable)
+    .values({
+      doeId,
+      sireName,
+      breedingMethod: "ai",
+      semenStrawId,
+      breedingDate: new Date(),
+      status: "confirmed-pregnant",
+    })
+    .returning();
+  createdBreedingIds.push(breeding.id);
+  return breeding;
+}
+
 async function getDoe(id: number) {
   const [doe] = await db.select().from(goatsTable).where(eq(goatsTable.id, id));
   return doe;
@@ -56,10 +90,21 @@ async function getDoe(id: number) {
 afterEach(async () => {
   // Remove any kids created off tracked breedings, then breedings, then goats.
   for (const breedingId of createdBreedingIds) {
+    // Recording kids can auto-create herd goat records; remove those too so no
+    // orphaned rows survive the test.
+    const kids = await db.select().from(kidsTable).where(eq(kidsTable.breedingId, breedingId));
     await db.delete(kidsTable).where(eq(kidsTable.breedingId, breedingId));
+    for (const kid of kids) {
+      if (kid.goatId != null) await db.delete(goatsTable).where(eq(goatsTable.id, kid.goatId));
+    }
     await db.delete(breedingsTable).where(eq(breedingsTable.id, breedingId));
   }
   createdBreedingIds.length = 0;
+
+  for (const strawId of createdStrawIds) {
+    await db.delete(semenStrawsTable).where(eq(semenStrawsTable.id, strawId));
+  }
+  createdStrawIds.length = 0;
 
   for (const goatId of createdGoatIds) {
     await db.delete(goatsTable).where(eq(goatsTable.id, goatId));
@@ -183,5 +228,68 @@ describe("POST /api/breedings/:id/kids doe status transition", () => {
       .from(breedingsTable)
       .where(eq(breedingsTable.id, breeding.id));
     expect(updatedBreeding.status).toBe("kidded");
+  });
+});
+
+describe("POST /api/breedings/:id/kids paternal pedigree inheritance", () => {
+  it("AI kidding inherits paternal grandparents from the linked semen straw", async () => {
+    const doe = await createDoe("pregnant");
+    const straw = await createStraw({ sireDamName: "Sire's Dam", sireSireName: "Sire's Sire" });
+    const breeding = await createAiBreeding(doe.id, straw.sireName, straw.id);
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/kids`)
+      .send({
+        birthDate: new Date().toISOString(),
+        kids: [{ name: "AI Kid", sex: "doe", kidStatus: "alive" }],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveLength(1);
+    const goatId = res.body[0].goatId;
+    expect(goatId).toBeTruthy();
+
+    const [kidGoat] = await db.select().from(goatsTable).where(eq(goatsTable.id, goatId));
+    expect(kidGoat.paternalGranddamName).toBe("Sire's Dam");
+    expect(kidGoat.paternalGrandsireName).toBe("Sire's Sire");
+    // Maternal grandparents still come from the doe.
+    expect(kidGoat.maternalGranddamName).toBe(doe.damName ?? "");
+    expect(kidGoat.maternalGrandsireName).toBe(doe.sireName ?? "");
+  });
+
+  it("AI kidding with no linked straw leaves paternal grandparents blank", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createAiBreeding(doe.id, "Unlinked AI Sire", null);
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/kids`)
+      .send({
+        birthDate: new Date().toISOString(),
+        kids: [{ name: "AI Kid No Straw", sex: "buck", kidStatus: "alive" }],
+      });
+
+    expect(res.status).toBe(201);
+    const goatId = res.body[0].goatId;
+    const [kidGoat] = await db.select().from(goatsTable).where(eq(goatsTable.id, goatId));
+    expect(kidGoat.paternalGranddamName).toBe("");
+    expect(kidGoat.paternalGrandsireName).toBe("");
+  });
+
+  it("natural-service kidding leaves paternal grandparents blank", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createBreeding(doe.id, "confirmed-pregnant");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/kids`)
+      .send({
+        birthDate: new Date().toISOString(),
+        kids: [{ name: "Natural Kid", sex: "doe", kidStatus: "alive" }],
+      });
+
+    expect(res.status).toBe(201);
+    const goatId = res.body[0].goatId;
+    const [kidGoat] = await db.select().from(goatsTable).where(eq(goatsTable.id, goatId));
+    expect(kidGoat.paternalGranddamName).toBe("");
+    expect(kidGoat.paternalGrandsireName).toBe("");
   });
 });

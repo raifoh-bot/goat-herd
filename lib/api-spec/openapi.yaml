@@ -1091,6 +1091,10 @@ components:
           type: string
           nullable: true
           description: Optional free-text semen source/supplier note (AI breedings)
+        semenStrawId:
+          type: integer
+          nullable: true
+          description: The semen straw inventory entry this AI breeding was drawn from, if any
         breedingDate:
           type: string
           format: date-time
@@ -1296,6 +1300,22 @@ components:
           type: string
           nullable: true
           description: Location in the storage tank (e.g. canister/cane)
+        sireDamName:
+          type: string
+          nullable: true
+          description: The sire's dam (kid's paternal granddam)
+        sireSireName:
+          type: string
+          nullable: true
+          description: The sire's sire (kid's paternal grandsire)
+        sirePatGranddamName:
+          type: string
+          nullable: true
+          description: The sire's paternal granddam (kid's paternal great-granddam)
+        sirePatGrandsireName:
+          type: string
+          nullable: true
+          description: The sire's paternal grandsire (kid's paternal great-grandsire)
         notes:
           type: string
           nullable: true
@@ -1325,6 +1345,14 @@ components:
           type: integer
         tankLocation:
           type: string
+        sireDamName:
+          type: string
+        sireSireName:
+          type: string
+        sirePatGranddamName:
+          type: string
+        sirePatGrandsireName:
+          type: string
         notes:
           type: string
       required:
@@ -1343,6 +1371,14 @@ components:
         count:
           type: integer
         tankLocation:
+          type: string
+        sireDamName:
+          type: string
+        sireSireName:
+          type: string
+        sirePatGranddamName:
+          type: string
+        sirePatGrandsireName:
           type: string
         notes:
           type: string

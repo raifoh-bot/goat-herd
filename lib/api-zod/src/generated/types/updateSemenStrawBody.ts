@@ -12,5 +12,9 @@ export interface UpdateSemenStrawBody {
   supplier?: string;
   count?: number;
   tankLocation?: string;
+  sireDamName?: string;
+  sireSireName?: string;
+  sirePatGranddamName?: string;
+  sirePatGrandsireName?: string;
   notes?: string;
 }

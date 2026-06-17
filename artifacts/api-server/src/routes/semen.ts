@@ -32,6 +32,10 @@ router.post("/semen-straws", requireManager, async (req, res): Promise<void> => 
       supplier: parsed.data.supplier,
       count: parsed.data.count,
       tankLocation: parsed.data.tankLocation,
+      sireDamName: parsed.data.sireDamName,
+      sireSireName: parsed.data.sireSireName,
+      sirePatGranddamName: parsed.data.sirePatGranddamName,
+      sirePatGrandsireName: parsed.data.sirePatGrandsireName,
       notes: parsed.data.notes,
     })
     .returning();
@@ -58,6 +62,10 @@ router.put("/semen-straws/:id", requireManager, async (req, res): Promise<void> 
   if (parsed.data.supplier !== undefined) updateData.supplier = parsed.data.supplier || null;
   if (parsed.data.count !== undefined) updateData.count = parsed.data.count;
   if (parsed.data.tankLocation !== undefined) updateData.tankLocation = parsed.data.tankLocation || null;
+  if (parsed.data.sireDamName !== undefined) updateData.sireDamName = parsed.data.sireDamName || null;
+  if (parsed.data.sireSireName !== undefined) updateData.sireSireName = parsed.data.sireSireName || null;
+  if (parsed.data.sirePatGranddamName !== undefined) updateData.sirePatGranddamName = parsed.data.sirePatGranddamName || null;
+  if (parsed.data.sirePatGrandsireName !== undefined) updateData.sirePatGrandsireName = parsed.data.sirePatGrandsireName || null;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
 
   const [straw] = await db

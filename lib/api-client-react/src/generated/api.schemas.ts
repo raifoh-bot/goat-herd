@@ -340,6 +340,8 @@ export interface Breeding {
   breedingMethod: BreedingBreedingMethod;
   /** Optional free-text semen source/supplier note (AI breedings) */
   semenSource?: string | null;
+  /** The semen straw inventory entry this AI breeding was drawn from, if any */
+  semenStrawId?: number | null;
   breedingDate: string;
   expectedKiddingDate?: string;
   status: BreedingStatus;
@@ -509,6 +511,14 @@ export interface SemenStraw {
   count: number;
   /** Location in the storage tank (e.g. canister/cane) */
   tankLocation?: string | null;
+  /** The sire's dam (kid's paternal granddam) */
+  sireDamName?: string | null;
+  /** The sire's sire (kid's paternal grandsire) */
+  sireSireName?: string | null;
+  /** The sire's paternal granddam (kid's paternal great-granddam) */
+  sirePatGranddamName?: string | null;
+  /** The sire's paternal grandsire (kid's paternal great-grandsire) */
+  sirePatGrandsireName?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -520,6 +530,10 @@ export interface CreateSemenStrawBody {
   supplier?: string;
   count: number;
   tankLocation?: string;
+  sireDamName?: string;
+  sireSireName?: string;
+  sirePatGranddamName?: string;
+  sirePatGrandsireName?: string;
   notes?: string;
 }
 
@@ -529,6 +543,10 @@ export interface UpdateSemenStrawBody {
   supplier?: string;
   count?: number;
   tankLocation?: string;
+  sireDamName?: string;
+  sireSireName?: string;
+  sirePatGranddamName?: string;
+  sirePatGrandsireName?: string;
   notes?: string;
 }
 

@@ -522,6 +522,12 @@ export const ListBreedingsResponseItem = zod
       .describe(
         "Optional free-text semen source\/supplier note (AI breedings)",
       ),
+    semenStrawId: zod
+      .number()
+      .nullish()
+      .describe(
+        "The semen straw inventory entry this AI breeding was drawn from, if any",
+      ),
     breedingDate: zod.coerce.date(),
     expectedKiddingDate: zod.coerce.date().optional(),
     status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -715,6 +721,12 @@ export const GetBreedingResponse = zod
       .describe(
         "Optional free-text semen source\/supplier note (AI breedings)",
       ),
+    semenStrawId: zod
+      .number()
+      .nullish()
+      .describe(
+        "The semen straw inventory entry this AI breeding was drawn from, if any",
+      ),
     breedingDate: zod.coerce.date(),
     expectedKiddingDate: zod.coerce.date().optional(),
     status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -868,6 +880,12 @@ export const UpdateBreedingResponse = zod.object({
     .string()
     .nullish()
     .describe("Optional free-text semen source\/supplier note (AI breedings)"),
+  semenStrawId: zod
+    .number()
+    .nullish()
+    .describe(
+      "The semen straw inventory entry this AI breeding was drawn from, if any",
+    ),
   breedingDate: zod.coerce.date(),
   expectedKiddingDate: zod.coerce.date().optional(),
   status: zod.enum(["bred", "confirmed-pregnant", "kidded", "open"]),
@@ -1009,6 +1027,22 @@ export const ListSemenStrawsResponseItem = zod.object({
     .string()
     .nullish()
     .describe("Location in the storage tank (e.g. canister\/cane)"),
+  sireDamName: zod
+    .string()
+    .nullish()
+    .describe("The sire's dam (kid's paternal granddam)"),
+  sireSireName: zod
+    .string()
+    .nullish()
+    .describe("The sire's sire (kid's paternal grandsire)"),
+  sirePatGranddamName: zod
+    .string()
+    .nullish()
+    .describe("The sire's paternal granddam (kid's paternal great-granddam)"),
+  sirePatGrandsireName: zod
+    .string()
+    .nullish()
+    .describe("The sire's paternal grandsire (kid's paternal great-grandsire)"),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -1024,6 +1058,10 @@ export const CreateSemenStrawBody = zod.object({
   supplier: zod.string().optional(),
   count: zod.number(),
   tankLocation: zod.string().optional(),
+  sireDamName: zod.string().optional(),
+  sireSireName: zod.string().optional(),
+  sirePatGranddamName: zod.string().optional(),
+  sirePatGrandsireName: zod.string().optional(),
   notes: zod.string().optional(),
 });
 
@@ -1040,6 +1078,10 @@ export const UpdateSemenStrawBody = zod.object({
   supplier: zod.string().optional(),
   count: zod.number().optional(),
   tankLocation: zod.string().optional(),
+  sireDamName: zod.string().optional(),
+  sireSireName: zod.string().optional(),
+  sirePatGranddamName: zod.string().optional(),
+  sirePatGrandsireName: zod.string().optional(),
   notes: zod.string().optional(),
 });
 
@@ -1056,6 +1098,22 @@ export const UpdateSemenStrawResponse = zod.object({
     .string()
     .nullish()
     .describe("Location in the storage tank (e.g. canister\/cane)"),
+  sireDamName: zod
+    .string()
+    .nullish()
+    .describe("The sire's dam (kid's paternal granddam)"),
+  sireSireName: zod
+    .string()
+    .nullish()
+    .describe("The sire's sire (kid's paternal grandsire)"),
+  sirePatGranddamName: zod
+    .string()
+    .nullish()
+    .describe("The sire's paternal granddam (kid's paternal great-granddam)"),
+  sirePatGrandsireName: zod
+    .string()
+    .nullish()
+    .describe("The sire's paternal grandsire (kid's paternal great-grandsire)"),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),

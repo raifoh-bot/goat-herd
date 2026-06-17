@@ -2,6 +2,7 @@ import { doublePrecision, integer, pgTable, serial, text, timestamp } from "driz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { goatsTable } from "./goats";
+import { semenStrawsTable } from "./semen";
 
 export const breedingEventsTable = pgTable("breeding_events", {
   id: serial("id").primaryKey(),
@@ -19,6 +20,7 @@ export const breedingsTable = pgTable("breedings", {
   sireName: text("sire_name").notNull(),
   breedingMethod: text("breeding_method", { enum: ["natural", "ai"] }).notNull().default("natural"),
   semenSource: text("semen_source"),
+  semenStrawId: integer("semen_straw_id").references(() => semenStrawsTable.id),
   breedingDate: timestamp("breeding_date").notNull(),
   expectedKiddingDate: timestamp("expected_kidding_date"),
   status: text("status", { enum: ["bred", "confirmed-pregnant", "kidded", "open"] }).notNull().default("bred"),

@@ -148,6 +148,7 @@ router.post("/breedings", async (req, res): Promise<void> => {
       sireName: parsed.data.sireName,
       breedingMethod,
       semenSource: parsed.data.semenSource,
+      semenStrawId: drawStraw?.id ?? null,
       breedingDate: new Date(parsed.data.breedingDate),
       expectedKiddingDate: parsed.data.expectedKiddingDate ? new Date(parsed.data.expectedKiddingDate) : null,
       notes: parsed.data.notes,
@@ -308,6 +309,19 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
   const breeding = breedingRows[0].breedings;
   const doe = breedingRows[0].goats;
 
+  // For AI breedings drawn from inventory, inherit the sire's breeding line from
+  // the linked semen straw so kids carry paternal grandparents (mirrors maternal
+  // inheritance from the doe). Only the straw actually used for this breeding is
+  // consulted — natural service and AI breedings with no linked straw leave
+  // paternal grandparents blank.
+  let sireStraw: typeof semenStrawsTable.$inferSelect | undefined;
+  if (breeding.breedingMethod === "ai" && breeding.semenStrawId != null) {
+    [sireStraw] = await db
+      .select()
+      .from(semenStrawsTable)
+      .where(eq(semenStrawsTable.id, breeding.semenStrawId));
+  }
+
   const birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
 
   // Insert kid records first (without goatId)
@@ -346,9 +360,9 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
         // Maternal grands = dam's parents
         maternalGranddamName: doe?.damName ?? "",
         maternalGrandsireName: doe?.sireName ?? "",
-        // Paternal grands = not tracked (sire is a name string only)
-        paternalGranddamName: "",
-        paternalGrandsireName: "",
+        // Paternal grands = sire's parents, inherited from the semen straw (AI only)
+        paternalGranddamName: sireStraw?.sireDamName ?? "",
+        paternalGrandsireName: sireStraw?.sireSireName ?? "",
       })
       .returning();
 

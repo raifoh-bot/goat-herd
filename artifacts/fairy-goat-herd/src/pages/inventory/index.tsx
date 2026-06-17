@@ -38,6 +38,10 @@ const strawSchema = z.object({
   supplier: z.string().optional(),
   count: z.coerce.number().int().min(0, "Count cannot be negative"),
   tankLocation: z.string().optional(),
+  sireDamName: z.string().optional(),
+  sireSireName: z.string().optional(),
+  sirePatGranddamName: z.string().optional(),
+  sirePatGrandsireName: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -62,7 +66,18 @@ export default function InventoryList() {
 
   const form = useForm<StrawValues>({
     resolver: zodResolver(strawSchema),
-    defaultValues: { sireName: "", strawId: "", supplier: "", count: 0, tankLocation: "", notes: "" },
+    defaultValues: {
+      sireName: "",
+      strawId: "",
+      supplier: "",
+      count: 0,
+      tankLocation: "",
+      sireDamName: "",
+      sireSireName: "",
+      sirePatGranddamName: "",
+      sirePatGrandsireName: "",
+      notes: "",
+    },
   });
 
   // When the farm has turned AI off, the inventory has no entry points; send
@@ -90,7 +105,18 @@ export default function InventoryList() {
 
   const openAdd = () => {
     setEditing(null);
-    form.reset({ sireName: "", strawId: "", supplier: "", count: 0, tankLocation: "", notes: "" });
+    form.reset({
+      sireName: "",
+      strawId: "",
+      supplier: "",
+      count: 0,
+      tankLocation: "",
+      sireDamName: "",
+      sireSireName: "",
+      sirePatGranddamName: "",
+      sirePatGrandsireName: "",
+      notes: "",
+    });
     setDialogOpen(true);
   };
 
@@ -102,6 +128,10 @@ export default function InventoryList() {
       supplier: straw.supplier ?? "",
       count: straw.count,
       tankLocation: straw.tankLocation ?? "",
+      sireDamName: straw.sireDamName ?? "",
+      sireSireName: straw.sireSireName ?? "",
+      sirePatGranddamName: straw.sirePatGranddamName ?? "",
+      sirePatGrandsireName: straw.sirePatGrandsireName ?? "",
       notes: straw.notes ?? "",
     });
     setDialogOpen(true);
@@ -114,6 +144,10 @@ export default function InventoryList() {
       supplier: data.supplier || undefined,
       count: data.count,
       tankLocation: data.tankLocation || undefined,
+      sireDamName: data.sireDamName || undefined,
+      sireSireName: data.sireSireName || undefined,
+      sirePatGranddamName: data.sirePatGranddamName || undefined,
+      sirePatGrandsireName: data.sirePatGrandsireName || undefined,
       notes: data.notes || undefined,
     };
 
@@ -340,6 +374,56 @@ export default function InventoryList() {
                     <FormMessage />
                   </FormItem>
                 )} />
+              </div>
+
+              <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-4">
+                <div>
+                  <h4 className="font-serif font-bold text-foreground text-sm">Sire's Breeding Line</h4>
+                  <p className="text-xs text-muted-foreground">
+                    The sire's own pedigree carries through to kids born from this straw.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="sireDamName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sire's Dam (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sire's mother" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="sireSireName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sire's Sire (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sire's father" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="sirePatGranddamName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paternal Granddam (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sire's sire's dam" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="sirePatGrandsireName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paternal Grandsire (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sire's sire's sire" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
 
               <FormField control={form.control} name="notes" render={({ field }) => (
