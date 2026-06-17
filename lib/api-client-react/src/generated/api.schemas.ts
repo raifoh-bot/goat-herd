@@ -705,6 +705,75 @@ export interface BreedCount {
   count: number;
 }
 
+export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
+
+export const AuthUserRole = {
+  admin: "admin",
+  owner: "owner",
+  farmhand: "farmhand",
+} as const;
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  role: AuthUserRole;
+}
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const UserRole = {
+  admin: "admin",
+  owner: "owner",
+  farmhand: "farmhand",
+} as const;
+
+export interface User {
+  id: number;
+  username: string;
+  role: UserRole;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoginBody {
+  /** @minLength 1 */
+  username: string;
+  /** @minLength 1 */
+  password: string;
+}
+
+export type CreateUserBodyRole =
+  (typeof CreateUserBodyRole)[keyof typeof CreateUserBodyRole];
+
+export const CreateUserBodyRole = {
+  admin: "admin",
+  owner: "owner",
+  farmhand: "farmhand",
+} as const;
+
+export interface CreateUserBody {
+  /** @minLength 1 */
+  username: string;
+  /** @minLength 8 */
+  password: string;
+  role: CreateUserBodyRole;
+}
+
+export type UpdateUserBodyRole =
+  (typeof UpdateUserBodyRole)[keyof typeof UpdateUserBodyRole];
+
+export const UpdateUserBodyRole = {
+  admin: "admin",
+  owner: "owner",
+  farmhand: "farmhand",
+} as const;
+
+export interface UpdateUserBody {
+  role?: UpdateUserBodyRole;
+  active?: boolean;
+}
+
 export type ListGoatsParams = {
   status?: ListGoatsStatus;
   sex?: ListGoatsSex;

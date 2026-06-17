@@ -2,8 +2,12 @@ import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
 import { db, semenStrawsTable } from "@workspace/db";
 import { CreateSemenStrawBody, UpdateSemenStrawBody } from "@workspace/api-zod";
+import { requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
+
+// Semen inventory is read-only for Farm Hands; only Admin/Owner may modify it.
+const requireManager = requireRole("admin", "owner");
 
 router.get("/semen-straws", async (_req, res): Promise<void> => {
   const rows = await db
@@ -13,7 +17,7 @@ router.get("/semen-straws", async (_req, res): Promise<void> => {
   res.json(rows);
 });
 
-router.post("/semen-straws", async (req, res): Promise<void> => {
+router.post("/semen-straws", requireManager, async (req, res): Promise<void> => {
   const parsed = CreateSemenStrawBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -35,7 +39,7 @@ router.post("/semen-straws", async (req, res): Promise<void> => {
   res.status(201).json(straw);
 });
 
-router.put("/semen-straws/:id", async (req, res): Promise<void> => {
+router.put("/semen-straws/:id", requireManager, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     res.status(400).json({ error: "Invalid ID" });
@@ -70,7 +74,7 @@ router.put("/semen-straws/:id", async (req, res): Promise<void> => {
   res.json(straw);
 });
 
-router.delete("/semen-straws/:id", async (req, res): Promise<void> => {
+router.delete("/semen-straws/:id", requireManager, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     res.status(400).json({ error: "Invalid ID" });

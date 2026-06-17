@@ -1,1 +1,2 @@
 - [Typecheck & codegen pitfalls](typecheck-codegen-pitfalls.md) — codegen regen forces tsc rebuild, surfacing 3 latent failures (api-zod barrel TS2308, deep api-client-react imports TS2307, composite lib TS6306); full `pnpm run typecheck` short-circuits at libs.
+- [Tests run as NODE_ENV=production](test-env-prod-cookies.md) — api-server vitest sets NODE_ENV=production; prod-gated behavior (secure cookies) activates in tests, breaking plain-HTTP supertest (login 200, next req 401). Gate HTTPS-only features on an explicit override.

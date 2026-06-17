@@ -10,8 +10,12 @@ import {
   UpdateGoatBody,
   UpdateGoatParams,
 } from "@workspace/api-zod";
+import { requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
+
+// Goats are read-only for Farm Hands; only Admin/Owner may create, edit, or delete.
+const requireManager = requireRole("admin", "owner");
 
 router.get("/goats", async (req, res): Promise<void> => {
   const params = ListGoatsQueryParams.safeParse(req.query);
@@ -37,7 +41,7 @@ router.get("/goats", async (req, res): Promise<void> => {
   res.json(goats);
 });
 
-router.post("/goats", async (req, res): Promise<void> => {
+router.post("/goats", requireManager, async (req, res): Promise<void> => {
   const parsed = CreateGoatBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -48,7 +52,7 @@ router.post("/goats", async (req, res): Promise<void> => {
   res.status(201).json(goat);
 });
 
-router.post("/goats/import", async (req, res): Promise<void> => {
+router.post("/goats/import", requireManager, async (req, res): Promise<void> => {
   const parsed = ImportGoatsBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -107,7 +111,7 @@ router.get("/goats/:id", async (req, res): Promise<void> => {
   res.json(goat);
 });
 
-router.put("/goats/:id", async (req, res): Promise<void> => {
+router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
   const params = UpdateGoatParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -134,7 +138,7 @@ router.put("/goats/:id", async (req, res): Promise<void> => {
   res.json(goat);
 });
 
-router.delete("/goats/:id", async (req, res): Promise<void> => {
+router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {
   const params = DeleteGoatParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

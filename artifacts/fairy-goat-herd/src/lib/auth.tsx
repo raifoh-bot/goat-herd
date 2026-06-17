@@ -1,0 +1,60 @@
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useLocation } from "wouter";
+import {
+  useGetCurrentUser,
+  getGetCurrentUserQueryKey,
+  type AuthUser,
+} from "@workspace/api-client-react";
+import { GoatIcon } from "@/components/goat-icon";
+
+type AuthContextValue = {
+  user: AuthUser;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthGuard");
+  }
+  return ctx;
+}
+
+/** Convenience: true when the current user has full management access. */
+export function useIsManager(): boolean {
+  const { user } = useAuth();
+  return user.role === "admin" || user.role === "owner";
+}
+
+export function AuthGuard({ children }: { children: ReactNode }) {
+  const [, setLocation] = useLocation();
+  const { data: user, isLoading, error } = useGetCurrentUser({
+    query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
+  });
+
+  // Any auth failure (401 or otherwise) sends the user to the login screen.
+  const unauthenticated = !isLoading && (Boolean(error) || !user);
+  useEffect(() => {
+    if (unauthenticated) {
+      setLocation("/login");
+    }
+  }, [unauthenticated, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <GoatIcon className="h-10 w-10 animate-pulse text-primary" />
+          <p className="text-sm">Loading your herd…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return null;
+  }
+
+  return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
+}

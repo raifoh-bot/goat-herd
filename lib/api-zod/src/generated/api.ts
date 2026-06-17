@@ -1224,3 +1224,73 @@ export const GetRecentActivityResponseItem = zod.object({
 export const GetRecentActivityResponse = zod.array(
   GetRecentActivityResponseItem,
 );
+
+/**
+ * @summary Log in with a username and password
+ */
+
+export const LoginBody = zod.object({
+  username: zod.string().min(1),
+  password: zod.string().min(1),
+});
+
+export const LoginResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand"]),
+});
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentUserResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand"]),
+});
+
+/**
+ * @summary List all user accounts
+ */
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand"]),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Create a new user account
+ */
+
+export const createUserBodyPasswordMin = 8;
+
+export const CreateUserBody = zod.object({
+  username: zod.string().min(1),
+  password: zod.string().min(createUserBodyPasswordMin),
+  role: zod.enum(["admin", "owner", "farmhand"]),
+});
+
+/**
+ * @summary Update a user's role or active status
+ */
+export const UpdateUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateUserBody = zod.object({
+  role: zod.enum(["admin", "owner", "farmhand"]).optional(),
+  active: zod.boolean().optional(),
+});
+
+export const UpdateUserResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand"]),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});

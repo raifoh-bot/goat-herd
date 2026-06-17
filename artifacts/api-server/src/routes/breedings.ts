@@ -18,8 +18,13 @@ import {
   UpdateBreedingEventParams,
   DeleteBreedingEventParams,
 } from "@workspace/api-zod";
+import { requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
+
+// Farm Hands may record breedings, kiddings, and events, but only Admin/Owner
+// may delete breeding records, kids, or events.
+const requireManager = requireRole("admin", "owner");
 
 router.get("/breedings", async (req, res): Promise<void> => {
   const rows = await db
@@ -417,7 +422,7 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   res.json(updated);
 });
 
-router.delete("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
+router.delete("/breedings/:id/kids/:kidId", requireManager, async (req, res): Promise<void> => {
   const paramsParsed = DeleteKidParams.safeParse({ id: Number(req.params.id), kidId: Number(req.params.kidId) });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid IDs" });
@@ -549,7 +554,7 @@ router.put("/breedings/:id/events/:eventId", async (req, res): Promise<void> => 
   res.json(updated);
 });
 
-router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> => {
+router.delete("/breedings/:id/events/:eventId", requireManager, async (req, res): Promise<void> => {
   const paramsParsed = DeleteBreedingEventParams.safeParse({
     id: Number(req.params.id),
     eventId: Number(req.params.eventId),
@@ -596,7 +601,7 @@ router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> 
   res.status(204).send();
 });
 
-router.delete("/breedings/:id", async (req, res): Promise<void> => {
+router.delete("/breedings/:id", requireManager, async (req, res): Promise<void> => {
   const idParsed = DeleteBreedingParams.safeParse({ id: Number(req.params.id) });
   if (!idParsed.success) {
     res.status(400).json({ error: "Invalid ID" });

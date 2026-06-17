@@ -1,23 +1,49 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, GitBranch, Heart, List, Milk, Snowflake } from "lucide-react";
+import { ClipboardList, GitBranch, Heart, List, LogOut, Milk, Snowflake, Users } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLogout, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { GoatIcon } from "@/components/goat-icon";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  owner: "Owner",
+  farmhand: "Farm Hand",
+};
+
 export function Layout({ children }: LayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const logout = useLogout();
+
+  const isManager = user.role === "admin" || user.role === "owner";
+
+  const handleLogout = () => {
+    logout.mutate(undefined, {
+      onSettled: () => {
+        queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
+        queryClient.clear();
+        setLocation("/login");
+      },
+    });
+  };
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: ClipboardList, exact: true },
     { href: "/goats", label: "The Herd", icon: List, exact: false },
     { href: "/breedings", label: "Kiddings", icon: Heart, exact: false },
     { href: "/inventory", label: "Semen Inventory", icon: Snowflake, exact: false },
-    { href: "/goats/new", label: "Add Goat", icon: Milk, exact: true },
+    ...(isManager ? [{ href: "/goats/new", label: "Add Goat", icon: Milk, exact: true }] : []),
     { href: "/lineage", label: "Lineage Reports", icon: GitBranch, exact: false },
+    ...(isManager ? [{ href: "/admin/users", label: "User Management", icon: Users, exact: false }] : []),
   ];
 
   return (
@@ -59,13 +85,21 @@ export function Layout({ children }: LayoutProps) {
           </nav>
         </div>
 
-        <div className="mt-auto p-6">
-          <div className="rounded-xl bg-sidebar-accent/50 p-4 border border-sidebar-accent border-dashed">
-            <h3 className="font-serif text-sm font-medium text-sidebar-primary mb-1">Herd Note</h3>
-            <p className="text-xs text-sidebar-foreground/70 leading-relaxed">
-              Keep fresh water, mineral mix, and clean bedding checked before the evening milking.
-            </p>
+        <div className="mt-auto p-6 space-y-3">
+          <div className="rounded-xl bg-sidebar-accent/50 p-4 border border-sidebar-accent">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{user.username}</p>
+            <p className="text-xs text-sidebar-foreground/70">{ROLE_LABELS[user.role] ?? user.role}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            disabled={logout.isPending}
+            className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {logout.isPending ? "Signing out…" : "Sign Out"}
+          </Button>
         </div>
       </aside>
 

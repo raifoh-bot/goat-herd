@@ -1,15 +1,23 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import request from "supertest";
+import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
-import { db, goatsTable, breedingsTable, kidsTable } from "@workspace/db";
+import bcrypt from "bcrypt";
+import { db, goatsTable, breedingsTable, kidsTable, usersTable } from "@workspace/db";
 import app from "../app";
 
 // These integration tests exercise the doe lactation-status side effects driven by
 // the breeding workflow (PUT /breedings/:id and POST /breedings/:id/kids). They run
 // against the live database, so every created row is tracked and removed afterwards.
+// All API routes require authentication, so the suite logs in as a seeded admin
+// user and issues every request through the resulting cookie-bearing agent.
 
 const createdGoatIds: number[] = [];
 const createdBreedingIds: number[] = [];
+
+const TEST_USERNAME = `test-admin-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const TEST_PASSWORD = "test-password-123";
+let testUserId: number;
+let agent: Agent;
 
 async function createDoe(lactationStatus: "exposed" | "serviced" | "pregnant" | "dry" | "milking" = "exposed") {
   const [doe] = await db
@@ -59,13 +67,26 @@ afterEach(async () => {
   createdGoatIds.length = 0;
 });
 
-beforeAll(() => {
-  // Capture any goats auto-created as herd records when kids are recorded so we can
-  // clean them up. We diff the goats table around the kid-recording test instead.
+beforeAll(async () => {
+  // Seed an admin user and log in so the cookie-bearing agent can reach the
+  // authentication-gated breeding endpoints.
+  const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
+  const [user] = await db
+    .insert(usersTable)
+    .values({ username: TEST_USERNAME, passwordHash, role: "admin", active: true })
+    .returning();
+  testUserId = user.id;
+
+  agent = request.agent(app);
+  const loginRes = await agent
+    .post("/api/auth/login")
+    .send({ username: TEST_USERNAME, password: TEST_PASSWORD });
+  expect(loginRes.status).toBe(200);
 });
 
 afterAll(async () => {
-  // Drain any pooled connections so the test process exits cleanly.
+  // Remove the seeded test user, then drain pooled connections.
+  await db.delete(usersTable).where(eq(usersTable.id, testUserId));
   const { pool } = await import("@workspace/db");
   await pool.end();
 });
@@ -75,7 +96,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     const doe = await createDoe("exposed");
     const breeding = await createBreeding(doe.id, "bred");
 
-    const res = await request(app)
+    const res = await agent
       .put(`/api/breedings/${breeding.id}`)
       .send({ status: "confirmed-pregnant" });
 
@@ -91,7 +112,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     const breeding = await createBreeding(doe.id, "bred");
 
     // First confirm: should set the doe to pregnant.
-    await request(app).put(`/api/breedings/${breeding.id}`).send({ status: "confirmed-pregnant" });
+    await agent.put(`/api/breedings/${breeding.id}`).send({ status: "confirmed-pregnant" });
     expect((await getDoe(doe.id)).lactationStatus).toBe("pregnant");
 
     // Simulate the doe's status drifting away from "pregnant" (e.g. another workflow).
@@ -99,7 +120,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
 
     // Saving "confirmed-pregnant" again should NOT re-fire the transition, because the
     // breeding is already in that status.
-    const res = await request(app)
+    const res = await agent
       .put(`/api/breedings/${breeding.id}`)
       .send({ status: "confirmed-pregnant", notes: "second save" });
 
@@ -112,7 +133,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     const doe = await createDoe("pregnant");
     const breeding = await createBreeding(doe.id, "confirmed-pregnant");
 
-    const res = await request(app)
+    const res = await agent
       .put(`/api/breedings/${breeding.id}`)
       .send({ status: "open" });
 
@@ -127,7 +148,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     const doe = await createDoe("milking");
     const breeding = await createBreeding(doe.id, "bred");
 
-    await request(app).put(`/api/breedings/${breeding.id}`).send({ status: "open" });
+    await agent.put(`/api/breedings/${breeding.id}`).send({ status: "open" });
 
     const updatedDoe = await getDoe(doe.id);
     expect(updatedDoe.lactationStatus).toBe("milking");
@@ -139,7 +160,7 @@ describe("POST /api/breedings/:id/kids doe status transition", () => {
     const doe = await createDoe("pregnant");
     const breeding = await createBreeding(doe.id, "confirmed-pregnant");
 
-    const res = await request(app)
+    const res = await agent
       .post(`/api/breedings/${breeding.id}/kids`)
       .send({
         birthDate: new Date().toISOString(),

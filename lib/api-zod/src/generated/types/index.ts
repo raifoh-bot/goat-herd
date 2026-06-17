@@ -7,6 +7,8 @@
  */
 
 export * from "./addKidsBody";
+export * from "./authUser";
+export * from "./authUserRole";
 export * from "./breedCount";
 export * from "./breedCountBreed";
 export * from "./breeding";
@@ -31,6 +33,8 @@ export * from "./createKidBody";
 export * from "./createKidBodyKidStatus";
 export * from "./createKidBodySex";
 export * from "./createSemenStrawBody";
+export * from "./createUserBody";
+export * from "./createUserBodyRole";
 export * from "./dashboardSummary";
 export * from "./doeLactationBreakdown";
 export * from "./errorEnvelope";
@@ -53,6 +57,7 @@ export * from "./kidSex";
 export * from "./listGoatsParams";
 export * from "./listGoatsSex";
 export * from "./listGoatsStatus";
+export * from "./loginBody";
 export * from "./semenStraw";
 export * from "./updateBreedingBody";
 export * from "./updateBreedingBodyBreedingMethod";
@@ -68,5 +73,9 @@ export * from "./updateKidBody";
 export * from "./updateKidBodyKidStatus";
 export * from "./updateKidBodySex";
 export * from "./updateSemenStrawBody";
+export * from "./updateUserBody";
+export * from "./updateUserBodyRole";
 export * from "./uploadUrlRequest";
 export * from "./uploadUrlResponse";
+export * from "./user";
+export * from "./userRole";

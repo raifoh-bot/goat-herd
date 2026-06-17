@@ -12,10 +12,13 @@ export {
   CreateBreedingEventBody,
   CreateGoatBody,
   CreateSemenStrawBody,
+  CreateUserBody,
   ImportGoatsBody,
+  LoginBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
   UpdateGoatBody,
   UpdateKidBody,
   UpdateSemenStrawBody,
+  UpdateUserBody,
 } from "./generated/api";
