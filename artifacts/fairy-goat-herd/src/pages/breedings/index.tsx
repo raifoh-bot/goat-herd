@@ -286,7 +286,7 @@ export default function BreedingsList() {
         data: {
           eventType: dialogState.eventType,
           eventDate: new Date(dialogDate + "T12:00:00").toISOString(),
-          notes: dialogState.eventType === "cover" && dialogNotes.trim() ? dialogNotes.trim() : undefined,
+          notes: dialogNotes.trim() ? dialogNotes.trim() : undefined,
         },
       },
       {
@@ -407,19 +407,23 @@ export default function BreedingsList() {
                 className="bg-background/50"
               />
             </div>
-            {dialogState?.eventType === "cover" && (
-              <div>
-                <Label htmlFor="cover-notes" className="text-sm mb-1.5 block">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Textarea
-                  id="cover-notes"
-                  placeholder="e.g. Very vigorous mating, observed twice"
-                  value={dialogNotes}
-                  onChange={(e) => setDialogNotes(e.target.value)}
-                  className="bg-background/50 resize-none"
-                  rows={2}
-                />
-              </div>
-            )}
+            <div>
+              <Label htmlFor="event-notes" className="text-sm mb-1.5 block">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Textarea
+                id="event-notes"
+                placeholder={
+                  dialogState?.eventType === "exposed"
+                    ? "e.g. Put in with buck pen overnight"
+                    : dialogState?.eventType === "cover"
+                    ? "e.g. Very vigorous mating, observed twice"
+                    : "e.g. Removed after 3 weeks, no further heat seen"
+                }
+                value={dialogNotes}
+                onChange={(e) => setDialogNotes(e.target.value)}
+                className="bg-background/50 resize-none"
+                rows={2}
+              />
+            </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" onClick={closeDialog} disabled={createEvent.isPending}>
