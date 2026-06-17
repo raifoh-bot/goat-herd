@@ -5,10 +5,17 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { FarmSettingsWeightUnit } from "./farmSettingsWeightUnit";
 
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
   usesAi: boolean;
+  /** The farm/herd name shown in the app header and branding. */
+  farmName: string;
+  /** Unit used for birth weights and milk production across the app. */
+  weightUnit: FarmSettingsWeightUnit;
+  /** Default gestation length in days used to auto-calculate expected kidding dates. */
+  gestationDays: number;
   updatedAt: Date;
 }

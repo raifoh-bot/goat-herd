@@ -5,7 +5,22 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateFarmSettingsBodyWeightUnit } from "./updateFarmSettingsBodyWeightUnit";
 
+/**
+ * Partial update of the farm settings. Only the provided fields are changed.
+ */
 export interface UpdateFarmSettingsBody {
-  usesAi: boolean;
+  usesAi?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  farmName?: string;
+  weightUnit?: UpdateFarmSettingsBodyWeightUnit;
+  /**
+   * @minimum 100
+   * @maximum 250
+   */
+  gestationDays?: number;
 }

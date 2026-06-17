@@ -157,15 +157,43 @@ describe("PUT /api/settings", () => {
     expect(res.status).toBe(403);
   });
 
-  it("rejects a missing usesAi field", async () => {
+  it("accepts an empty body as a no-op update", async () => {
     const agent = await login(ADMIN);
     const res = await agent.put("/api/settings").send({});
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
   });
 
   it("rejects a non-boolean usesAi value", async () => {
     const agent = await login(ADMIN);
     const res = await agent.put("/api/settings").send({ usesAi: "yes" });
+    expect(res.status).toBe(400);
+  });
+
+  it("updates farm name, weight unit, and gestation length", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent
+      .put("/api/settings")
+      .send({ farmName: "Sunny Meadow", weightUnit: "kg", gestationDays: 155 });
+    expect(res.status).toBe(200);
+    expect(res.body.farmName).toBe("Sunny Meadow");
+    expect(res.body.weightUnit).toBe("kg");
+    expect(res.body.gestationDays).toBe(155);
+
+    const readBack = await agent.get("/api/settings");
+    expect(readBack.body.farmName).toBe("Sunny Meadow");
+    expect(readBack.body.weightUnit).toBe("kg");
+    expect(readBack.body.gestationDays).toBe(155);
+  });
+
+  it("rejects an invalid weight unit", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.put("/api/settings").send({ weightUnit: "stone" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an out-of-range gestation length", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.put("/api/settings").send({ gestationDays: 5 });
     expect(res.status).toBe(400);
   });
 });

@@ -43,7 +43,7 @@ export function Layout({ children }: LayoutProps) {
   const [newPassword, setNewPassword] = useState("");
 
   const isManager = user.role === "admin" || user.role === "owner";
-  const { usesAi } = useFarmSettings();
+  const { usesAi, farmName } = useFarmSettings();
 
   const resetPasswordForm = () => {
     setCurrentPassword("");
@@ -109,7 +109,7 @@ export function Layout({ children }: LayoutProps) {
               <GoatIcon className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">MyGoatHerd</h1>
+              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">{farmName}</h1>
             </div>
           </div>
 

@@ -43,9 +43,20 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
 
   const current = await getOrCreateSettings();
 
+  // Apply only the fields that were actually provided so the client can save a
+  // single setting at a time without clobbering the others.
+  const { usesAi, farmName, weightUnit, gestationDays } = parsed.data;
+  const changes: Partial<typeof farmSettingsTable.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (usesAi !== undefined) changes.usesAi = usesAi;
+  if (farmName !== undefined) changes.farmName = farmName.trim();
+  if (weightUnit !== undefined) changes.weightUnit = weightUnit;
+  if (gestationDays !== undefined) changes.gestationDays = gestationDays;
+
   const [updated] = await db
     .update(farmSettingsTable)
-    .set({ usesAi: parsed.data.usesAi, updatedAt: new Date() })
+    .set(changes)
     .where(eq(farmSettingsTable.id, current.id))
     .returning();
 

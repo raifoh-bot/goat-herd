@@ -1430,15 +1430,44 @@ export const GetSettingsResponse = zod.object({
     .describe(
       "Whether this farm uses artificial insemination. When false, AI-related UI is hidden.",
     ),
+  farmName: zod
+    .string()
+    .describe("The farm\/herd name shown in the app header and branding."),
+  weightUnit: zod
+    .enum(["kg", "lb"])
+    .describe(
+      "Unit used for birth weights and milk production across the app.",
+    ),
+  gestationDays: zod
+    .number()
+    .describe(
+      "Default gestation length in days used to auto-calculate expected kidding dates.",
+    ),
   updatedAt: zod.coerce.date(),
 });
 
 /**
  * @summary Update the farm settings
  */
-export const UpdateSettingsBody = zod.object({
-  usesAi: zod.boolean(),
-});
+export const updateSettingsBodyFarmNameMax = 100;
+
+export const updateSettingsBodyGestationDaysMin = 100;
+export const updateSettingsBodyGestationDaysMax = 250;
+
+export const UpdateSettingsBody = zod
+  .object({
+    usesAi: zod.boolean().optional(),
+    farmName: zod.string().min(1).max(updateSettingsBodyFarmNameMax).optional(),
+    weightUnit: zod.enum(["kg", "lb"]).optional(),
+    gestationDays: zod
+      .number()
+      .min(updateSettingsBodyGestationDaysMin)
+      .max(updateSettingsBodyGestationDaysMax)
+      .optional(),
+  })
+  .describe(
+    "Partial update of the farm settings. Only the provided fields are changed.",
+  );
 
 export const UpdateSettingsResponse = zod.object({
   id: zod.number(),
@@ -1446,6 +1475,19 @@ export const UpdateSettingsResponse = zod.object({
     .boolean()
     .describe(
       "Whether this farm uses artificial insemination. When false, AI-related UI is hidden.",
+    ),
+  farmName: zod
+    .string()
+    .describe("The farm\/herd name shown in the app header and branding."),
+  weightUnit: zod
+    .enum(["kg", "lb"])
+    .describe(
+      "Unit used for birth weights and milk production across the app.",
+    ),
+  gestationDays: zod
+    .number()
+    .describe(
+      "Default gestation length in days used to auto-calculate expected kidding dates.",
     ),
   updatedAt: zod.coerce.date(),
 });

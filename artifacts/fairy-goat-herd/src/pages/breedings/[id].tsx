@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/lib/date";
-import { useFarmSettings } from "@/lib/settings";
+import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import {
   getGetBreedingQueryKey,
   getListBreedingsQueryKey,
@@ -74,6 +74,7 @@ const editKidSchema = z.object({
 type EditKidValues = z.infer<typeof editKidSchema>;
 
 function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
+  const { weightUnit } = useFarmSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -154,7 +155,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
             {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
           </div>
           <div className="text-xs text-muted-foreground">
-            {kid.birthWeight ? `${kid.birthWeight} lbs` : null}
+            {kid.birthWeight ? `${kid.birthWeight} ${weightUnitLabel(weightUnit)}` : null}
             {kid.birthDate ? ` • Born ${formatDate(kid.birthDate, { month: "short", day: "numeric", year: "numeric" })}` : null}
             {kid.notes ? ` • ${kid.notes}` : null}
           </div>
@@ -226,7 +227,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
                 )} />
                 <FormField control={editForm.control} name="birthWeight" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Birth Weight (lbs)</FormLabel>
+                    <FormLabel>Birth Weight ({weightUnitLabel(weightUnit)})</FormLabel>
                     <FormControl><Input type="number" step="0.1" placeholder="e.g. 4.2" {...field} className="bg-background/50" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -673,7 +674,7 @@ export default function BreedingDetail() {
   const [isAddingKids, setIsAddingKids] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const { usesAi } = useFarmSettings();
+  const { usesAi, weightUnit } = useFarmSettings();
 
   const { data: breeding, isLoading, isError } = useGetBreeding(id, {
     query: { enabled: !!id, queryKey: getGetBreedingQueryKey(id) },
@@ -1197,7 +1198,7 @@ export default function BreedingDetail() {
                               name={`kids.${idx}.birthWeight`}
                               render={({ field: f }) => (
                                 <FormItem>
-                                  <FormLabel className="text-xs">Weight (lbs, optional)</FormLabel>
+                                  <FormLabel className="text-xs">Weight ({weightUnitLabel(weightUnit)}, optional)</FormLabel>
                                   <FormControl>
                                     <Input className="h-8 bg-background/50" type="number" step="0.1" placeholder="e.g. 6.5" {...f} />
                                   </FormControl>

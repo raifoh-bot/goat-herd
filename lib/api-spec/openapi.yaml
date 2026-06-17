@@ -1761,18 +1761,41 @@ components:
         usesAi:
           type: boolean
           description: Whether this farm uses artificial insemination. When false, AI-related UI is hidden.
+        farmName:
+          type: string
+          description: The farm/herd name shown in the app header and branding.
+        weightUnit:
+          type: string
+          enum: [kg, lb]
+          description: Unit used for birth weights and milk production across the app.
+        gestationDays:
+          type: integer
+          description: Default gestation length in days used to auto-calculate expected kidding dates.
         updatedAt:
           type: string
           format: date-time
       required:
         - id
         - usesAi
+        - farmName
+        - weightUnit
+        - gestationDays
         - updatedAt
 
     UpdateFarmSettingsBody:
       type: object
+      description: Partial update of the farm settings. Only the provided fields are changed.
       properties:
         usesAi:
           type: boolean
-      required:
-        - usesAi
+        farmName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        weightUnit:
+          type: string
+          enum: [kg, lb]
+        gestationDays:
+          type: integer
+          minimum: 100
+          maximum: 250

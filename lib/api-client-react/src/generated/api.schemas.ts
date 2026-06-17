@@ -822,15 +822,54 @@ export interface ChangePasswordBody {
   newPassword: string;
 }
 
+/**
+ * Unit used for birth weights and milk production across the app.
+ */
+export type FarmSettingsWeightUnit =
+  (typeof FarmSettingsWeightUnit)[keyof typeof FarmSettingsWeightUnit];
+
+export const FarmSettingsWeightUnit = {
+  kg: "kg",
+  lb: "lb",
+} as const;
+
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
   usesAi: boolean;
+  /** The farm/herd name shown in the app header and branding. */
+  farmName: string;
+  /** Unit used for birth weights and milk production across the app. */
+  weightUnit: FarmSettingsWeightUnit;
+  /** Default gestation length in days used to auto-calculate expected kidding dates. */
+  gestationDays: number;
   updatedAt: string;
 }
 
+export type UpdateFarmSettingsBodyWeightUnit =
+  (typeof UpdateFarmSettingsBodyWeightUnit)[keyof typeof UpdateFarmSettingsBodyWeightUnit];
+
+export const UpdateFarmSettingsBodyWeightUnit = {
+  kg: "kg",
+  lb: "lb",
+} as const;
+
+/**
+ * Partial update of the farm settings. Only the provided fields are changed.
+ */
 export interface UpdateFarmSettingsBody {
-  usesAi: boolean;
+  usesAi?: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  farmName?: string;
+  weightUnit?: UpdateFarmSettingsBodyWeightUnit;
+  /**
+   * @minimum 100
+   * @maximum 250
+   */
+  gestationDays?: number;
 }
 
 export type ListGoatsParams = {

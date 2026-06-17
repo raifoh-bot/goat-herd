@@ -24,7 +24,7 @@ import {
   useListBreedings,
   useListSemenStraws,
 } from "@workspace/api-client-react";
-import { useFarmSettings } from "@/lib/settings";
+import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 
 const NEW_SENTINEL = "__new__";
 
@@ -274,7 +274,7 @@ export default function BreedingNew() {
     name: "kids",
   });
 
-  const { usesAi } = useFarmSettings();
+  const { usesAi, weightUnit, gestationDays } = useFarmSettings();
   const breedingDate = breedingForm.watch("breedingDate");
   const breedingMethod = breedingForm.watch("breedingMethod");
   const isAi = usesAi && breedingMethod === "ai";
@@ -283,14 +283,14 @@ export default function BreedingNew() {
   const computedExpected = (() => {
     if (!breedingDate) return "";
     const d = new Date(breedingDate);
-    d.setDate(d.getDate() + 150);
+    d.setDate(d.getDate() + gestationDays);
     return d.toISOString().slice(0, 10);
   })();
 
   const autoBreedingDate = (() => {
     if (!kiddingDate) return "";
     const d = new Date(kiddingDate);
-    d.setDate(d.getDate() - 145);
+    d.setDate(d.getDate() - gestationDays);
     return d.toISOString().slice(0, 10);
   })();
 
@@ -552,7 +552,7 @@ export default function BreedingNew() {
                           <Input type="date" {...field} placeholder={computedExpected} className="bg-background/50" />
                         </FormControl>
                         <FormDescription>
-                          {computedExpected ? `~150 days after breeding: ${new Date(computedExpected + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : "Leave blank to auto-calculate"}
+                          {computedExpected ? `~${gestationDays} days after breeding: ${new Date(computedExpected + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : "Leave blank to auto-calculate"}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -646,7 +646,7 @@ export default function BreedingNew() {
                         </FormControl>
                         <FormDescription>
                           {autoBreedingDate
-                            ? `Leave blank to use ${new Date(autoBreedingDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (kidding − 145 d)`
+                            ? `Leave blank to use ${new Date(autoBreedingDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (kidding − ${gestationDays} d)`
                             : "Auto-calculated from kidding date"}
                         </FormDescription>
                         <FormMessage />
@@ -737,7 +737,7 @@ export default function BreedingNew() {
 
                         <FormField control={historicalForm.control} name={`kids.${index}.birthWeight`} render={({ field }) => (
                           <FormItem className="col-span-2 md:col-span-1">
-                            <FormLabel>Birth Weight (lbs)</FormLabel>
+                            <FormLabel>Birth Weight ({weightUnitLabel(weightUnit)})</FormLabel>
                             <FormControl>
                               <Input type="number" step="0.1" placeholder="e.g. 4.2" {...field} className="bg-background/50" />
                             </FormControl>

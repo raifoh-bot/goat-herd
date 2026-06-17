@@ -19,6 +19,20 @@ export async function ensureFarmSettings(): Promise<void> {
       "updated_at" timestamp DEFAULT now() NOT NULL
     );
   `);
+  // Idempotently add columns introduced after the table first shipped, so older
+  // databases gain the new farm-wide settings without a separate migration step.
+  await pool.query(`
+    ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "farm_name" text NOT NULL DEFAULT 'MyGoatHerd';
+  `);
+  await pool.query(`
+    ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "weight_unit" text NOT NULL DEFAULT 'lb';
+  `);
+  await pool.query(`
+    ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "gestation_days" integer NOT NULL DEFAULT 150;
+  `);
   await pool.query(`
     INSERT INTO "farm_settings" ("uses_ai")
     SELECT true
