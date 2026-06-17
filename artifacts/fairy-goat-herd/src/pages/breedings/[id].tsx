@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/lib/date";
+import { useFarmSettings } from "@/lib/settings";
 import {
   getGetBreedingQueryKey,
   getListBreedingsQueryKey,
@@ -672,6 +673,8 @@ export default function BreedingDetail() {
   const [isAddingKids, setIsAddingKids] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const { usesAi } = useFarmSettings();
+
   const { data: breeding, isLoading, isError } = useGetBreeding(id, {
     query: { enabled: !!id, queryKey: getGetBreedingQueryKey(id) },
   });
@@ -816,7 +819,7 @@ export default function BreedingDetail() {
 
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
-  const isAi = breeding.breedingMethod === "ai";
+  const isAi = usesAi && breeding.breedingMethod === "ai";
   const liveKids = breeding.kids?.filter((k) => k.kidStatus !== "doa") ?? [];
   const doaKids = breeding.kids?.filter((k) => k.kidStatus === "doa") ?? [];
 
