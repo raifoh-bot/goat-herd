@@ -223,6 +223,16 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const [existing] = await db
+    .select()
+    .from(breedingsTable)
+    .where(eq(breedingsTable.id, id));
+
+  if (!existing) {
+    res.status(404).json({ error: "Breeding not found" });
+    return;
+  }
+
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.sireName !== undefined) updateData.sireName = parsed.data.sireName;
   if (parsed.data.breedingMethod !== undefined) updateData.breedingMethod = parsed.data.breedingMethod;
@@ -251,6 +261,13 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
         .set({ lactationStatus: "dry", updatedAt: new Date() })
         .where(eq(goatsTable.id, breeding.doeId));
     }
+  }
+
+  if (parsed.data.status === "confirmed-pregnant" && existing.status !== "confirmed-pregnant") {
+    await db
+      .update(goatsTable)
+      .set({ lactationStatus: "pregnant", updatedAt: new Date() })
+      .where(eq(goatsTable.id, breeding.doeId));
   }
 
   res.json(breeding);
