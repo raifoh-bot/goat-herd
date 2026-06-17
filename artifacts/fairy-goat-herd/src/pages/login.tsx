@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,10 +26,11 @@ export default function Login() {
   const { data: currentUser } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
   });
-  if (currentUser) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (currentUser) {
+      setLocation("/");
+    }
+  }, [currentUser, setLocation]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
