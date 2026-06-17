@@ -731,6 +731,66 @@ paths:
         "404":
           description: User not found
 
+  /users/{id}/password:
+    put:
+      operationId: setUserPassword
+      tags: [users]
+      summary: Set (reset) a user's password
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetUserPasswordBody"
+      responses:
+        "204":
+          description: Password updated
+        "400":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/password:
+    put:
+      operationId: changeOwnPassword
+      tags: [auth]
+      summary: Change the current user's own password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "204":
+          description: Password changed
+        "400":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Current password is incorrect or not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
 components:
   schemas:
     HealthStatus:
@@ -1566,3 +1626,25 @@ components:
           enum: [admin, owner, farmhand]
         active:
           type: boolean
+
+    SetUserPasswordBody:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 8
+      required:
+        - password
+
+    ChangePasswordBody:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
+      required:
+        - currentPassword
+        - newPassword

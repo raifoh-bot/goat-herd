@@ -8,6 +8,7 @@ export * from "./generated/types";
 // ambiguity in favor of the runtime schemas.
 export {
   AddKidsBody,
+  ChangeOwnPasswordBody,
   CreateBreedingBody,
   CreateBreedingEventBody,
   CreateGoatBody,
@@ -15,6 +16,7 @@ export {
   CreateUserBody,
   ImportGoatsBody,
   LoginBody,
+  SetUserPasswordBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
   UpdateGoatBody,

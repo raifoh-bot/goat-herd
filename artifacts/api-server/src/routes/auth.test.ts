@@ -142,3 +142,110 @@ describe("role enforcement", () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 });
+
+describe("admin password reset", () => {
+  it("lets an admin reset another user's password", async () => {
+    const target = await seedUser(
+      `auth-reset-${suffix}`,
+      "original-password-1",
+      "farmhand",
+    );
+    const adminAgent = await login(ADMIN);
+    const res = await adminAgent
+      .put(`/api/users/${target.id}/password`)
+      .send({ password: "brand-new-password-2" });
+    expect(res.status).toBe(204);
+
+    // Old password no longer works; new one does.
+    const oldLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ username: target.username, password: "original-password-1" });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ username: target.username, password: "brand-new-password-2" });
+    expect(newLogin.status).toBe(200);
+  });
+
+  it("rejects a password shorter than 8 characters", async () => {
+    const target = await seedUser(
+      `auth-reset-short-${suffix}`,
+      "original-password-1",
+      "farmhand",
+    );
+    const adminAgent = await login(ADMIN);
+    const res = await adminAgent
+      .put(`/api/users/${target.id}/password`)
+      .send({ password: "short" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for an unknown user", async () => {
+    const adminAgent = await login(ADMIN);
+    const res = await adminAgent
+      .put("/api/users/99999999/password")
+      .send({ password: "brand-new-password-2" });
+    expect(res.status).toBe(404);
+  });
+
+  it("forbids a farm hand from resetting passwords", async () => {
+    const target = await seedUser(
+      `auth-reset-forbidden-${suffix}`,
+      "original-password-1",
+      "farmhand",
+    );
+    const handAgent = await login(HAND);
+    const res = await handAgent
+      .put(`/api/users/${target.id}/password`)
+      .send({ password: "brand-new-password-2" });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("self-service password change", () => {
+  it("lets a user change their own password", async () => {
+    const username = `auth-self-${suffix}`;
+    await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+
+    const res = await agent
+      .put("/api/auth/password")
+      .send({ currentPassword: "first-password-1", newPassword: "second-password-2" });
+    expect(res.status).toBe(204);
+
+    const newLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ username, password: "second-password-2" });
+    expect(newLogin.status).toBe(200);
+  });
+
+  it("rejects an incorrect current password", async () => {
+    const username = `auth-self-wrong-${suffix}`;
+    await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+
+    const res = await agent
+      .put("/api/auth/password")
+      .send({ currentPassword: "not-the-password", newPassword: "second-password-2" });
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a new password shorter than 8 characters", async () => {
+    const username = `auth-self-short-${suffix}`;
+    await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+
+    const res = await agent
+      .put("/api/auth/password")
+      .send({ currentPassword: "first-password-1", newPassword: "short" });
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .put("/api/auth/password")
+      .send({ currentPassword: "first-password-1", newPassword: "second-password-2" });
+    expect(res.status).toBe(401);
+  });
+});

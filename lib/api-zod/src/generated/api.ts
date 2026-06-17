@@ -1294,3 +1294,27 @@ export const UpdateUserResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Set (reset) a user's password
+ */
+export const SetUserPasswordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const setUserPasswordBodyPasswordMin = 8;
+
+export const SetUserPasswordBody = zod.object({
+  password: zod.string().min(setUserPasswordBodyPasswordMin),
+});
+
+/**
+ * @summary Change the current user's own password
+ */
+
+export const changeOwnPasswordBodyNewPasswordMin = 8;
+
+export const ChangeOwnPasswordBody = zod.object({
+  currentPassword: zod.string().min(1),
+  newPassword: zod.string().min(changeOwnPasswordBodyNewPasswordMin),
+});

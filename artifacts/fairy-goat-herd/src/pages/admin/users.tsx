@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
-import { ShieldCheck, UserPlus } from "lucide-react";
+import { KeyRound, ShieldCheck, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListUsers,
   useCreateUser,
   useUpdateUser,
+  useSetUserPassword,
   getListUsersQueryKey,
   UserRole,
   type User,
@@ -38,6 +39,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -62,6 +71,9 @@ export default function AdminUsers() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<string>(UserRole.farmhand);
 
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+
   const isManager = currentUser.role === "admin" || currentUser.role === "owner";
 
   const { data: users, isLoading } = useListUsers({
@@ -69,6 +81,7 @@ export default function AdminUsers() {
   });
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const setUserPassword = useSetUserPassword();
 
   // Farm Hands have no business here.
   if (!isManager) {
@@ -125,6 +138,39 @@ export default function AdminUsers() {
         onError: () =>
           toast({
             title: "Update failed",
+            description: "That change could not be saved.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const handleResetPassword = (e: FormEvent) => {
+    e.preventDefault();
+    if (!resetTarget) return;
+    if (resetPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "The new password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUserPassword.mutate(
+      { id: resetTarget.id, data: { password: resetPassword } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Password reset",
+            description: `${resetTarget.username} can sign in with the new password.`,
+          });
+          setResetTarget(null);
+          setResetPassword("");
+        },
+        onError: () =>
+          toast({
+            title: "Could not reset password",
             description: "That change could not be saved.",
             variant: "destructive",
           }),
@@ -264,14 +310,27 @@ export default function AdminUsers() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={isSelf || updateUser.isPending}
-                            onClick={() => handleActiveToggle(u)}
-                          >
-                            {u.active ? "Deactivate" : "Activate"}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setResetTarget(u);
+                                setResetPassword("");
+                              }}
+                            >
+                              <KeyRound className="mr-1.5 h-3.5 w-3.5" />
+                              Reset Password
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isSelf || updateUser.isPending}
+                              onClick={() => handleActiveToggle(u)}
+                            >
+                              {u.active ? "Deactivate" : "Activate"}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -282,6 +341,57 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog
+        open={resetTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResetTarget(null);
+            setResetPassword("");
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleResetPassword}>
+            <DialogHeader>
+              <DialogTitle className="font-serif flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-primary" /> Reset Password
+              </DialogTitle>
+              <DialogDescription>
+                Set a new password for{" "}
+                <span className="font-medium text-foreground">{resetTarget?.username}</span>. They
+                will use it the next time they sign in.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-4">
+              <Label htmlFor="reset-password">New password</Label>
+              <Input
+                id="reset-password"
+                type="password"
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setResetTarget(null);
+                  setResetPassword("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={setUserPassword.isPending}>
+                {setUserPassword.isPending ? "Saving…" : "Set Password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

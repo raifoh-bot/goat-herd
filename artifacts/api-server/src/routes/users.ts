@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, usersTable } from "@workspace/db";
-import { CreateUserBody, UpdateUserBody } from "@workspace/api-zod";
+import { CreateUserBody, UpdateUserBody, SetUserPasswordBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -100,6 +100,35 @@ router.put("/users/:id", async (req, res): Promise<void> => {
   }
 
   res.json(toPublicUser(user));
+});
+
+router.put("/users/:id/password", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = SetUserPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+
+  const [user] = await db
+    .update(usersTable)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(usersTable.id, id))
+    .returning();
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.sendStatus(204);
 });
 
 export default router;

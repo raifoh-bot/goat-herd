@@ -774,6 +774,18 @@ export interface UpdateUserBody {
   active?: boolean;
 }
 
+export interface SetUserPasswordBody {
+  /** @minLength 8 */
+  password: string;
+}
+
+export interface ChangePasswordBody {
+  /** @minLength 1 */
+  currentPassword: string;
+  /** @minLength 8 */
+  newPassword: string;
+}
+
 export type ListGoatsParams = {
   status?: ListGoatsStatus;
   sex?: ListGoatsSex;
