@@ -81,6 +81,12 @@ export interface Goat {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  damRegNo?: string;
+  sireRegNo?: string;
+  maternalGranddamRegNo?: string;
+  maternalGrandsireRegNo?: string;
+  paternalGranddamRegNo?: string;
+  paternalGrandsireRegNo?: string;
   dateOfBirth?: string;
   sex?: GoatSex;
   breed: GoatBreed;
@@ -178,6 +184,12 @@ export interface CreateGoatBody {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  damRegNo?: string;
+  sireRegNo?: string;
+  maternalGranddamRegNo?: string;
+  maternalGrandsireRegNo?: string;
+  paternalGranddamRegNo?: string;
+  paternalGrandsireRegNo?: string;
   dateOfBirth?: string;
   sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
@@ -271,6 +283,12 @@ export interface UpdateGoatBody {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  damRegNo?: string;
+  sireRegNo?: string;
+  maternalGranddamRegNo?: string;
+  maternalGrandsireRegNo?: string;
+  paternalGranddamRegNo?: string;
+  paternalGrandsireRegNo?: string;
   dateOfBirth?: string;
   sex?: UpdateGoatBodySex;
   breed?: UpdateGoatBodyBreed;

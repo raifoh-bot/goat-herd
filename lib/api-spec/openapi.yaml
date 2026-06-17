@@ -856,6 +856,18 @@ components:
           type: string
         paternalGrandsireName:
           type: string
+        damRegNo:
+          type: string
+        sireRegNo:
+          type: string
+        maternalGranddamRegNo:
+          type: string
+        maternalGrandsireRegNo:
+          type: string
+        paternalGranddamRegNo:
+          type: string
+        paternalGrandsireRegNo:
+          type: string
         dateOfBirth:
           type: string
           format: date-time
@@ -934,6 +946,18 @@ components:
           type: string
         paternalGrandsireName:
           type: string
+        damRegNo:
+          type: string
+        sireRegNo:
+          type: string
+        maternalGranddamRegNo:
+          type: string
+        maternalGrandsireRegNo:
+          type: string
+        paternalGranddamRegNo:
+          type: string
+        paternalGrandsireRegNo:
+          type: string
         dateOfBirth:
           type: string
           format: date-time
@@ -997,6 +1021,18 @@ components:
         paternalGranddamName:
           type: string
         paternalGrandsireName:
+          type: string
+        damRegNo:
+          type: string
+        sireRegNo:
+          type: string
+        maternalGranddamRegNo:
+          type: string
+        maternalGrandsireRegNo:
+          type: string
+        paternalGranddamRegNo:
+          type: string
+        paternalGrandsireRegNo:
           type: string
         dateOfBirth:
           type: string

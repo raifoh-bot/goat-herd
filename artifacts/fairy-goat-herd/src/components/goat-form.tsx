@@ -25,6 +25,12 @@ const formSchema = z.object({
   maternalGrandsireName: z.string().optional(),
   paternalGranddamName: z.string().optional(),
   paternalGrandsireName: z.string().optional(),
+  damRegNo: z.string().optional(),
+  sireRegNo: z.string().optional(),
+  maternalGranddamRegNo: z.string().optional(),
+  maternalGrandsireRegNo: z.string().optional(),
+  paternalGranddamRegNo: z.string().optional(),
+  paternalGrandsireRegNo: z.string().optional(),
   breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
   lactationStatus: z.enum(["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
@@ -72,6 +78,12 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       maternalGrandsireName: defaultValues?.maternalGrandsireName || "",
       paternalGranddamName: defaultValues?.paternalGranddamName || "",
       paternalGrandsireName: defaultValues?.paternalGrandsireName || "",
+      damRegNo: defaultValues?.damRegNo || "",
+      sireRegNo: defaultValues?.sireRegNo || "",
+      maternalGranddamRegNo: defaultValues?.maternalGranddamRegNo || "",
+      maternalGrandsireRegNo: defaultValues?.maternalGrandsireRegNo || "",
+      paternalGranddamRegNo: defaultValues?.paternalGranddamRegNo || "",
+      paternalGrandsireRegNo: defaultValues?.paternalGrandsireRegNo || "",
       breed: defaultValues?.breed || "mixed",
       lactationStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether")
         ? ((defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | null | undefined) || null)
@@ -432,89 +444,43 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="damName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dam</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Mother's name" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="sireName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sire</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Father's name" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="maternalGranddamName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maternal Granddam</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Dam's dam" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="maternalGrandsireName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maternal Grandsire</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Dam's sire" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="paternalGranddamName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paternal Granddam</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Sire's dam" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="paternalGrandsireName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paternal Grandsire</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Sire's sire" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {([
+              { nameField: "damName", regField: "damRegNo", label: "Dam", namePlaceholder: "Mother's name" },
+              { nameField: "sireName", regField: "sireRegNo", label: "Sire", namePlaceholder: "Father's name" },
+              { nameField: "maternalGranddamName", regField: "maternalGranddamRegNo", label: "Maternal Granddam", namePlaceholder: "Dam's dam" },
+              { nameField: "maternalGrandsireName", regField: "maternalGrandsireRegNo", label: "Maternal Grandsire", namePlaceholder: "Dam's sire" },
+              { nameField: "paternalGranddamName", regField: "paternalGranddamRegNo", label: "Paternal Granddam", namePlaceholder: "Sire's dam" },
+              { nameField: "paternalGrandsireName", regField: "paternalGrandsireRegNo", label: "Paternal Grandsire", namePlaceholder: "Sire's sire" },
+            ] as const).map((ancestor) => (
+              <div key={ancestor.nameField} className="space-y-3 rounded-lg border border-border/60 bg-background/30 p-3">
+                <FormField
+                  control={form.control}
+                  name={ancestor.nameField}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{ancestor.label}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={ancestor.namePlaceholder} {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={ancestor.regField}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs text-muted-foreground">Reg No.</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Registration number" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ))}
           </div>
         </div>
 

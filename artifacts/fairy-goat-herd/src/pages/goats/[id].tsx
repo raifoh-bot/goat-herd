@@ -138,14 +138,14 @@ export default function GoatDetails() {
   }
 
   const pedigreeRows = [
-    { label: "Dam", value: goat.damName },
-    { label: "Sire", value: goat.sireName },
-    { label: "Maternal Granddam", value: goat.maternalGranddamName },
-    { label: "Maternal Grandsire", value: goat.maternalGrandsireName },
-    { label: "Paternal Granddam", value: goat.paternalGranddamName },
-    { label: "Paternal Grandsire", value: goat.paternalGrandsireName },
+    { label: "Dam", value: goat.damName, regNo: goat.damRegNo },
+    { label: "Sire", value: goat.sireName, regNo: goat.sireRegNo },
+    { label: "Maternal Granddam", value: goat.maternalGranddamName, regNo: goat.maternalGranddamRegNo },
+    { label: "Maternal Grandsire", value: goat.maternalGrandsireName, regNo: goat.maternalGrandsireRegNo },
+    { label: "Paternal Granddam", value: goat.paternalGranddamName, regNo: goat.paternalGranddamRegNo },
+    { label: "Paternal Grandsire", value: goat.paternalGrandsireName, regNo: goat.paternalGrandsireRegNo },
   ];
-  const hasPedigree = pedigreeRows.some((row) => row.value);
+  const hasPedigree = pedigreeRows.some((row) => row.value || row.regNo);
 
   return (
     <Layout>
@@ -300,6 +300,9 @@ export default function GoatDetails() {
                         <div key={row.label} className="rounded-xl border border-border bg-card/50 p-4">
                           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{row.label}</div>
                           <div className="font-medium text-foreground">{row.value || "Not recorded"}</div>
+                          {row.regNo && (
+                            <div className="mt-1 text-xs text-muted-foreground">Reg: {row.regNo}</div>
+                          )}
                         </div>
                       ))}
                     </div>

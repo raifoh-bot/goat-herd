@@ -48,6 +48,15 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
     : <ChevronDown className="h-3.5 w-3.5 text-primary" />;
 }
 
+function AncestorCell({ name, regNo }: { name?: string | null; regNo?: string | null }) {
+  return (
+    <td className="px-4 py-3 text-muted-foreground align-top">
+      <div>{name || "—"}</div>
+      {regNo && <div className="text-xs text-muted-foreground/70">Reg: {regNo}</div>}
+    </td>
+  );
+}
+
 export default function LineageReports() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -122,12 +131,12 @@ export default function LineageReports() {
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {goat.dateOfBirth ? formatAge(goat.dateOfBirth) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.damName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.sireName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.maternalGranddamName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.maternalGrandsireName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.paternalGranddamName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{goat.paternalGrandsireName || "—"}</td>
+                    <AncestorCell name={goat.damName} regNo={goat.damRegNo} />
+                    <AncestorCell name={goat.sireName} regNo={goat.sireRegNo} />
+                    <AncestorCell name={goat.maternalGranddamName} regNo={goat.maternalGranddamRegNo} />
+                    <AncestorCell name={goat.maternalGrandsireName} regNo={goat.maternalGrandsireRegNo} />
+                    <AncestorCell name={goat.paternalGranddamName} regNo={goat.paternalGranddamRegNo} />
+                    <AncestorCell name={goat.paternalGrandsireName} regNo={goat.paternalGrandsireRegNo} />
                   </tr>
                 ))
               )}

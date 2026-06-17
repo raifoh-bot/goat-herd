@@ -21,6 +21,12 @@ export interface CreateGoatBody {
   maternalGrandsireName?: string;
   paternalGranddamName?: string;
   paternalGrandsireName?: string;
+  damRegNo?: string;
+  sireRegNo?: string;
+  maternalGranddamRegNo?: string;
+  maternalGrandsireRegNo?: string;
+  paternalGranddamRegNo?: string;
+  paternalGrandsireRegNo?: string;
   dateOfBirth?: Date;
   sex?: CreateGoatBodySex;
   breed: CreateGoatBodyBreed;
