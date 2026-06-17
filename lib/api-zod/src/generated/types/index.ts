@@ -57,6 +57,7 @@ export * from "./semenStraw";
 export * from "./updateBreedingBody";
 export * from "./updateBreedingBodyBreedingMethod";
 export * from "./updateBreedingBodyStatus";
+export * from "./updateBreedingEventBody";
 export * from "./updateGoatBody";
 export * from "./updateGoatBodyBreed";
 export * from "./updateGoatBodyHerdStatus";

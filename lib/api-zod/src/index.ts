@@ -14,6 +14,7 @@ export {
   CreateSemenStrawBody,
   ImportGoatsBody,
   UpdateBreedingBody,
+  UpdateBreedingEventBody,
   UpdateGoatBody,
   UpdateKidBody,
   UpdateSemenStrawBody,

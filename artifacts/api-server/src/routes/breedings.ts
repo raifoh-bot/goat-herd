@@ -14,6 +14,8 @@ import {
   DeleteKidParams,
   CreateBreedingEventBody,
   CreateBreedingEventParams,
+  UpdateBreedingEventBody,
+  UpdateBreedingEventParams,
   DeleteBreedingEventParams,
 } from "@workspace/api-zod";
 
@@ -470,6 +472,64 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
   }
 
   res.status(201).json(event);
+});
+
+router.put("/breedings/:id/events/:eventId", async (req, res): Promise<void> => {
+  const paramsParsed = UpdateBreedingEventParams.safeParse({
+    id: Number(req.params.id),
+    eventId: Number(req.params.eventId),
+  });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const parsed = UpdateBreedingEventBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(breedingEventsTable)
+    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+
+  if (!existing || existing.breedingId !== paramsParsed.data.id) {
+    res.status(404).json({ error: "Event not found" });
+    return;
+  }
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (parsed.data.eventDate !== undefined) updateData.eventDate = new Date(parsed.data.eventDate);
+  if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
+
+  const [updated] = await db
+    .update(breedingEventsTable)
+    .set(updateData)
+    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId))
+    .returning();
+
+  // If a cover event's date changed, recalculate expectedKiddingDate from the latest cover
+  if (existing.eventType === "cover" && parsed.data.eventDate !== undefined) {
+    const allEvents = await db
+      .select()
+      .from(breedingEventsTable)
+      .where(eq(breedingEventsTable.breedingId, paramsParsed.data.id));
+    const covers = allEvents
+      .filter((e) => e.eventType === "cover")
+      .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+    if (covers.length > 0) {
+      const latestCover = new Date(covers[0].eventDate);
+      const newKiddingDate = new Date(latestCover.getTime() + 145 * 24 * 60 * 60 * 1000);
+      await db
+        .update(breedingsTable)
+        .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
+        .where(eq(breedingsTable.id, paramsParsed.data.id));
+    }
+  }
+
+  res.json(updated);
 });
 
 router.delete("/breedings/:id/events/:eventId", async (req, res): Promise<void> => {

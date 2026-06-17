@@ -23,6 +23,7 @@ import {
   getListGoatsQueryKey,
   useAddKids,
   useCreateBreedingEvent,
+  useUpdateBreedingEvent,
   useDeleteBreeding,
   useDeleteBreedingEvent,
   useDeleteKid,
@@ -285,6 +286,173 @@ const eventFormSchema = z.object({
 });
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
+const editEventSchema = z.object({
+  eventDate: z.string().min(1, "Date is required"),
+  notes: z.string().optional(),
+});
+type EditEventValues = z.infer<typeof editEventSchema>;
+
+function TimelineEvent({
+  event,
+  breedingId,
+  isLast,
+  isLatestCover,
+}: {
+  event: BreedingEvent;
+  breedingId: number;
+  isLast: boolean;
+  isLatestCover: boolean;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const updateEvent = useUpdateBreedingEvent();
+  const deleteEvent = useDeleteBreedingEvent();
+
+  const cfg = eventConfig[event.eventType as EventType] ?? eventConfig.exposed;
+  const Icon = cfg.icon;
+  const isCover = event.eventType === "cover";
+  const projectedKiddingDate = isCover
+    ? new Date(new Date(event.eventDate).getTime() + GESTATION_DAYS * 24 * 60 * 60 * 1000)
+    : null;
+
+  const editForm = useForm<EditEventValues>({
+    resolver: zodResolver(editEventSchema),
+    values: {
+      eventDate: new Date(event.eventDate).toISOString().slice(0, 10),
+      notes: event.notes ?? "",
+    },
+  });
+
+  const openEdit = () => {
+    editForm.reset({
+      eventDate: new Date(event.eventDate).toISOString().slice(0, 10),
+      notes: event.notes ?? "",
+    });
+    setIsEditing(true);
+  };
+
+  const handleEdit = (data: EditEventValues) => {
+    updateEvent.mutate(
+      {
+        id: breedingId,
+        eventId: event.id,
+        data: { eventDate: new Date(data.eventDate + "T12:00:00").toISOString(), notes: data.notes || undefined },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Event updated" });
+          setIsEditing(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to update event", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    deleteEvent.mutate(
+      { id: breedingId, eventId: event.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Event removed" });
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to remove event", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center shrink-0">
+        <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${isCover ? "bg-rose-500/25 border-rose-400" : cfg.dotClass}`}>
+          <Icon className={`h-3.5 w-3.5 ${cfg.iconClass}`} />
+        </div>
+        {!isLast && <div className="w-px flex-1 bg-border my-1 min-h-[16px]" />}
+      </div>
+      <div className="flex-1 pb-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <span className="font-medium text-sm text-foreground">{cfg.label}</span>
+              <Badge className={`${cfg.badgeClass} text-xs px-2 py-0 border`}>{cfg.fullLabel}</Badge>
+              {isLatestCover && (
+                <Badge className="bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700 text-xs px-2 py-0 border">
+                  Active estimate
+                </Badge>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {formatDate(event.eventDate, { month: "short", day: "numeric", year: "numeric" })}
+              {event.notes && <> · <span className="italic">{event.notes}</span></>}
+            </div>
+            {isCover && projectedKiddingDate && (
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-800/40 px-2 py-1 text-xs text-rose-700 dark:text-rose-300">
+                <Baby className="h-3 w-3 shrink-0" />
+                <span>Est. kidding: <span className="font-medium">{formatDate(projectedKiddingDate.toISOString(), { month: "short", day: "numeric", year: "numeric" })}</span></span>
+                <span className="text-rose-400 dark:text-rose-500">(+{GESTATION_DAYS} days)</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              variant="ghost" size="sm"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              onClick={openEdit}
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost" size="sm"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+              onClick={handleDelete}
+              disabled={deleteEvent.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit {cfg.label}</DialogTitle>
+            <DialogDescription>Update the date or notes for this event.</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 mt-2">
+              <FormField control={editForm.control} name="eventDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl><Input type="date" {...field} className="bg-background/50" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editForm.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea className="bg-background/50 resize-none" rows={2} placeholder="e.g. Buck was attentive, observed 2 covers" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" disabled={updateEvent.isPending}>
+                  {updateEvent.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function ExposureWindowSummary({ events }: { events: BreedingEvent[] }) {
   const exposedEvents = events.filter((e) => e.eventType === "exposed");
   const removedEvents = events.filter((e) => e.eventType === "removed");
@@ -348,7 +516,6 @@ function ExposureTimeline({ events, breedingId, isAi = false }: { events: Breedi
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const createEvent = useCreateBreedingEvent();
-  const deleteEvent = useDeleteBreedingEvent();
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -378,19 +545,6 @@ function ExposureTimeline({ events, breedingId, isAi = false }: { events: Breedi
           queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
         },
         onError: () => toast({ title: "Failed to log event", variant: "destructive" }),
-      }
-    );
-  };
-
-  const handleDelete = (eventId: number) => {
-    deleteEvent.mutate(
-      { id: breedingId, eventId },
-      {
-        onSuccess: () => {
-          toast({ title: "Event removed" });
-          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
-        },
-        onError: () => toast({ title: "Failed to remove event", variant: "destructive" }),
       }
     );
   };
@@ -438,57 +592,16 @@ function ExposureTimeline({ events, breedingId, isAi = false }: { events: Breedi
                   ).id
                 : null;
               return events.map((event, idx) => {
-                const cfg = eventConfig[event.eventType as EventType] ?? eventConfig.exposed;
-                const Icon = cfg.icon;
                 const isLast = idx === events.length - 1;
-                const isCover = event.eventType === "cover";
-                const isLatestCover = isCover && event.id === latestCoverId;
-                const projectedKiddingDate = isCover
-                  ? new Date(new Date(event.eventDate).getTime() + GESTATION_DAYS * 24 * 60 * 60 * 1000)
-                  : null;
+                const isLatestCover = event.eventType === "cover" && event.id === latestCoverId;
                 return (
-                  <div key={event.id} className="flex gap-3">
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className={`h-7 w-7 rounded-full border flex items-center justify-center ${isCover ? "bg-rose-500/25 border-rose-400" : cfg.dotClass}`}>
-                        <Icon className={`h-3.5 w-3.5 ${cfg.iconClass}`} />
-                      </div>
-                      {!isLast && <div className="w-px flex-1 bg-border my-1 min-h-[16px]" />}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span className="font-medium text-sm text-foreground">{cfg.label}</span>
-                            <Badge className={`${cfg.badgeClass} text-xs px-2 py-0 border`}>{cfg.fullLabel}</Badge>
-                            {isLatestCover && (
-                              <Badge className="bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700 text-xs px-2 py-0 border">
-                                Active estimate
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDate(event.eventDate, { month: "short", day: "numeric", year: "numeric" })}
-                            {event.notes && <> · <span className="italic">{event.notes}</span></>}
-                          </div>
-                          {isCover && projectedKiddingDate && (
-                            <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-800/40 px-2 py-1 text-xs text-rose-700 dark:text-rose-300">
-                              <Baby className="h-3 w-3 shrink-0" />
-                              <span>Est. kidding: <span className="font-medium">{formatDate(projectedKiddingDate.toISOString(), { month: "short", day: "numeric", year: "numeric" })}</span></span>
-                              <span className="text-rose-400 dark:text-rose-500">(+{GESTATION_DAYS} days)</span>
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost" size="sm"
-                          className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDelete(event.id)}
-                          disabled={deleteEvent.isPending}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  <TimelineEvent
+                    key={event.id}
+                    event={event}
+                    breedingId={breedingId}
+                    isLast={isLast}
+                    isLatestCover={isLatestCover}
+                  />
                 );
               });
             })()}

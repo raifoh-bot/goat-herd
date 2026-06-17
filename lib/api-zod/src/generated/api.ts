@@ -882,6 +882,29 @@ export const CreateBreedingEventBody = zod.object({
 });
 
 /**
+ * @summary Update a breeding event's date and/or notes
+ */
+export const UpdateBreedingEventParams = zod.object({
+  id: zod.coerce.number(),
+  eventId: zod.coerce.number(),
+});
+
+export const UpdateBreedingEventBody = zod.object({
+  eventDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateBreedingEventResponse = zod.object({
+  id: zod.number(),
+  breedingId: zod.number(),
+  eventType: zod.enum(["exposed", "cover", "removed"]),
+  eventDate: zod.coerce.date(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Delete a breeding event
  */
 export const DeleteBreedingEventParams = zod.object({

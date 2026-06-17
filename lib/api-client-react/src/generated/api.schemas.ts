@@ -417,6 +417,11 @@ export interface CreateBreedingEventBody {
   notes?: string;
 }
 
+export interface UpdateBreedingEventBody {
+  eventDate?: string;
+  notes?: string;
+}
+
 export type CreateBreedingBodyBreedingMethod =
   (typeof CreateBreedingBodyBreedingMethod)[keyof typeof CreateBreedingBodyBreedingMethod];
 

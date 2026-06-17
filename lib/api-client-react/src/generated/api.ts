@@ -37,6 +37,7 @@ import type {
   ListGoatsParams,
   SemenStraw,
   UpdateBreedingBody,
+  UpdateBreedingEventBody,
   UpdateGoatBody,
   UpdateKidBody,
   UpdateSemenStrawBody,
@@ -1497,6 +1498,94 @@ export const useCreateBreedingEvent = <
   TContext
 > => {
   return useMutation(getCreateBreedingEventMutationOptions(options));
+};
+
+/**
+ * @summary Update a breeding event's date and/or notes
+ */
+export const getUpdateBreedingEventUrl = (id: number, eventId: number) => {
+  return `/api/breedings/${id}/events/${eventId}`;
+};
+
+export const updateBreedingEvent = async (
+  id: number,
+  eventId: number,
+  updateBreedingEventBody: UpdateBreedingEventBody,
+  options?: RequestInit,
+): Promise<BreedingEvent> => {
+  return customFetch<BreedingEvent>(getUpdateBreedingEventUrl(id, eventId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBreedingEventBody),
+  });
+};
+
+export const getUpdateBreedingEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBreedingEvent>>,
+    TError,
+    { id: number; eventId: number; data: BodyType<UpdateBreedingEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBreedingEvent>>,
+  TError,
+  { id: number; eventId: number; data: BodyType<UpdateBreedingEventBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBreedingEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBreedingEvent>>,
+    { id: number; eventId: number; data: BodyType<UpdateBreedingEventBody> }
+  > = (props) => {
+    const { id, eventId, data } = props ?? {};
+
+    return updateBreedingEvent(id, eventId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBreedingEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBreedingEvent>>
+>;
+export type UpdateBreedingEventMutationBody = BodyType<UpdateBreedingEventBody>;
+export type UpdateBreedingEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a breeding event's date and/or notes
+ */
+export const useUpdateBreedingEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBreedingEvent>>,
+    TError,
+    { id: number; eventId: number; data: BodyType<UpdateBreedingEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBreedingEvent>>,
+  TError,
+  { id: number; eventId: number; data: BodyType<UpdateBreedingEventBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBreedingEventMutationOptions(options));
 };
 
 /**
