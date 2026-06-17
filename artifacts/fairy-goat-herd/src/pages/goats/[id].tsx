@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Tag, Trash2, User, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import {
 import { breedLabels } from "@/pages/goats/index";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
+import { useFarmSettings } from "@/lib/settings";
 
 const breedingStatusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -52,6 +53,8 @@ export default function GoatDetails() {
     query: { queryKey: getListBreedingsQueryKey() },
   });
   const doeBreedings = (allBreedings ?? []).filter((b) => b.doeId === id);
+
+  const { usesAi } = useFarmSettings();
 
   const updateGoat = useUpdateGoat();
   const deleteGoat = useDeleteGoat();
@@ -338,12 +341,20 @@ export default function GoatDetails() {
                         return (
                           <Link key={breeding.id} href={`/breedings/${breeding.id}`}>
                             <div className="rounded-xl border border-border bg-card/50 p-4 hover:bg-muted/30 transition-colors cursor-pointer">
-                              <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center justify-between gap-2 mb-2">
                                 <span className="font-medium text-foreground text-sm">× {breeding.sireName}</span>
-                                <Badge className={`${config.className} flex items-center gap-1 px-2 py-0.5 text-xs`}>
-                                  <StatusIcon className="h-3 w-3" />
-                                  {config.label}
-                                </Badge>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {usesAi && breeding.breedingMethod === "ai" && (
+                                    <Badge className="bg-violet-500/15 text-violet-700 border border-violet-400/40 flex items-center gap-1 px-2 py-0.5 text-xs dark:text-violet-300 dark:bg-violet-500/10">
+                                      <Zap className="h-3 w-3" />
+                                      AI
+                                    </Badge>
+                                  )}
+                                  <Badge className={`${config.className} flex items-center gap-1 px-2 py-0.5 text-xs`}>
+                                    <StatusIcon className="h-3 w-3" />
+                                    {config.label}
+                                  </Badge>
+                                </div>
                               </div>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
