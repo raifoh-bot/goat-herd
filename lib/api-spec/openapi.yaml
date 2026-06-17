@@ -1764,6 +1764,14 @@ components:
         farmName:
           type: string
           description: The farm/herd name shown in the app header and branding.
+        adgaNumber:
+          type: string
+          nullable: true
+          description: The farm's ADGA (American Dairy Goat Association) membership number.
+        logoUrl:
+          type: string
+          nullable: true
+          description: URL of the farm logo image shown in the sidebar and on printed reports.
         weightUnit:
           type: string
           enum: [kg, lb]
@@ -1792,6 +1800,13 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        adgaNumber:
+          type: string
+          nullable: true
+          maxLength: 50
+        logoUrl:
+          type: string
+          nullable: true
         weightUnit:
           type: string
           enum: [kg, lb]

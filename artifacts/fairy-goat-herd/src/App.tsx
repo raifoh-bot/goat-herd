@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +15,6 @@ import BreedingNew from "@/pages/breedings/new";
 import BreedingDetail from "@/pages/breedings/[id]";
 import InventoryList from "@/pages/inventory/index";
 import LineageReports from "@/pages/lineage";
-import AdminUsers from "@/pages/admin/users";
 import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
@@ -34,7 +33,9 @@ function AuthenticatedRoutes() {
         <Route path="/breedings/:id" component={BreedingDetail} />
         <Route path="/inventory" component={InventoryList} />
         <Route path="/lineage" component={LineageReports} />
-        <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/users">
+          <Redirect to="/admin/settings?tab=users" replace />
+        </Route>
         <Route path="/admin/settings" component={AdminSettings} />
         <Route component={NotFound} />
       </Switch>

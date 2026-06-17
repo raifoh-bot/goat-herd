@@ -1433,6 +1433,18 @@ export const GetSettingsResponse = zod.object({
   farmName: zod
     .string()
     .describe("The farm\/herd name shown in the app header and branding."),
+  adgaNumber: zod
+    .string()
+    .nullish()
+    .describe(
+      "The farm's ADGA (American Dairy Goat Association) membership number.",
+    ),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "URL of the farm logo image shown in the sidebar and on printed reports.",
+    ),
   weightUnit: zod
     .enum(["kg", "lb"])
     .describe(
@@ -1451,6 +1463,8 @@ export const GetSettingsResponse = zod.object({
  */
 export const updateSettingsBodyFarmNameMax = 100;
 
+export const updateSettingsBodyAdgaNumberMax = 50;
+
 export const updateSettingsBodyGestationDaysMin = 100;
 export const updateSettingsBodyGestationDaysMax = 250;
 
@@ -1458,6 +1472,8 @@ export const UpdateSettingsBody = zod
   .object({
     usesAi: zod.boolean().optional(),
     farmName: zod.string().min(1).max(updateSettingsBodyFarmNameMax).optional(),
+    adgaNumber: zod.string().max(updateSettingsBodyAdgaNumberMax).nullish(),
+    logoUrl: zod.string().nullish(),
     weightUnit: zod.enum(["kg", "lb"]).optional(),
     gestationDays: zod
       .number()
@@ -1479,6 +1495,18 @@ export const UpdateSettingsResponse = zod.object({
   farmName: zod
     .string()
     .describe("The farm\/herd name shown in the app header and branding."),
+  adgaNumber: zod
+    .string()
+    .nullish()
+    .describe(
+      "The farm's ADGA (American Dairy Goat Association) membership number.",
+    ),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "URL of the farm logo image shown in the sidebar and on printed reports.",
+    ),
   weightUnit: zod
     .enum(["kg", "lb"])
     .describe(

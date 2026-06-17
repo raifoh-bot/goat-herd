@@ -17,6 +17,8 @@ export function weightUnitLabel(unit: WeightUnit): string {
 export interface FarmSettingsValues {
   usesAi: boolean;
   farmName: string;
+  adgaNumber: string | null;
+  logoUrl: string | null;
   weightUnit: WeightUnit;
   gestationDays: number;
   isLoading: boolean;
@@ -35,6 +37,8 @@ export function useFarmSettings(): FarmSettingsValues {
   return {
     usesAi: data?.usesAi ?? true,
     farmName: data?.farmName?.trim() ? data.farmName : DEFAULT_FARM_NAME,
+    adgaNumber: data?.adgaNumber ?? null,
+    logoUrl: data?.logoUrl ?? null,
     weightUnit: (data?.weightUnit as WeightUnit) ?? DEFAULT_WEIGHT_UNIT,
     gestationDays: data?.gestationDays ?? DEFAULT_GESTATION_DAYS,
     isLoading,

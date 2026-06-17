@@ -17,6 +17,9 @@ export interface UpdateFarmSettingsBody {
    * @maxLength 100
    */
   farmName?: string;
+  /** @maxLength 50 */
+  adgaNumber?: string | null;
+  logoUrl?: string | null;
   weightUnit?: UpdateFarmSettingsBodyWeightUnit;
   /**
    * @minimum 100

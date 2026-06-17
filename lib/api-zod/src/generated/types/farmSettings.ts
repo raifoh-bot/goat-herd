@@ -13,6 +13,10 @@ export interface FarmSettings {
   usesAi: boolean;
   /** The farm/herd name shown in the app header and branding. */
   farmName: string;
+  /** The farm's ADGA (American Dairy Goat Association) membership number. */
+  adgaNumber?: string | null;
+  /** URL of the farm logo image shown in the sidebar and on printed reports. */
+  logoUrl?: string | null;
   /** Unit used for birth weights and milk production across the app. */
   weightUnit: FarmSettingsWeightUnit;
   /** Default gestation length in days used to auto-calculate expected kidding dates. */
