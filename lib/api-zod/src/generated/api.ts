@@ -1309,6 +1309,36 @@ export const SetUserPasswordBody = zod.object({
 });
 
 /**
+ * @summary Get the farm settings
+ */
+export const GetSettingsResponse = zod.object({
+  id: zod.number(),
+  usesAi: zod
+    .boolean()
+    .describe(
+      "Whether this farm uses artificial insemination. When false, AI-related UI is hidden.",
+    ),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update the farm settings
+ */
+export const UpdateSettingsBody = zod.object({
+  usesAi: zod.boolean(),
+});
+
+export const UpdateSettingsResponse = zod.object({
+  id: zod.number(),
+  usesAi: zod
+    .boolean()
+    .describe(
+      "Whether this farm uses artificial insemination. When false, AI-related UI is hidden.",
+    ),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Change the current user's own password
  */
 

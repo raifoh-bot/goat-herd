@@ -24,6 +24,7 @@ import {
   useListBreedings,
   useListSemenStraws,
 } from "@workspace/api-client-react";
+import { useFarmSettings } from "@/lib/settings";
 
 const NEW_SENTINEL = "__new__";
 
@@ -273,9 +274,10 @@ export default function BreedingNew() {
     name: "kids",
   });
 
+  const { usesAi } = useFarmSettings();
   const breedingDate = breedingForm.watch("breedingDate");
   const breedingMethod = breedingForm.watch("breedingMethod");
-  const isAi = breedingMethod === "ai";
+  const isAi = usesAi && breedingMethod === "ai";
   const kiddingDate = historicalForm.watch("kiddingDate");
 
   const computedExpected = (() => {
@@ -293,15 +295,16 @@ export default function BreedingNew() {
   })();
 
   const handleBreedingSubmit = (data: BreedingValues) => {
+    const effectiveMethod = usesAi ? data.breedingMethod : "natural";
     createBreeding.mutate(
       {
         data: {
           doeId: data.doeId,
-          breedingMethod: data.breedingMethod,
+          breedingMethod: effectiveMethod,
           sireName: data.sireName,
-          semenSource: data.breedingMethod === "ai" && data.semenSource ? data.semenSource : undefined,
+          semenSource: effectiveMethod === "ai" && data.semenSource ? data.semenSource : undefined,
           semenStrawId:
-            data.breedingMethod === "ai" && data.semenStrawId
+            effectiveMethod === "ai" && data.semenStrawId
               ? Number(data.semenStrawId)
               : undefined,
           breedingDate: new Date(data.breedingDate).toISOString(),
@@ -418,6 +421,7 @@ export default function BreedingNew() {
             <CardContent>
               <Form {...breedingForm}>
                 <form onSubmit={breedingForm.handleSubmit(handleBreedingSubmit)} className="space-y-6">
+                  {usesAi && (
                   <FormField control={breedingForm.control} name="breedingMethod" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Breeding Method</FormLabel>
@@ -447,6 +451,7 @@ export default function BreedingNew() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={breedingForm.control} name="doeId" render={({ field }) => (

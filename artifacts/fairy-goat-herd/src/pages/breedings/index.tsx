@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useFarmSettings } from "@/lib/settings";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const statusConfig = {
@@ -44,9 +45,11 @@ interface ExposureDialogState {
 function BreedingCard({
   breeding,
   onExposureAction,
+  showAi,
 }: {
   breeding: BreedingWithDoe;
   onExposureAction: (state: ExposureDialogState) => void;
+  showAi: boolean;
 }) {
   const config = statusConfig[breeding.status];
   const StatusIcon = config.icon;
@@ -56,7 +59,7 @@ function BreedingCard({
     : new Date(breedingDate.getTime() + 145 * 24 * 60 * 60 * 1000);
   const daysUntilKidding = Math.ceil((expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-  const isAi = breeding.breedingMethod === "ai";
+  const isAiRecord = breeding.breedingMethod === "ai";
   const showExposureButton = breeding.status === "bred" || breeding.status === "confirmed-pregnant";
   const isExposed = breeding.hasActiveExposure;
   const doeName = breeding.doe?.name ?? `Doe #${breeding.doeId}`;
@@ -99,13 +102,13 @@ function BreedingCard({
                 <StatusIcon className="h-3 w-3" />
                 {config.label}
               </Badge>
-              {isAi && (
+              {showAi && isAiRecord && (
                 <Badge className="bg-violet-500/15 text-violet-700 border border-violet-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-violet-300 dark:bg-violet-500/10">
                   <Zap className="h-3 w-3" />
                   AI
                 </Badge>
               )}
-              {!isAi && isExposed && (
+              {!isAiRecord && isExposed && (
                 <Badge className="bg-amber-500/15 text-amber-700 border border-amber-400/40 flex items-center gap-1.5 px-2.5 py-1 dark:text-amber-400 dark:bg-amber-500/10">
                   <Zap className="h-3 w-3" />
                   Exposed{breeding.exposedDays != null && breeding.exposedDays > 0 ? ` · ${breeding.exposedDays}d` : ""}{breeding.firstExposedDate ? ` · Since ${formatDate(breeding.firstExposedDate, { month: "short", day: "numeric", year: "numeric" })}` : ""}
@@ -195,7 +198,7 @@ function BreedingCard({
             <p className="mt-3 text-xs text-muted-foreground line-clamp-2 italic border-t border-border pt-3">{breeding.notes}</p>
           )}
 
-          {showExposureButton && isAi && (
+          {showExposureButton && isAiRecord && (
             <div className="mt-3 border-t border-border pt-3">
               <Button
                 variant="outline"
@@ -209,7 +212,7 @@ function BreedingCard({
             </div>
           )}
 
-          {showExposureButton && !isAi && (
+          {showExposureButton && !isAiRecord && (
             <div className="mt-3 border-t border-border pt-3">
               {isExposed ? (
                 <div className="flex gap-2">
@@ -258,6 +261,7 @@ export default function BreedingsList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const createEvent = useCreateBreedingEvent();
+  const { usesAi } = useFarmSettings();
 
   const [dialogState, setDialogState] = useState<ExposureDialogState | null>(null);
   const [dialogDate, setDialogDate] = useState("");
@@ -356,7 +360,7 @@ export default function BreedingsList() {
                   Active ({active.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {active.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} />)}
+                  {active.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} showAi={usesAi} />)}
                 </div>
               </section>
             )}
@@ -368,7 +372,7 @@ export default function BreedingsList() {
                   Past Kiddings ({past.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {past.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} />)}
+                  {past.map((b) => <BreedingCard key={b.id} breeding={b} onExposureAction={openDialog} showAi={usesAi} />)}
                 </div>
               </section>
             )}

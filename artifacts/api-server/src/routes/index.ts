@@ -7,6 +7,7 @@ import breedingsRouter from "./breedings";
 import semenRouter from "./semen";
 import storageRouter from "./storage";
 import usersRouter from "./users";
+import settingsRouter from "./settings";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -24,5 +25,6 @@ router.use(breedingsRouter);
 router.use(semenRouter);
 router.use(storageRouter);
 router.use(usersRouter);
+router.use(settingsRouter);
 
 export default router;

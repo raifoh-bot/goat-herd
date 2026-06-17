@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { Plus, Snowflake, Pencil, Trash2, Package } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useFarmSettings } from "@/lib/settings";
 
 const strawSchema = z.object({
   sireName: z.string().min(1, "Sire / straw name is required"),
@@ -44,6 +46,8 @@ type StrawValues = z.infer<typeof strawSchema>;
 export default function InventoryList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const { usesAi, isLoading: settingsLoading } = useFarmSettings();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SemenStraw | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SemenStraw | null>(null);
@@ -60,6 +64,14 @@ export default function InventoryList() {
     resolver: zodResolver(strawSchema),
     defaultValues: { sireName: "", strawId: "", supplier: "", count: 0, tankLocation: "", notes: "" },
   });
+
+  // When the farm has turned AI off, the inventory has no entry points; send
+  // anyone who lands here by direct URL back to the herd.
+  useEffect(() => {
+    if (!settingsLoading && !usesAi) {
+      setLocation("/goats");
+    }
+  }, [settingsLoading, usesAi, setLocation]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSemenStrawsQueryKey() });
 

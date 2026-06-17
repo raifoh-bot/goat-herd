@@ -786,6 +786,17 @@ export interface ChangePasswordBody {
   newPassword: string;
 }
 
+export interface FarmSettings {
+  id: number;
+  /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
+  usesAi: boolean;
+  updatedAt: string;
+}
+
+export interface UpdateFarmSettingsBody {
+  usesAi: boolean;
+}
+
 export type ListGoatsParams = {
   status?: ListGoatsStatus;
   sex?: ListGoatsSex;

@@ -21,6 +21,8 @@ tags:
     description: Authentication and current-user session
   - name: users
     description: User account management
+  - name: settings
+    description: Farm-level settings
   - name: Storage
     description: Object storage upload and serving endpoints.
 
@@ -763,6 +765,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get the farm settings
+      responses:
+        "200":
+          description: The current farm settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmSettings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update the farm settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFarmSettingsBody"
+      responses:
+        "200":
+          description: Updated farm settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmSettings"
 
   /auth/password:
     put:
@@ -1648,3 +1680,27 @@ components:
       required:
         - currentPassword
         - newPassword
+
+    FarmSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+        usesAi:
+          type: boolean
+          description: Whether this farm uses artificial insemination. When false, AI-related UI is hidden.
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - usesAi
+        - updatedAt
+
+    UpdateFarmSettingsBody:
+      type: object
+      properties:
+        usesAi:
+          type: boolean
+      required:
+        - usesAi

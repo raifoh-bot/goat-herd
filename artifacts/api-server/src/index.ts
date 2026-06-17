@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedAdmin } from "./lib/seedAdmin";
 import { ensureSessionTable } from "./lib/ensureSessionTable";
+import { ensureFarmSettings } from "./lib/ensureFarmSettings";
 
 const rawPort = process.env["PORT"];
 
@@ -21,6 +22,9 @@ async function start(): Promise<void> {
   // Provision the session table before serving traffic so the very first
   // login can persist a session.
   await ensureSessionTable();
+
+  // Ensure a farm settings row always exists so reads never 404.
+  await ensureFarmSettings();
 
   app.listen(port, (err) => {
     if (err) {

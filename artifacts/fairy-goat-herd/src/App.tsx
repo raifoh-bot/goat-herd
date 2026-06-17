@@ -16,6 +16,7 @@ import BreedingDetail from "@/pages/breedings/[id]";
 import InventoryList from "@/pages/inventory/index";
 import LineageReports from "@/pages/lineage";
 import AdminUsers from "@/pages/admin/users";
+import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function AuthenticatedRoutes() {
         <Route path="/inventory" component={InventoryList} />
         <Route path="/lineage" component={LineageReports} />
         <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/settings" component={AdminSettings} />
         <Route component={NotFound} />
       </Switch>
     </AuthGuard>

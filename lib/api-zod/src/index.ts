@@ -19,6 +19,7 @@ export {
   SetUserPasswordBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
+  UpdateSettingsBody,
   UpdateGoatBody,
   UpdateKidBody,
   UpdateSemenStrawBody,
