@@ -936,7 +936,7 @@ components:
           maxLength: 4
         centerTailTattoo:
           type: string
-          maxLength: 4
+          maxLength: 8
         eidNumber:
           type: string
           maxLength: 50
@@ -1040,7 +1040,7 @@ components:
           nullable: true
         centerTailTattoo:
           type: string
-          maxLength: 4
+          maxLength: 8
           nullable: true
         eidNumber:
           type: string
@@ -1134,7 +1134,7 @@ components:
           nullable: true
         centerTailTattoo:
           type: string
-          maxLength: 4
+          maxLength: 8
           nullable: true
         eidNumber:
           type: string
@@ -1749,7 +1749,7 @@ components:
           maxLength: 4
         centerTailTattoo:
           type: string
-          maxLength: 4
+          maxLength: 8
         eidNumber:
           type: string
           maxLength: 50

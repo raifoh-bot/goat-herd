@@ -30,7 +30,7 @@ export interface ImportGoatRow {
   rightTailTattoo?: string;
   /** @maxLength 4 */
   leftTailTattoo?: string;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string;
   /** @maxLength 50 */
   eidNumber?: string;

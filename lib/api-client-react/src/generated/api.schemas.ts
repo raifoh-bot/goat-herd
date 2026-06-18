@@ -122,7 +122,7 @@ export interface Goat {
   rightTailTattoo?: string;
   /** @maxLength 4 */
   leftTailTattoo?: string;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string;
   /** @maxLength 50 */
   eidNumber?: string;
@@ -240,7 +240,7 @@ export interface CreateGoatBody {
   rightTailTattoo?: string | null;
   /** @maxLength 4 */
   leftTailTattoo?: string | null;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string | null;
   /** @maxLength 50 */
   eidNumber?: string | null;
@@ -356,7 +356,7 @@ export interface UpdateGoatBody {
   rightTailTattoo?: string | null;
   /** @maxLength 4 */
   leftTailTattoo?: string | null;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string | null;
   /** @maxLength 50 */
   eidNumber?: string | null;
@@ -804,7 +804,7 @@ export interface ImportGoatRow {
   rightTailTattoo?: string;
   /** @maxLength 4 */
   leftTailTattoo?: string;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string;
   /** @maxLength 50 */
   eidNumber?: string;

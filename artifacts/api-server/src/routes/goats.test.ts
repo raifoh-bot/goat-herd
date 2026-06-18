@@ -90,3 +90,37 @@ describe("PUT /api/goats/:id tattoo and EID clearing", () => {
     expect(getRes.body.leftTailTattoo).toBe("C3D4");
   });
 });
+
+describe("Center Tail tattoo length", () => {
+  it("accepts an 8-character center tail tattoo and persists it intact", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      centerTailTattoo: "AB1CD2EF",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    const created = await getGoat(goatId);
+    expect(created.centerTailTattoo).toBe("AB1CD2EF");
+  });
+
+  it("rejects a center tail tattoo longer than 8 characters", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      centerTailTattoo: "AB1CD2EFG",
+    });
+    expect(createRes.status).toBe(400);
+  });
+
+  it("still rejects other tattoo locations longer than 4 characters", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      rightEarTattoo: "A1B2C",
+    });
+    expect(createRes.status).toBe(400);
+  });
+});

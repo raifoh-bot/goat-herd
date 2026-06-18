@@ -51,7 +51,7 @@ export interface UpdateGoatBody {
   rightTailTattoo?: string | null;
   /** @maxLength 4 */
   leftTailTattoo?: string | null;
-  /** @maxLength 4 */
+  /** @maxLength 8 */
   centerTailTattoo?: string | null;
   /** @maxLength 50 */
   eidNumber?: string | null;

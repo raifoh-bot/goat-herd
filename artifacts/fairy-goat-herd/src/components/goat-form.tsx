@@ -43,7 +43,7 @@ const formSchema = z.object({
   leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
   rightTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
   leftTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
-  centerTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  centerTailTattoo: z.string().max(8, "Max 8 characters").optional().transform((v) => (v ? v : null)),
   eidNumber: z.string().max(50, "Max 50 characters").optional().transform((v) => (v ? v : null)),
 });
 
@@ -52,7 +52,7 @@ const TATTOO_LOCATIONS = [
   { field: "leftEarTattoo", label: "Left Ear", placeholder: "E.g., C3D4" },
   { field: "rightTailTattoo", label: "Right Tail", placeholder: "E.g., E5F6" },
   { field: "leftTailTattoo", label: "Left Tail", placeholder: "E.g., G7H8" },
-  { field: "centerTailTattoo", label: "Center Tail", placeholder: "E.g., J9K0" },
+  { field: "centerTailTattoo", label: "Center Tail", placeholder: "E.g., AB1CD2EF", maxLength: 8 },
 ] as const;
 
 type TattooField = (typeof TATTOO_LOCATIONS)[number]["field"];
@@ -560,7 +560,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                         <FormControl>
                           <Input
                             placeholder={loc.placeholder}
-                            maxLength={4}
+                            maxLength={"maxLength" in loc ? loc.maxLength : 4}
                             {...field}
                             value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}

@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { seedAdmin } from "./lib/seedAdmin";
 import { ensureSessionTable } from "./lib/ensureSessionTable";
 import { ensureFarmSettings } from "./lib/ensureFarmSettings";
+import { ensureGoatColumns } from "./lib/ensureGoatColumns";
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +26,9 @@ async function start(): Promise<void> {
 
   // Ensure a farm settings row always exists so reads never 404.
   await ensureFarmSettings();
+
+  // Apply idempotent goats column adjustments (e.g. widened center_tail_tattoo).
+  await ensureGoatColumns();
 
   app.listen(port, (err) => {
     if (err) {

@@ -72,7 +72,7 @@ export const listGoatsResponseRightTailTattooMax = 4;
 
 export const listGoatsResponseLeftTailTattooMax = 4;
 
-export const listGoatsResponseCenterTailTattooMax = 4;
+export const listGoatsResponseCenterTailTattooMax = 8;
 
 export const listGoatsResponseEidNumberMax = 50;
 
@@ -179,7 +179,7 @@ export const createGoatBodyRightTailTattooMax = 4;
 
 export const createGoatBodyLeftTailTattooMax = 4;
 
-export const createGoatBodyCenterTailTattooMax = 4;
+export const createGoatBodyCenterTailTattooMax = 8;
 
 export const createGoatBodyEidNumberMax = 50;
 
@@ -277,7 +277,7 @@ export const getGoatResponseRightTailTattooMax = 4;
 
 export const getGoatResponseLeftTailTattooMax = 4;
 
-export const getGoatResponseCenterTailTattooMax = 4;
+export const getGoatResponseCenterTailTattooMax = 8;
 
 export const getGoatResponseEidNumberMax = 50;
 
@@ -381,7 +381,7 @@ export const updateGoatBodyRightTailTattooMax = 4;
 
 export const updateGoatBodyLeftTailTattooMax = 4;
 
-export const updateGoatBodyCenterTailTattooMax = 4;
+export const updateGoatBodyCenterTailTattooMax = 8;
 
 export const updateGoatBodyEidNumberMax = 50;
 
@@ -474,7 +474,7 @@ export const updateGoatResponseRightTailTattooMax = 4;
 
 export const updateGoatResponseLeftTailTattooMax = 4;
 
-export const updateGoatResponseCenterTailTattooMax = 4;
+export const updateGoatResponseCenterTailTattooMax = 8;
 
 export const updateGoatResponseEidNumberMax = 50;
 
@@ -587,7 +587,7 @@ export const importGoatsBodyGoatsItemRightTailTattooMax = 4;
 
 export const importGoatsBodyGoatsItemLeftTailTattooMax = 4;
 
-export const importGoatsBodyGoatsItemCenterTailTattooMax = 4;
+export const importGoatsBodyGoatsItemCenterTailTattooMax = 8;
 
 export const importGoatsBodyGoatsItemEidNumberMax = 50;
 
@@ -678,7 +678,7 @@ export const listBreedingsResponseTwoDoeRightTailTattooMax = 4;
 
 export const listBreedingsResponseTwoDoeLeftTailTattooMax = 4;
 
-export const listBreedingsResponseTwoDoeCenterTailTattooMax = 4;
+export const listBreedingsResponseTwoDoeCenterTailTattooMax = 8;
 
 export const listBreedingsResponseTwoDoeEidNumberMax = 50;
 
@@ -910,7 +910,7 @@ export const getBreedingResponseTwoDoeRightTailTattooMax = 4;
 
 export const getBreedingResponseTwoDoeLeftTailTattooMax = 4;
 
-export const getBreedingResponseTwoDoeCenterTailTattooMax = 4;
+export const getBreedingResponseTwoDoeCenterTailTattooMax = 8;
 
 export const getBreedingResponseTwoDoeEidNumberMax = 50;
 
@@ -1397,7 +1397,7 @@ export const getDashboardSummaryResponseTopProducerRightTailTattooMax = 4;
 
 export const getDashboardSummaryResponseTopProducerLeftTailTattooMax = 4;
 
-export const getDashboardSummaryResponseTopProducerCenterTailTattooMax = 4;
+export const getDashboardSummaryResponseTopProducerCenterTailTattooMax = 8;
 
 export const getDashboardSummaryResponseTopProducerEidNumberMax = 50;
 
@@ -1568,7 +1568,7 @@ export const getRecentActivityResponseRightTailTattooMax = 4;
 
 export const getRecentActivityResponseLeftTailTattooMax = 4;
 
-export const getRecentActivityResponseCenterTailTattooMax = 4;
+export const getRecentActivityResponseCenterTailTattooMax = 8;
 
 export const getRecentActivityResponseEidNumberMax = 50;
 
