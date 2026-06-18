@@ -31,14 +31,21 @@ export function createSessionMiddleware(): RequestHandler {
     createTableIfMissing: false,
   });
 
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // Secure cookies are required over HTTPS in production but break plain-HTTP
-  // test clients (e.g. supertest), so allow an explicit override.
+  // The Replit proxy serves the app over HTTPS in BOTH the dev preview and
+  // production, and `trust proxy` is enabled, so secure cookies work in both.
+  // We default secure ON (not just in production) because the dev preview runs
+  // inside a cross-site iframe: browsers only send `sameSite: "none"` cookies
+  // in that context, and `sameSite: "none"` REQUIRES `secure: true`. Plain-HTTP
+  // test clients (supertest) set SESSION_COOKIE_SECURE=false to opt out.
   const secureCookies =
     process.env.SESSION_COOKIE_SECURE !== undefined
       ? process.env.SESSION_COOKIE_SECURE === "true"
-      : isProduction;
+      : true;
+
+  // `none` is required for the cross-site preview iframe, but it is only valid
+  // alongside a secure cookie. When secure is disabled (tests) fall back to
+  // `lax`, which is fine for same-origin supertest requests.
+  const sameSite: "none" | "lax" = secureCookies ? "none" : "lax";
 
   const options: SessionOptions = {
     store,
@@ -49,7 +56,7 @@ export function createSessionMiddleware(): RequestHandler {
     rolling: true,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite,
       secure: secureCookies,
       maxAge: resolveIdleTimeout(),
     },

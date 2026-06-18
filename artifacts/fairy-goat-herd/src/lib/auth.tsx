@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCurrentUser,
   getGetCurrentUserQueryKey,
@@ -29,6 +30,7 @@ export function useIsManager(): boolean {
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { data: user, isLoading, error } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
   });
@@ -37,9 +39,13 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   const unauthenticated = !isLoading && (Boolean(error) || !user);
   useEffect(() => {
     if (unauthenticated) {
+      // Clear any stale cached user so the login page agrees we're logged out.
+      // Without this, a cached user on /login would redirect back to "/",
+      // which redirects back here — an infinite loop that crashes the app.
+      queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
       setLocation("/login");
     }
-  }, [unauthenticated, setLocation]);
+  }, [unauthenticated, setLocation, queryClient]);
 
   if (isLoading) {
     return (
