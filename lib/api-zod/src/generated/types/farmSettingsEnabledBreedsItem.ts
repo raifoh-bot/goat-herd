@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CreateGoatBodyBreed =
-  (typeof CreateGoatBodyBreed)[keyof typeof CreateGoatBodyBreed];
+export type FarmSettingsEnabledBreedsItem =
+  (typeof FarmSettingsEnabledBreedsItem)[keyof typeof FarmSettingsEnabledBreedsItem];
 
-export const CreateGoatBodyBreed = {
+export const FarmSettingsEnabledBreedsItem = {
   alpine: "alpine",
   angora: "angora",
   boer: "boer",

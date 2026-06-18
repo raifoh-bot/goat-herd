@@ -2,6 +2,7 @@ import {
   useGetSettings,
   getGetSettingsQueryKey,
 } from "@workspace/api-client-react";
+import { BREED_SLUGS } from "@/lib/breeds";
 
 export type WeightUnit = "kg" | "lb";
 
@@ -21,6 +22,7 @@ export interface FarmSettingsValues {
   logoUrl: string | null;
   weightUnit: WeightUnit;
   gestationDays: number;
+  enabledBreeds: string[];
   isLoading: boolean;
 }
 
@@ -41,6 +43,10 @@ export function useFarmSettings(): FarmSettingsValues {
     logoUrl: data?.logoUrl ?? null,
     weightUnit: (data?.weightUnit as WeightUnit) ?? DEFAULT_WEIGHT_UNIT,
     gestationDays: data?.gestationDays ?? DEFAULT_GESTATION_DAYS,
+    enabledBreeds:
+      data?.enabledBreeds && data.enabledBreeds.length > 0
+        ? data.enabledBreeds
+        : [...BREED_SLUGS],
     isLoading,
   };
 }

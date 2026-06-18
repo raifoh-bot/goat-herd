@@ -21,14 +21,23 @@ export type GoatBreed = (typeof GoatBreed)[keyof typeof GoatBreed];
 
 export const GoatBreed = {
   alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
+  angora: "angora",
   boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
+  kiko: "kiko",
+  lamancha: "lamancha",
   mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 export type GoatStatus = (typeof GoatStatus)[keyof typeof GoatStatus];
@@ -127,14 +136,23 @@ export type CreateGoatBodyBreed =
 
 export const CreateGoatBodyBreed = {
   alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
+  angora: "angora",
   boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
+  kiko: "kiko",
+  lamancha: "lamancha",
   mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 export type CreateGoatBodyStatus =
@@ -226,14 +244,23 @@ export type UpdateGoatBodyBreed =
 
 export const UpdateGoatBodyBreed = {
   alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
+  angora: "angora",
   boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
+  kiko: "kiko",
+  lamancha: "lamancha",
   mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 export type UpdateGoatBodyStatus =
@@ -700,14 +727,23 @@ export type ImportGoatRowBreed =
 
 export const ImportGoatRowBreed = {
   alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
+  angora: "angora",
   boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
+  kiko: "kiko",
+  lamancha: "lamancha",
   mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 export type ImportGoatRowLactationStatus =
@@ -758,14 +794,23 @@ export type BreedCountBreed =
 
 export const BreedCountBreed = {
   alpine: "alpine",
-  nubian: "nubian",
-  saanen: "saanen",
-  lamancha: "lamancha",
-  toggenburg: "toggenburg",
+  angora: "angora",
   boer: "boer",
-  "nigerian-dwarf": "nigerian-dwarf",
-  oberhasli: "oberhasli",
+  kiko: "kiko",
+  lamancha: "lamancha",
   mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 export interface BreedCount {
@@ -865,6 +910,30 @@ export const FarmSettingsWeightUnit = {
   lb: "lb",
 } as const;
 
+export type FarmSettingsEnabledBreedsItem =
+  (typeof FarmSettingsEnabledBreedsItem)[keyof typeof FarmSettingsEnabledBreedsItem];
+
+export const FarmSettingsEnabledBreedsItem = {
+  alpine: "alpine",
+  angora: "angora",
+  boer: "boer",
+  kiko: "kiko",
+  lamancha: "lamancha",
+  mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
+} as const;
+
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
@@ -879,6 +948,8 @@ export interface FarmSettings {
   weightUnit: FarmSettingsWeightUnit;
   /** Default gestation length in days used to auto-calculate expected kidding dates. */
   gestationDays: number;
+  /** The catalog breed slugs that exist on this farm. Only these appear in breed pickers. */
+  enabledBreeds: FarmSettingsEnabledBreedsItem[];
   updatedAt: string;
 }
 
@@ -888,6 +959,30 @@ export type UpdateFarmSettingsBodyWeightUnit =
 export const UpdateFarmSettingsBodyWeightUnit = {
   kg: "kg",
   lb: "lb",
+} as const;
+
+export type UpdateFarmSettingsBodyEnabledBreedsItem =
+  (typeof UpdateFarmSettingsBodyEnabledBreedsItem)[keyof typeof UpdateFarmSettingsBodyEnabledBreedsItem];
+
+export const UpdateFarmSettingsBodyEnabledBreedsItem = {
+  alpine: "alpine",
+  angora: "angora",
+  boer: "boer",
+  kiko: "kiko",
+  lamancha: "lamancha",
+  mixed: "mixed",
+  myotonic: "myotonic",
+  "nigerian-dwarf": "nigerian-dwarf",
+  nubian: "nubian",
+  oberhasli: "oberhasli",
+  pygmy: "pygmy",
+  "recorded-grade": "recorded-grade",
+  saanen: "saanen",
+  sable: "sable",
+  savanna: "savanna",
+  spanish: "spanish",
+  texmaster: "texmaster",
+  toggenburg: "toggenburg",
 } as const;
 
 /**
@@ -909,6 +1004,8 @@ export interface UpdateFarmSettingsBody {
    * @maximum 250
    */
   gestationDays?: number;
+  /** The catalog breed slugs that exist on this farm. */
+  enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
 }
 
 export type ListGoatsParams = {

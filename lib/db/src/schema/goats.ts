@@ -24,7 +24,7 @@ export const goatsTable = pgTable("goats", {
   legacyMagicLevel: integer("magic_level"),
   legacyWingType: text("wing_type"),
   sex: text("sex", { enum: ["doe", "buck", "wether"] }),
-  breed: text("breed", { enum: ["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"] }).notNull(),
+  breed: text("breed", { enum: ["alpine", "angora", "boer", "kiko", "lamancha", "mixed", "myotonic", "nigerian-dwarf", "nubian", "oberhasli", "pygmy", "recorded-grade", "saanen", "sable", "savanna", "spanish", "texmaster", "toggenburg"] }).notNull(),
   status: text("status", { enum: ["healthy", "watch", "treatment", "dry"] }).notNull().default("healthy"),
   milkPerDay: doublePrecision("milk_per_day").notNull().default(0),
   lactationStatus: text("lactation_status", { enum: ["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"] }),

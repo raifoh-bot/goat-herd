@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useImportGoats, getListGoatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { getBreedOptions } from "@/lib/breeds";
+import { useFarmSettings } from "@/lib/settings";
 
-const BREEDS = ["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"] as const;
 const SEX_OPTIONS = ["doe", "buck", "wether"] as const;
 const LACTATION_OPTIONS = ["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"] as const;
 
@@ -73,10 +74,10 @@ function normalizeSex(value: unknown): "doe" | "buck" | "wether" | undefined {
   return undefined;
 }
 
-function normalizeBreed(value: unknown): typeof BREEDS[number] | undefined {
+function normalizeBreed(value: unknown, allowedBreeds: readonly string[]): string | undefined {
   if (!value) return undefined;
   const v = String(value).toLowerCase().trim().replace(/\s+/g, "-");
-  for (const b of BREEDS) {
+  for (const b of allowedBreeds) {
     if (v === b || v.includes(b) || b.includes(v)) return b;
   }
   return undefined;
@@ -87,6 +88,7 @@ function applyMapping(
   colMapping: Record<string, string>,
   defaultSex: string,
   defaultBreed: string,
+  allowedBreeds: readonly string[],
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [col, field] of Object.entries(colMapping)) {
@@ -98,7 +100,8 @@ function applyMapping(
     } else if (field === "sex") {
       result[field] = normalizeSex(val);
     } else if (field === "breed") {
-      result[field] = normalizeBreed(val) ?? val;
+      const normalized = normalizeBreed(val, allowedBreeds);
+      if (normalized) result[field] = normalized;
     } else if (field === "rightEarTattoo" || field === "leftEarTattoo") {
       result[field] = String(val).slice(0, 4);
     } else {
@@ -128,6 +131,10 @@ export default function ImportGoats() {
   const [defaultSex, setDefaultSex] = useState("");
   const [defaultBreed, setDefaultBreed] = useState("");
   const [result, setResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+
+  const { enabledBreeds } = useFarmSettings();
+  const breedOptions = getBreedOptions(enabledBreeds);
+  const allowedBreeds = breedOptions.map((b) => b.slug);
 
   const importGoats = useImportGoats();
 
@@ -183,11 +190,11 @@ export default function ImportGoats() {
     if (workbook) loadSheet(workbook, name);
   };
 
-  const previewRows = rows.slice(0, 5).map((r) => applyMapping(r, colMapping, defaultSex, defaultBreed));
+  const previewRows = rows.slice(0, 5).map((r) => applyMapping(r, colMapping, defaultSex, defaultBreed, allowedBreeds));
 
   const handleImport = () => {
     const goats = rows
-      .map((r) => applyMapping(r, colMapping, defaultSex, defaultBreed))
+      .map((r) => applyMapping(r, colMapping, defaultSex, defaultBreed, allowedBreeds))
       .filter((r) => r.name && r.breed);
 
     if (goats.length === 0) {
@@ -302,7 +309,7 @@ export default function ImportGoats() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="_none">No default</SelectItem>
-                        {BREEDS.map((b) => <SelectItem key={b} value={b} className="capitalize">{b.replace("-", " ")}</SelectItem>)}
+                        {breedOptions.map((b) => <SelectItem key={b.slug} value={b.slug}>{b.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -401,7 +408,7 @@ export default function ImportGoats() {
                   <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Mapping
                 </Button>
                 <Button onClick={handleImport} disabled={importGoats.isPending}>
-                  {importGoats.isPending ? "Importing..." : `Import ${rows.filter((r) => applyMapping(r, colMapping, defaultSex, defaultBreed).name && applyMapping(r, colMapping, defaultSex, defaultBreed).breed).length} Goats`}
+                  {importGoats.isPending ? "Importing..." : `Import ${rows.filter((r) => applyMapping(r, colMapping, defaultSex, defaultBreed, allowedBreeds).name && applyMapping(r, colMapping, defaultSex, defaultBreed, allowedBreeds).breed).length} Goats`}
                 </Button>
               </div>
             </CardContent>

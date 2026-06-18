@@ -5,6 +5,7 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateFarmSettingsBodyEnabledBreedsItem } from "./updateFarmSettingsBodyEnabledBreedsItem";
 import type { UpdateFarmSettingsBodyWeightUnit } from "./updateFarmSettingsBodyWeightUnit";
 
 /**
@@ -26,4 +27,6 @@ export interface UpdateFarmSettingsBody {
    * @maximum 250
    */
   gestationDays?: number;
+  /** The catalog breed slugs that exist on this farm. */
+  enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
 }

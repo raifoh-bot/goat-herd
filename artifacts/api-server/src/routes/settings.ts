@@ -45,7 +45,8 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
 
   // Apply only the fields that were actually provided so the client can save a
   // single setting at a time without clobbering the others.
-  const { usesAi, farmName, adgaNumber, logoUrl, weightUnit, gestationDays } = parsed.data;
+  const { usesAi, farmName, adgaNumber, logoUrl, weightUnit, gestationDays, enabledBreeds } =
+    parsed.data;
   const changes: Partial<typeof farmSettingsTable.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -58,6 +59,10 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
   if (logoUrl !== undefined) changes.logoUrl = logoUrl === "" ? null : logoUrl;
   if (weightUnit !== undefined) changes.weightUnit = weightUnit;
   if (gestationDays !== undefined) changes.gestationDays = gestationDays;
+  if (enabledBreeds !== undefined) {
+    // De-dupe while preserving the catalog-validated entries Zod already checked.
+    changes.enabledBreeds = Array.from(new Set(enabledBreeds));
+  }
 
   const [updated] = await db
     .update(farmSettingsTable)

@@ -11,18 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { GoatCard } from "@/components/goat-card";
 import { formatAge } from "@/lib/age";
-
-export const breedLabels: Record<string, string> = {
-  alpine: "Alpine",
-  nubian: "Nubian",
-  saanen: "Saanen",
-  lamancha: "LaMancha",
-  toggenburg: "Toggenburg",
-  boer: "Boer",
-  "nigerian-dwarf": "Nigerian Dwarf",
-  oberhasli: "Oberhasli",
-  mixed: "Mixed",
-};
+import { breedLabels } from "@/lib/breeds";
 
 const lactationLabels: Record<string, string> = {
   milking: "Milking",

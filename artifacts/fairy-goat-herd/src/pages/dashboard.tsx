@@ -7,6 +7,7 @@ import {
   useGetRecentActivity,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { breedLabels } from "@/lib/breeds";
 import { OnboardingBanner } from "@/components/onboarding-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,18 +16,6 @@ import {
   PieChart, Pie, Tooltip as RechartsTooltip,
   ResponsiveContainer, Cell, Legend,
 } from "recharts";
-
-const breedLabels: Record<string, string> = {
-  alpine: "Alpine",
-  nubian: "Nubian",
-  saanen: "Saanen",
-  lamancha: "LaMancha",
-  toggenburg: "Toggenburg",
-  boer: "Boer",
-  "nigerian-dwarf": "Nigerian Dwarf",
-  oberhasli: "Oberhasli",
-  mixed: "Mixed",
-};
 
 const LACTATION_COLORS: Record<string, string> = {
   Milking: "hsl(var(--chart-1))",

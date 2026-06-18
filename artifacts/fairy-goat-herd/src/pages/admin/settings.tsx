@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Settings, Zap, Home, CalendarClock, Loader2, Upload, X } from "lucide-react";
+import { Settings, Zap, Home, CalendarClock, Loader2, Upload, X, PawPrint } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetSettings,
@@ -11,7 +11,9 @@ import { useUpload } from "@workspace/object-storage-web";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/lib/auth";
 import { DEFAULT_FARM_NAME, DEFAULT_GESTATION_DAYS } from "@/lib/settings";
+import { BREED_CATALOG, BREED_SLUGS } from "@/lib/breeds";
 import { GoatIcon } from "@/components/goat-icon";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ function FarmTab() {
   const [farmName, setFarmName] = useState("");
   const [adgaNumber, setAdgaNumber] = useState("");
   const [gestationDays, setGestationDays] = useState("");
+  const [enabledBreeds, setEnabledBreeds] = useState<string[]>([...BREED_SLUGS]);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Keep the editable fields in sync once the saved settings load in.
@@ -51,6 +54,11 @@ function FarmTab() {
       setFarmName(settings.farmName ?? DEFAULT_FARM_NAME);
       setAdgaNumber(settings.adgaNumber ?? "");
       setGestationDays(String(settings.gestationDays ?? DEFAULT_GESTATION_DAYS));
+      setEnabledBreeds(
+        settings.enabledBreeds && settings.enabledBreeds.length > 0
+          ? settings.enabledBreeds
+          : [...BREED_SLUGS],
+      );
     }
   }, [settings]);
 
@@ -165,6 +173,35 @@ function FarmTab() {
         description: usesAi
           ? "Artificial insemination tools are now visible across the app."
           : "AI tools are now hidden. Breedings default to natural service.",
+      },
+    );
+  };
+
+  const toggleBreed = (slug: string, checked: boolean) => {
+    setEnabledBreeds((prev) =>
+      checked ? [...prev, slug] : prev.filter((b) => b !== slug),
+    );
+  };
+
+  const savedBreeds = settings?.enabledBreeds ?? [...BREED_SLUGS];
+  const breedsDirty =
+    enabledBreeds.length !== savedBreeds.length ||
+    [...enabledBreeds].sort().join(",") !== [...savedBreeds].sort().join(",");
+
+  const handleSaveBreeds = () => {
+    if (enabledBreeds.length === 0) {
+      toast({
+        title: "Select at least one breed",
+        description: "Your farm needs at least one breed enabled.",
+        variant: "destructive",
+      });
+      return;
+    }
+    save(
+      { enabledBreeds: enabledBreeds as Parameters<typeof updateSettings.mutate>[0]["data"]["enabledBreeds"] },
+      {
+        title: "Breeds saved",
+        description: `${enabledBreeds.length} breed${enabledBreeds.length !== 1 ? "s" : ""} are now selectable on your farm.`,
       },
     );
   };
@@ -339,6 +376,67 @@ function FarmTab() {
               disabled={busy}
               onCheckedChange={handleToggleAi}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/10 shadow-lg">
+        <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <PawPrint className="h-4 w-4 text-primary" /> Breeds on this farm
+          </CardTitle>
+          <CardDescription>
+            Choose which breeds exist on your farm. Only these appear when adding goats,
+            recording breedings, or importing. Enable a new breed here before adding a goat of it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {enabledBreeds.length} of {BREED_CATALOG.length} breeds selected
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setEnabledBreeds([...BREED_SLUGS])}
+                >
+                  Select all
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setEnabledBreeds([])}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+              {BREED_CATALOG.map((breed) => (
+                <label
+                  key={breed.slug}
+                  className="flex items-center gap-2.5 text-sm font-medium text-foreground cursor-pointer"
+                >
+                  <Checkbox
+                    checked={enabledBreeds.includes(breed.slug)}
+                    disabled={busy}
+                    onCheckedChange={(checked) => toggleBreed(breed.slug, checked === true)}
+                  />
+                  {breed.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleSaveBreeds} disabled={busy || !breedsDirty}>
+              Save breeds
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -22,7 +22,7 @@ import {
   useListBreedings,
   useUpdateGoat,
 } from "@workspace/api-client-react";
-import { breedLabels } from "@/pages/goats/index";
+import { breedLabels } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings } from "@/lib/settings";

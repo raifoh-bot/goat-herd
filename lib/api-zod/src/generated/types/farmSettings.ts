@@ -5,6 +5,7 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { FarmSettingsEnabledBreedsItem } from "./farmSettingsEnabledBreedsItem";
 import type { FarmSettingsWeightUnit } from "./farmSettingsWeightUnit";
 
 export interface FarmSettings {
@@ -21,5 +22,7 @@ export interface FarmSettings {
   weightUnit: FarmSettingsWeightUnit;
   /** Default gestation length in days used to auto-calculate expected kidding dates. */
   gestationDays: number;
+  /** The catalog breed slugs that exist on this farm. Only these appear in breed pickers. */
+  enabledBreeds: FarmSettingsEnabledBreedsItem[];
   updatedAt: Date;
 }

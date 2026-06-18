@@ -10,6 +10,29 @@ export const farmSettingsTable = pgTable("farm_settings", {
   logoUrl: text("logo_url"),
   weightUnit: text("weight_unit").notNull().default("lb"),
   gestationDays: integer("gestation_days").notNull().default(150),
+  enabledBreeds: text("enabled_breeds")
+    .array()
+    .notNull()
+    .default([
+      "alpine",
+      "angora",
+      "boer",
+      "kiko",
+      "lamancha",
+      "mixed",
+      "myotonic",
+      "nigerian-dwarf",
+      "nubian",
+      "oberhasli",
+      "pygmy",
+      "recorded-grade",
+      "saanen",
+      "sable",
+      "savanna",
+      "spanish",
+      "texmaster",
+      "toggenburg",
+    ]),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

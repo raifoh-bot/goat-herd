@@ -37,6 +37,7 @@ function makeSettings(
     logoUrl: null,
     weightUnit: "lb",
     gestationDays: 150,
+    enabledBreeds: [],
     isLoading: false,
     ...overrides,
   };

@@ -3,7 +3,7 @@ import { CheckCircle2, Milk } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { breedLabels } from "@/pages/goats/index";
+import { breedLabels } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 
 function hasCompleteBreedingLines(goat: Goat): boolean {

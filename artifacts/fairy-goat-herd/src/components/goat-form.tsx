@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Loader2, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
+import { BREED_SLUGS, getBreedOptions } from "@/lib/breeds";
+import { useFarmSettings } from "@/lib/settings";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
@@ -31,7 +33,7 @@ const formSchema = z.object({
   maternalGrandsireRegNo: z.string().optional(),
   paternalGranddamRegNo: z.string().optional(),
   paternalGrandsireRegNo: z.string().optional(),
-  breed: z.enum(["alpine", "nubian", "saanen", "lamancha", "toggenburg", "boer", "nigerian-dwarf", "oberhasli", "mixed"]),
+  breed: z.enum(BREED_SLUGS),
   lactationStatus: z.enum(["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal("")),
@@ -96,6 +98,11 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
     },
   });
+
+  const { enabledBreeds } = useFarmSettings();
+  // Union-in this goat's current breed so an edited goat whose breed is no
+  // longer enabled still shows (and keeps) its stored breed.
+  const breedOptions = getBreedOptions(enabledBreeds, defaultValues?.breed ?? null);
 
   const dateOfBirth = form.watch("dateOfBirth");
   const damName = form.watch("damName");
@@ -273,15 +280,11 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="alpine">Alpine</SelectItem>
-                    <SelectItem value="nubian">Nubian</SelectItem>
-                    <SelectItem value="saanen">Saanen</SelectItem>
-                    <SelectItem value="lamancha">LaMancha</SelectItem>
-                    <SelectItem value="toggenburg">Toggenburg</SelectItem>
-                    <SelectItem value="boer">Boer</SelectItem>
-                    <SelectItem value="nigerian-dwarf">Nigerian Dwarf</SelectItem>
-                    <SelectItem value="oberhasli">Oberhasli</SelectItem>
-                    <SelectItem value="mixed">Mixed</SelectItem>
+                    {breedOptions.map((breed) => (
+                      <SelectItem key={breed.slug} value={breed.slug}>
+                        {breed.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
