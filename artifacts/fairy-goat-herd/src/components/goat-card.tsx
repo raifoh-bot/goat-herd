@@ -17,6 +17,14 @@ function hasCompleteBreedingLines(goat: Goat): boolean {
   );
 }
 
+const TATTOO_LOCATIONS: { field: keyof Goat; label: string }[] = [
+  { field: "rightEarTattoo", label: "R Ear" },
+  { field: "leftEarTattoo", label: "L Ear" },
+  { field: "rightTailTattoo", label: "R Tail" },
+  { field: "leftTailTattoo", label: "L Tail" },
+  { field: "centerTailTattoo", label: "C Tail" },
+];
+
 interface GoatCardProps {
   goat: Goat;
 }
@@ -67,6 +75,29 @@ export function GoatCard({ goat }: GoatCardProps) {
           {goat.adgaId && (
             <p className="text-xs text-muted-foreground/70 mt-1 font-mono">ADGA #{goat.adgaId}</p>
           )}
+          {(() => {
+            const tattoos = TATTOO_LOCATIONS.filter((loc) => goat[loc.field]);
+            if (tattoos.length === 0 && !goat.eidNumber) return null;
+            return (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {tattoos.map((loc) => (
+                  <span
+                    key={loc.field}
+                    className="inline-flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                  >
+                    <span className="uppercase tracking-wide">{loc.label}:</span>
+                    <span className="font-mono font-semibold uppercase text-foreground/80">{String(goat[loc.field])}</span>
+                  </span>
+                ))}
+                {goat.eidNumber && (
+                  <span className="inline-flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <span className="uppercase tracking-wide">EID:</span>
+                    <span className="font-mono font-semibold text-foreground/80">{goat.eidNumber}</span>
+                  </span>
+                )}
+              </div>
+            );
+          })()}
         </CardHeader>
       </Card>
     </Link>

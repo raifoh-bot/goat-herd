@@ -928,6 +928,18 @@ components:
         leftEarTattoo:
           type: string
           maxLength: 4
+        rightTailTattoo:
+          type: string
+          maxLength: 4
+        leftTailTattoo:
+          type: string
+          maxLength: 4
+        centerTailTattoo:
+          type: string
+          maxLength: 4
+        eidNumber:
+          type: string
+          maxLength: 50
         createdAt:
           type: string
           format: date-time
@@ -1013,9 +1025,27 @@ components:
         rightEarTattoo:
           type: string
           maxLength: 4
+          nullable: true
         leftEarTattoo:
           type: string
           maxLength: 4
+          nullable: true
+        rightTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        leftTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        centerTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        eidNumber:
+          type: string
+          maxLength: 50
+          nullable: true
       required:
         - name
         - breed
@@ -1089,9 +1119,27 @@ components:
         rightEarTattoo:
           type: string
           maxLength: 4
+          nullable: true
         leftEarTattoo:
           type: string
           maxLength: 4
+          nullable: true
+        rightTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        leftTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        centerTailTattoo:
+          type: string
+          maxLength: 4
+          nullable: true
+        eidNumber:
+          type: string
+          maxLength: 50
+          nullable: true
 
     Breeding:
       type: object
@@ -1693,6 +1741,18 @@ components:
         leftEarTattoo:
           type: string
           maxLength: 4
+        rightTailTattoo:
+          type: string
+          maxLength: 4
+        leftTailTattoo:
+          type: string
+          maxLength: 4
+        centerTailTattoo:
+          type: string
+          maxLength: 4
+        eidNumber:
+          type: string
+          maxLength: 50
         lactationStatus:
           type: string
           enum: [milking, dry, exposed, serviced, pregnant, kid, retired]

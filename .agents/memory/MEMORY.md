@@ -1,5 +1,7 @@
-- [Separate dev/prod databases](separate-dev-prod-databases.md) — dev & prod are distinct DBs; prod is read-only via tools, so seed prod data from an idempotent boot-time seed in the deployed app, not from agent tooling.
-- [connect-pg-simple + esbuild](connect-pg-simple-esbuild.md) — createTableIfMissing reads table.sql via __dirname which esbuild rewrites to dist/; sessions silently fail to persist (login 200, next req 401). Use createTableIfMissing:false + boot-time ensureSessionTable().
-- [Replit iframe cookies](replit-iframe-cookies.md) — dev preview is a cross-site iframe; cookie auth needs SameSite=None+Secure (default secure on, trust proxy set) or login 200 but every next req 401. Prod (direct) hides it.
-- [Typecheck & codegen pitfalls](typecheck-codegen-pitfalls.md) — codegen regen forces tsc rebuild, surfacing 3 latent failures (api-zod barrel TS2308, deep api-client-react imports TS2307, composite lib TS6306); full `pnpm run typecheck` short-circuits at libs.
-- [Tests run as NODE_ENV=production](test-env-prod-cookies.md) — api-server vitest sets NODE_ENV=production; prod-gated behavior (secure cookies) activates in tests, breaking plain-HTTP supertest (login 200, next req 401). Gate HTTPS-only features on an explicit override.
+- [Separate dev/prod databases](separate-dev-prod-databases.md) — prod DB is read-only via tooling; seed prod from an idempotent boot-time seed.
+- [connect-pg-simple + esbuild](connect-pg-simple-esbuild.md) — table.sql path breaks under esbuild; use createTableIfMissing:false + boot-time ensure.
+- [Replit iframe cookies](replit-iframe-cookies.md) — dev preview is cross-site; cookie auth needs SameSite=None+Secure or every request 401s.
+- [Typecheck & codegen pitfalls](typecheck-codegen-pitfalls.md) — codegen regen forces tsc rebuild that surfaces latent lib/barrel failures.
+- [Tests run as NODE_ENV=production](test-env-prod-cookies.md) — api-server vitest runs as production; gate HTTPS-only features behind an explicit override.
+- [drizzle push drops user_sessions](drizzle-push-drops-session-table.md) — never confirm db push; add columns via ALTER TABLE ... ADD COLUMN IF NOT EXISTS.
+- [Clearing fields needs null not undefined](clearing-fields-null-not-undefined.md) — form transforms must emit null so Drizzle .set() actually clears; undefined is omitted.

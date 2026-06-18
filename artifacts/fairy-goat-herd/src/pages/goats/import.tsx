@@ -29,6 +29,10 @@ const GOAT_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: "maternalGrandsireName", label: "Maternal Grandsire" },
   { key: "rightEarTattoo", label: "Right Ear Tattoo" },
   { key: "leftEarTattoo", label: "Left Ear Tattoo" },
+  { key: "rightTailTattoo", label: "Right Tail Tattoo" },
+  { key: "leftTailTattoo", label: "Left Tail Tattoo" },
+  { key: "centerTailTattoo", label: "Center Tail Tattoo" },
+  { key: "eidNumber", label: "EID / Microchip" },
 ];
 
 const AUTO_MAP: Record<string, string> = {
@@ -38,6 +42,10 @@ const AUTO_MAP: Record<string, string> = {
   "dob": "dateOfBirth", "date of birth": "dateOfBirth", "birthday": "dateOfBirth", "birth date": "dateOfBirth",
   "tat re": "rightEarTattoo", "re tattoo": "rightEarTattoo", "right ear": "rightEarTattoo", "right ear tattoo": "rightEarTattoo",
   "tat le": "leftEarTattoo", "le tattoo": "leftEarTattoo", "left ear": "leftEarTattoo", "left ear tattoo": "leftEarTattoo",
+  "tat rt": "rightTailTattoo", "rt tattoo": "rightTailTattoo", "right tail": "rightTailTattoo", "right tail tattoo": "rightTailTattoo",
+  "tat lt": "leftTailTattoo", "lt tattoo": "leftTailTattoo", "left tail": "leftTailTattoo", "left tail tattoo": "leftTailTattoo",
+  "tat ct": "centerTailTattoo", "ct tattoo": "centerTailTattoo", "center tail": "centerTailTattoo", "center tail tattoo": "centerTailTattoo", "centre tail": "centerTailTattoo",
+  "eid": "eidNumber", "eid number": "eidNumber", "microchip": "eidNumber", "microchip id": "eidNumber", "chip": "eidNumber", "chip id": "eidNumber",
   "sex": "sex", "gender": "sex",
   "breed": "breed",
   "dam": "damName", "dam name": "damName", "mother": "damName",
@@ -102,7 +110,13 @@ function applyMapping(
     } else if (field === "breed") {
       const normalized = normalizeBreed(val, allowedBreeds);
       if (normalized) result[field] = normalized;
-    } else if (field === "rightEarTattoo" || field === "leftEarTattoo") {
+    } else if (
+      field === "rightEarTattoo" ||
+      field === "leftEarTattoo" ||
+      field === "rightTailTattoo" ||
+      field === "leftTailTattoo" ||
+      field === "centerTailTattoo"
+    ) {
       result[field] = String(val).slice(0, 4);
     } else {
       result[field] = String(val).trim() || undefined;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { formatAge } from "@/lib/age";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader2, Upload, X } from "lucide-react";
+import { Camera, Loader2, Plus, Upload, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
 import { BREED_SLUGS, getBreedOptions } from "@/lib/breeds";
@@ -39,9 +39,23 @@ const formSchema = z.object({
   imageUrl: z.string().optional().or(z.literal("")),
   herdStatus: z.enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"]).nullable().optional(),
   leasedBuck: z.boolean().optional(),
-  rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
-  leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => v || undefined),
+  rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  rightTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  leftTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  centerTailTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
+  eidNumber: z.string().max(50, "Max 50 characters").optional().transform((v) => (v ? v : null)),
 });
+
+const TATTOO_LOCATIONS = [
+  { field: "rightEarTattoo", label: "Right Ear", placeholder: "E.g., A1B2" },
+  { field: "leftEarTattoo", label: "Left Ear", placeholder: "E.g., C3D4" },
+  { field: "rightTailTattoo", label: "Right Tail", placeholder: "E.g., E5F6" },
+  { field: "leftTailTattoo", label: "Left Tail", placeholder: "E.g., G7H8" },
+  { field: "centerTailTattoo", label: "Center Tail", placeholder: "E.g., J9K0" },
+] as const;
+
+type TattooField = (typeof TATTOO_LOCATIONS)[number]["field"];
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -96,8 +110,27 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
+      rightTailTattoo: defaultValues?.rightTailTattoo || "",
+      leftTailTattoo: defaultValues?.leftTailTattoo || "",
+      centerTailTattoo: defaultValues?.centerTailTattoo || "",
+      eidNumber: defaultValues?.eidNumber || "",
     },
   });
+
+  const [activeTattooFields, setActiveTattooFields] = useState<TattooField[]>(() =>
+    TATTOO_LOCATIONS.filter((loc) => defaultValues?.[loc.field]).map((loc) => loc.field),
+  );
+
+  const addTattooLocation = (field: TattooField) => {
+    setActiveTattooFields((prev) => (prev.includes(field) ? prev : [...prev, field]));
+  };
+
+  const removeTattooLocation = (field: TattooField) => {
+    form.setValue(field, "");
+    setActiveTattooFields((prev) => prev.filter((f) => f !== field));
+  };
+
+  const availableTattooLocations = TATTOO_LOCATIONS.filter((loc) => !activeTattooFields.includes(loc.field));
 
   const { enabledBreeds } = useFarmSettings();
   // Union-in this goat's current breed so an edited goat whose breed is no
@@ -489,31 +522,90 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
 
         <div className="space-y-4 rounded-xl border border-border bg-card/50 p-4">
           <div>
-            <h3 className="font-serif text-lg font-semibold text-foreground">Tattoo</h3>
-            <p className="text-sm text-muted-foreground">ADGA ear tattoo identifiers (up to 4 characters each).</p>
+            <h3 className="font-serif text-lg font-semibold text-foreground">Identification</h3>
+            <p className="text-sm text-muted-foreground">Tattoo locations and microchip/EID for this goat.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium text-foreground">Tattoo</h4>
+              <p className="text-xs text-muted-foreground">Add the locations this goat is tattooed in (up to 4 characters each).</p>
+            </div>
+
+            {activeTattooFields.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">No tattoo locations added yet.</p>
+            )}
+
+            {activeTattooFields.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {TATTOO_LOCATIONS.filter((loc) => activeTattooFields.includes(loc.field)).map((loc) => (
+                  <FormField
+                    key={loc.field}
+                    control={form.control}
+                    name={loc.field}
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>{loc.label}</FormLabel>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTattooLocation(loc.field)}
+                            className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-3 w-3 mr-1" /> Remove
+                          </Button>
+                        </div>
+                        <FormControl>
+                          <Input
+                            placeholder={loc.placeholder}
+                            maxLength={4}
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            className="bg-background/50 uppercase"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+
+            {availableTattooLocations.length > 0 && (
+              <Select value="" onValueChange={(v) => addTattooLocation(v as TattooField)}>
+                <SelectTrigger className="w-full md:w-64 bg-background/50">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Plus className="h-4 w-4" /> Add tattoo location
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTattooLocations.map((loc) => (
+                    <SelectItem key={loc.field} value={loc.field}>
+                      {loc.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-4 border-t border-border/60 pt-4">
+            <div>
+              <h4 className="text-sm font-medium text-foreground">Microchip</h4>
+              <p className="text-xs text-muted-foreground">Optional electronic ID (EID) number.</p>
+            </div>
             <FormField
               control={form.control}
-              name="rightEarTattoo"
+              name="eidNumber"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Right Ear</FormLabel>
+                <FormItem className="md:max-w-md">
+                  <FormLabel>EID Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g., A1B2" maxLength={4} {...field} className="bg-background/50 uppercase" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="leftEarTattoo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Left Ear</FormLabel>
-                  <FormControl>
-                    <Input placeholder="E.g., C3D4" maxLength={4} {...field} className="bg-background/50 uppercase" />
+                    <Input placeholder="E.g., 982000123456789" maxLength={50} {...field} value={field.value ?? ""} className="bg-background/50 font-mono" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

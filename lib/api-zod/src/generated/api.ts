@@ -68,6 +68,14 @@ export const listGoatsResponseRightEarTattooMax = 4;
 
 export const listGoatsResponseLeftEarTattooMax = 4;
 
+export const listGoatsResponseRightTailTattooMax = 4;
+
+export const listGoatsResponseLeftTailTattooMax = 4;
+
+export const listGoatsResponseCenterTailTattooMax = 4;
+
+export const listGoatsResponseEidNumberMax = 50;
+
 export const ListGoatsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
@@ -139,6 +147,19 @@ export const ListGoatsResponseItem = zod.object({
     .max(listGoatsResponseRightEarTattooMax)
     .optional(),
   leftEarTattoo: zod.string().max(listGoatsResponseLeftEarTattooMax).optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(listGoatsResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(listGoatsResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(listGoatsResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod.string().max(listGoatsResponseEidNumberMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -153,6 +174,14 @@ export const createGoatBodyMilkPerDayMax = 10;
 export const createGoatBodyRightEarTattooMax = 4;
 
 export const createGoatBodyLeftEarTattooMax = 4;
+
+export const createGoatBodyRightTailTattooMax = 4;
+
+export const createGoatBodyLeftTailTattooMax = 4;
+
+export const createGoatBodyCenterTailTattooMax = 4;
+
+export const createGoatBodyEidNumberMax = 50;
 
 export const CreateGoatBody = zod.object({
   name: zod.string(),
@@ -219,8 +248,15 @@ export const CreateGoatBody = zod.object({
   herdStatus: zod
     .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
     .nullish(),
-  rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).optional(),
-  leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).optional(),
+  rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).nullish(),
+  leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).nullish(),
+  rightTailTattoo: zod.string().max(createGoatBodyRightTailTattooMax).nullish(),
+  leftTailTattoo: zod.string().max(createGoatBodyLeftTailTattooMax).nullish(),
+  centerTailTattoo: zod
+    .string()
+    .max(createGoatBodyCenterTailTattooMax)
+    .nullish(),
+  eidNumber: zod.string().max(createGoatBodyEidNumberMax).nullish(),
 });
 
 /**
@@ -236,6 +272,14 @@ export const getGoatResponseMilkPerDayMax = 10;
 export const getGoatResponseRightEarTattooMax = 4;
 
 export const getGoatResponseLeftEarTattooMax = 4;
+
+export const getGoatResponseRightTailTattooMax = 4;
+
+export const getGoatResponseLeftTailTattooMax = 4;
+
+export const getGoatResponseCenterTailTattooMax = 4;
+
+export const getGoatResponseEidNumberMax = 50;
 
 export const GetGoatResponse = zod.object({
   id: zod.number(),
@@ -305,6 +349,16 @@ export const GetGoatResponse = zod.object({
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod.string().max(getGoatResponseRightEarTattooMax).optional(),
   leftEarTattoo: zod.string().max(getGoatResponseLeftEarTattooMax).optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(getGoatResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod.string().max(getGoatResponseLeftTailTattooMax).optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(getGoatResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod.string().max(getGoatResponseEidNumberMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -322,6 +376,14 @@ export const updateGoatBodyMilkPerDayMax = 10;
 export const updateGoatBodyRightEarTattooMax = 4;
 
 export const updateGoatBodyLeftEarTattooMax = 4;
+
+export const updateGoatBodyRightTailTattooMax = 4;
+
+export const updateGoatBodyLeftTailTattooMax = 4;
+
+export const updateGoatBodyCenterTailTattooMax = 4;
+
+export const updateGoatBodyEidNumberMax = 50;
 
 export const UpdateGoatBody = zod.object({
   name: zod.string().optional(),
@@ -390,8 +452,15 @@ export const UpdateGoatBody = zod.object({
   herdStatus: zod
     .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
     .nullish(),
-  rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).optional(),
-  leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).optional(),
+  rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).nullish(),
+  leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).nullish(),
+  rightTailTattoo: zod.string().max(updateGoatBodyRightTailTattooMax).nullish(),
+  leftTailTattoo: zod.string().max(updateGoatBodyLeftTailTattooMax).nullish(),
+  centerTailTattoo: zod
+    .string()
+    .max(updateGoatBodyCenterTailTattooMax)
+    .nullish(),
+  eidNumber: zod.string().max(updateGoatBodyEidNumberMax).nullish(),
 });
 
 export const updateGoatResponseMilkPerDayMin = 0;
@@ -400,6 +469,14 @@ export const updateGoatResponseMilkPerDayMax = 10;
 export const updateGoatResponseRightEarTattooMax = 4;
 
 export const updateGoatResponseLeftEarTattooMax = 4;
+
+export const updateGoatResponseRightTailTattooMax = 4;
+
+export const updateGoatResponseLeftTailTattooMax = 4;
+
+export const updateGoatResponseCenterTailTattooMax = 4;
+
+export const updateGoatResponseEidNumberMax = 50;
 
 export const UpdateGoatResponse = zod.object({
   id: zod.number(),
@@ -475,6 +552,19 @@ export const UpdateGoatResponse = zod.object({
     .string()
     .max(updateGoatResponseLeftEarTattooMax)
     .optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(updateGoatResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(updateGoatResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(updateGoatResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod.string().max(updateGoatResponseEidNumberMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -492,6 +582,14 @@ export const DeleteGoatParams = zod.object({
 export const importGoatsBodyGoatsItemRightEarTattooMax = 4;
 
 export const importGoatsBodyGoatsItemLeftEarTattooMax = 4;
+
+export const importGoatsBodyGoatsItemRightTailTattooMax = 4;
+
+export const importGoatsBodyGoatsItemLeftTailTattooMax = 4;
+
+export const importGoatsBodyGoatsItemCenterTailTattooMax = 4;
+
+export const importGoatsBodyGoatsItemEidNumberMax = 50;
 
 export const ImportGoatsBody = zod.object({
   goats: zod.array(
@@ -535,6 +633,22 @@ export const ImportGoatsBody = zod.object({
         .string()
         .max(importGoatsBodyGoatsItemLeftEarTattooMax)
         .optional(),
+      rightTailTattoo: zod
+        .string()
+        .max(importGoatsBodyGoatsItemRightTailTattooMax)
+        .optional(),
+      leftTailTattoo: zod
+        .string()
+        .max(importGoatsBodyGoatsItemLeftTailTattooMax)
+        .optional(),
+      centerTailTattoo: zod
+        .string()
+        .max(importGoatsBodyGoatsItemCenterTailTattooMax)
+        .optional(),
+      eidNumber: zod
+        .string()
+        .max(importGoatsBodyGoatsItemEidNumberMax)
+        .optional(),
       lactationStatus: zod
         .enum([
           "milking",
@@ -559,6 +673,14 @@ export const listBreedingsResponseTwoDoeMilkPerDayMax = 10;
 export const listBreedingsResponseTwoDoeRightEarTattooMax = 4;
 
 export const listBreedingsResponseTwoDoeLeftEarTattooMax = 4;
+
+export const listBreedingsResponseTwoDoeRightTailTattooMax = 4;
+
+export const listBreedingsResponseTwoDoeLeftTailTattooMax = 4;
+
+export const listBreedingsResponseTwoDoeCenterTailTattooMax = 4;
+
+export const listBreedingsResponseTwoDoeEidNumberMax = 50;
 
 export const ListBreedingsResponseItem = zod
   .object({
@@ -677,6 +799,22 @@ export const ListBreedingsResponseItem = zod
             .string()
             .max(listBreedingsResponseTwoDoeLeftEarTattooMax)
             .optional(),
+          rightTailTattoo: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeRightTailTattooMax)
+            .optional(),
+          leftTailTattoo: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeLeftTailTattooMax)
+            .optional(),
+          centerTailTattoo: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeCenterTailTattooMax)
+            .optional(),
+          eidNumber: zod
+            .string()
+            .max(listBreedingsResponseTwoDoeEidNumberMax)
+            .optional(),
           createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
         })
@@ -767,6 +905,14 @@ export const getBreedingResponseTwoDoeMilkPerDayMax = 10;
 export const getBreedingResponseTwoDoeRightEarTattooMax = 4;
 
 export const getBreedingResponseTwoDoeLeftEarTattooMax = 4;
+
+export const getBreedingResponseTwoDoeRightTailTattooMax = 4;
+
+export const getBreedingResponseTwoDoeLeftTailTattooMax = 4;
+
+export const getBreedingResponseTwoDoeCenterTailTattooMax = 4;
+
+export const getBreedingResponseTwoDoeEidNumberMax = 50;
 
 export const GetBreedingResponse = zod
   .object({
@@ -884,6 +1030,22 @@ export const GetBreedingResponse = zod
           leftEarTattoo: zod
             .string()
             .max(getBreedingResponseTwoDoeLeftEarTattooMax)
+            .optional(),
+          rightTailTattoo: zod
+            .string()
+            .max(getBreedingResponseTwoDoeRightTailTattooMax)
+            .optional(),
+          leftTailTattoo: zod
+            .string()
+            .max(getBreedingResponseTwoDoeLeftTailTattooMax)
+            .optional(),
+          centerTailTattoo: zod
+            .string()
+            .max(getBreedingResponseTwoDoeCenterTailTattooMax)
+            .optional(),
+          eidNumber: zod
+            .string()
+            .max(getBreedingResponseTwoDoeEidNumberMax)
             .optional(),
           createdAt: zod.coerce.date(),
           updatedAt: zod.coerce.date(),
@@ -1231,6 +1393,14 @@ export const getDashboardSummaryResponseTopProducerRightEarTattooMax = 4;
 
 export const getDashboardSummaryResponseTopProducerLeftEarTattooMax = 4;
 
+export const getDashboardSummaryResponseTopProducerRightTailTattooMax = 4;
+
+export const getDashboardSummaryResponseTopProducerLeftTailTattooMax = 4;
+
+export const getDashboardSummaryResponseTopProducerCenterTailTattooMax = 4;
+
+export const getDashboardSummaryResponseTopProducerEidNumberMax = 50;
+
 export const GetDashboardSummaryResponse = zod.object({
   totalGoats: zod.number(),
   doeCount: zod.number(),
@@ -1332,6 +1502,22 @@ export const GetDashboardSummaryResponse = zod.object({
         .string()
         .max(getDashboardSummaryResponseTopProducerLeftEarTattooMax)
         .optional(),
+      rightTailTattoo: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerRightTailTattooMax)
+        .optional(),
+      leftTailTattoo: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerLeftTailTattooMax)
+        .optional(),
+      centerTailTattoo: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerCenterTailTattooMax)
+        .optional(),
+      eidNumber: zod
+        .string()
+        .max(getDashboardSummaryResponseTopProducerEidNumberMax)
+        .optional(),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
     })
@@ -1377,6 +1563,14 @@ export const getRecentActivityResponseMilkPerDayMax = 10;
 export const getRecentActivityResponseRightEarTattooMax = 4;
 
 export const getRecentActivityResponseLeftEarTattooMax = 4;
+
+export const getRecentActivityResponseRightTailTattooMax = 4;
+
+export const getRecentActivityResponseLeftTailTattooMax = 4;
+
+export const getRecentActivityResponseCenterTailTattooMax = 4;
+
+export const getRecentActivityResponseEidNumberMax = 50;
 
 export const GetRecentActivityResponseItem = zod.object({
   id: zod.number(),
@@ -1452,6 +1646,19 @@ export const GetRecentActivityResponseItem = zod.object({
     .string()
     .max(getRecentActivityResponseLeftEarTattooMax)
     .optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(getRecentActivityResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(getRecentActivityResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(getRecentActivityResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod.string().max(getRecentActivityResponseEidNumberMax).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

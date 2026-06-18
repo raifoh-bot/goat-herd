@@ -277,21 +277,41 @@ export default function GoatDetails() {
                       <span className="font-medium text-foreground">{goat.dateOfBirth ? formatAge(goat.dateOfBirth) : `${goat.age} yr`}</span>
                     </div>
 
-                    {(goat.rightEarTattoo || goat.leftEarTattoo) && (
-                      <div className="pt-1">
-                        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tattoo</div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-center">
-                            <div className="text-xs text-muted-foreground mb-1">Right Ear</div>
-                            <div className="font-mono font-semibold text-foreground uppercase">{goat.rightEarTattoo || "—"}</div>
-                          </div>
-                          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-center">
-                            <div className="text-xs text-muted-foreground mb-1">Left Ear</div>
-                            <div className="font-mono font-semibold text-foreground uppercase">{goat.leftEarTattoo || "—"}</div>
-                          </div>
+                    {(() => {
+                      const tattoos = [
+                        { label: "Right Ear", value: goat.rightEarTattoo },
+                        { label: "Left Ear", value: goat.leftEarTattoo },
+                        { label: "Right Tail", value: goat.rightTailTattoo },
+                        { label: "Left Tail", value: goat.leftTailTattoo },
+                        { label: "Center Tail", value: goat.centerTailTattoo },
+                      ].filter((t) => t.value);
+                      if (tattoos.length === 0 && !goat.eidNumber) return null;
+                      return (
+                        <div className="pt-1 space-y-3">
+                          {tattoos.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tattoo</div>
+                              <div className="grid grid-cols-2 gap-2">
+                                {tattoos.map((t) => (
+                                  <div key={t.label} className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-center">
+                                    <div className="text-xs text-muted-foreground mb-1">{t.label}</div>
+                                    <div className="font-mono font-semibold text-foreground uppercase">{t.value}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {goat.eidNumber && (
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Microchip / EID</div>
+                              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-center">
+                                <div className="font-mono font-semibold text-foreground break-all">{goat.eidNumber}</div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>

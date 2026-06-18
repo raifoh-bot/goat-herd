@@ -35,6 +35,10 @@ export const goatsTable = pgTable("goats", {
   leasedBuck: boolean("leased_buck").default(false).notNull(),
   rightEarTattoo: varchar("right_ear_tattoo", { length: 4 }),
   leftEarTattoo: varchar("left_ear_tattoo", { length: 4 }),
+  rightTailTattoo: varchar("right_tail_tattoo", { length: 4 }),
+  leftTailTattoo: varchar("left_tail_tattoo", { length: 4 }),
+  centerTailTattoo: varchar("center_tail_tattoo", { length: 4 }),
+  eidNumber: varchar("eid_number", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

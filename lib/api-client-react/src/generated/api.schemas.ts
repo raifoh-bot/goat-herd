@@ -118,6 +118,14 @@ export interface Goat {
   rightEarTattoo?: string;
   /** @maxLength 4 */
   leftEarTattoo?: string;
+  /** @maxLength 4 */
+  rightTailTattoo?: string;
+  /** @maxLength 4 */
+  leftTailTattoo?: string;
+  /** @maxLength 4 */
+  centerTailTattoo?: string;
+  /** @maxLength 50 */
+  eidNumber?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -225,9 +233,17 @@ export interface CreateGoatBody {
   leasedBuck?: boolean;
   herdStatus?: CreateGoatBodyHerdStatus;
   /** @maxLength 4 */
-  rightEarTattoo?: string;
+  rightEarTattoo?: string | null;
   /** @maxLength 4 */
-  leftEarTattoo?: string;
+  leftEarTattoo?: string | null;
+  /** @maxLength 4 */
+  rightTailTattoo?: string | null;
+  /** @maxLength 4 */
+  leftTailTattoo?: string | null;
+  /** @maxLength 4 */
+  centerTailTattoo?: string | null;
+  /** @maxLength 50 */
+  eidNumber?: string | null;
 }
 
 export type UpdateGoatBodySex =
@@ -333,9 +349,17 @@ export interface UpdateGoatBody {
   leasedBuck?: boolean;
   herdStatus?: UpdateGoatBodyHerdStatus;
   /** @maxLength 4 */
-  rightEarTattoo?: string;
+  rightEarTattoo?: string | null;
   /** @maxLength 4 */
-  leftEarTattoo?: string;
+  leftEarTattoo?: string | null;
+  /** @maxLength 4 */
+  rightTailTattoo?: string | null;
+  /** @maxLength 4 */
+  leftTailTattoo?: string | null;
+  /** @maxLength 4 */
+  centerTailTattoo?: string | null;
+  /** @maxLength 50 */
+  eidNumber?: string | null;
 }
 
 /**
@@ -776,6 +800,14 @@ export interface ImportGoatRow {
   rightEarTattoo?: string;
   /** @maxLength 4 */
   leftEarTattoo?: string;
+  /** @maxLength 4 */
+  rightTailTattoo?: string;
+  /** @maxLength 4 */
+  leftTailTattoo?: string;
+  /** @maxLength 4 */
+  centerTailTattoo?: string;
+  /** @maxLength 50 */
+  eidNumber?: string;
   lactationStatus?: ImportGoatRowLactationStatus;
 }
 

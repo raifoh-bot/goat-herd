@@ -44,7 +44,15 @@ export interface UpdateGoatBody {
   leasedBuck?: boolean;
   herdStatus?: UpdateGoatBodyHerdStatus;
   /** @maxLength 4 */
-  rightEarTattoo?: string;
+  rightEarTattoo?: string | null;
   /** @maxLength 4 */
-  leftEarTattoo?: string;
+  leftEarTattoo?: string | null;
+  /** @maxLength 4 */
+  rightTailTattoo?: string | null;
+  /** @maxLength 4 */
+  leftTailTattoo?: string | null;
+  /** @maxLength 4 */
+  centerTailTattoo?: string | null;
+  /** @maxLength 50 */
+  eidNumber?: string | null;
 }

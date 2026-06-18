@@ -50,6 +50,14 @@ export interface Goat {
   rightEarTattoo?: string;
   /** @maxLength 4 */
   leftEarTattoo?: string;
+  /** @maxLength 4 */
+  rightTailTattoo?: string;
+  /** @maxLength 4 */
+  leftTailTattoo?: string;
+  /** @maxLength 4 */
+  centerTailTattoo?: string;
+  /** @maxLength 50 */
+  eidNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }

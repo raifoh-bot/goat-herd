@@ -80,6 +80,10 @@ router.post("/goats/import", requireManager, async (req, res): Promise<void> => 
         paternalGrandsireName: row.paternalGrandsireName ?? "",
         rightEarTattoo: row.rightEarTattoo ? row.rightEarTattoo.slice(0, 4) : null,
         leftEarTattoo: row.leftEarTattoo ? row.leftEarTattoo.slice(0, 4) : null,
+        rightTailTattoo: row.rightTailTattoo ? row.rightTailTattoo.slice(0, 4) : null,
+        leftTailTattoo: row.leftTailTattoo ? row.leftTailTattoo.slice(0, 4) : null,
+        centerTailTattoo: row.centerTailTattoo ? row.centerTailTattoo.slice(0, 4) : null,
+        eidNumber: row.eidNumber ?? null,
         lactationStatus: row.lactationStatus ?? null,
       });
       imported++;
