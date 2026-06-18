@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { Plus, Snowflake, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, Snowflake, Pencil, Trash2, Package, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useFarmSettings } from "@/lib/settings";
+import { useIsManager } from "@/lib/auth";
+import { ImportStrawsDialog } from "./import-dialog";
 
 const strawSchema = z.object({
   sireName: z.string().min(1, "Sire / straw name is required"),
@@ -52,7 +54,9 @@ export default function InventoryList() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { usesAi, isLoading: settingsLoading } = useFarmSettings();
+  const isManager = useIsManager();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<SemenStraw | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SemenStraw | null>(null);
 
@@ -208,9 +212,16 @@ export default function InventoryList() {
               Track frozen straws in the tank and what's available per sire.
             </p>
           </div>
-          <Button onClick={openAdd} size="lg" className="shadow-md shrink-0">
-            <Plus className="mr-2 h-4 w-4" /> Add Straws
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {isManager && (
+              <Button onClick={() => setImportOpen(true)} size="lg" variant="outline" className="shadow-sm">
+                <Upload className="mr-2 h-4 w-4" /> Import CSV
+              </Button>
+            )}
+            <Button onClick={openAdd} size="lg" className="shadow-md">
+              <Plus className="mr-2 h-4 w-4" /> Add Straws
+            </Button>
+          </div>
         </div>
 
         {/* Remaining straws per sire */}
@@ -311,6 +322,9 @@ export default function InventoryList() {
           </div>
         )}
       </div>
+
+      {/* Bulk CSV import dialog */}
+      <ImportStrawsDialog open={importOpen} onOpenChange={setImportOpen} onImported={invalidate} />
 
       {/* Add / edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

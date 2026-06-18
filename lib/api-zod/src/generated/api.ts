@@ -1127,6 +1127,29 @@ export const DeleteSemenStrawParams = zod.object({
 });
 
 /**
+ * @summary Bulk import semen straws into inventory
+ */
+
+export const importSemenStrawsBodyStrawsItemCountMin = 0;
+
+export const ImportSemenStrawsBody = zod.object({
+  straws: zod.array(
+    zod.object({
+      sireName: zod.string().min(1),
+      count: zod.number().min(importSemenStrawsBodyStrawsItemCountMin),
+      strawId: zod.string().optional(),
+      supplier: zod.string().optional(),
+      tankLocation: zod.string().optional(),
+      sireDamName: zod.string().optional(),
+      sireSireName: zod.string().optional(),
+      sirePatGranddamName: zod.string().optional(),
+      sirePatGrandsireName: zod.string().optional(),
+      notes: zod.string().optional(),
+    }),
+  ),
+});
+
+/**
  * @summary Get herd dashboard summary
  */
 export const getDashboardSummaryResponseTopProducerMilkPerDayMin = 0;

@@ -550,6 +550,38 @@ export interface UpdateSemenStrawBody {
   notes?: string;
 }
 
+export interface ImportSemenStrawRow {
+  /** @minLength 1 */
+  sireName: string;
+  /** @minimum 0 */
+  count: number;
+  strawId?: string;
+  supplier?: string;
+  tankLocation?: string;
+  sireDamName?: string;
+  sireSireName?: string;
+  sirePatGranddamName?: string;
+  sirePatGrandsireName?: string;
+  notes?: string;
+}
+
+export interface ImportSemenStrawsBody {
+  straws: ImportSemenStrawRow[];
+}
+
+export interface ImportSemenStrawFailure {
+  /** Zero-based index of the failed row in the submitted array */
+  index: number;
+  /** Why this row was rejected */
+  reason: string;
+}
+
+export interface ImportSemenStrawsResult {
+  imported: number;
+  skipped: number;
+  failed: ImportSemenStrawFailure[];
+}
+
 export type CreateKidBodySex =
   (typeof CreateKidBodySex)[keyof typeof CreateKidBodySex];
 

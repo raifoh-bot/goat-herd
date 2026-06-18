@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db, semenStrawsTable } from "@workspace/db";
 import { CreateSemenStrawBody, UpdateSemenStrawBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
@@ -8,6 +9,24 @@ const router: IRouter = Router();
 
 // Semen inventory is read-only for Farm Hands; only Admin/Owner may modify it.
 const requireManager = requireRole("admin", "owner");
+
+// Strict per-row schema for CSV imports. Validated row-by-row so one bad row
+// does not reject the whole file — invalid rows are reported back by index.
+const importStrawRowSchema = z.object({
+  sireName: z.string().trim().min(1, "Sire name is required"),
+  count: z
+    .number({ invalid_type_error: "Count must be a number" })
+    .int("Count must be a whole number")
+    .min(0, "Count cannot be negative"),
+  strawId: z.string().optional(),
+  supplier: z.string().optional(),
+  tankLocation: z.string().optional(),
+  sireDamName: z.string().optional(),
+  sireSireName: z.string().optional(),
+  sirePatGranddamName: z.string().optional(),
+  sirePatGrandsireName: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 router.get("/semen-straws", async (_req, res): Promise<void> => {
   const rows = await db
@@ -41,6 +60,60 @@ router.post("/semen-straws", requireManager, async (req, res): Promise<void> => 
     .returning();
 
   res.status(201).json(straw);
+});
+
+router.post("/semen-straws/import", requireManager, async (req, res): Promise<void> => {
+  const body = req.body as { straws?: unknown };
+  if (!body || !Array.isArray(body.straws)) {
+    res.status(400).json({ error: "Expected a 'straws' array" });
+    return;
+  }
+
+  const rawRows = body.straws as unknown[];
+  const failed: { index: number; reason: string }[] = [];
+  const values: (typeof semenStrawsTable.$inferInsert)[] = [];
+
+  // Validate each row independently so a single bad row does not block the rest.
+  rawRows.forEach((raw, index) => {
+    const parsed = importStrawRowSchema.safeParse(raw);
+    if (!parsed.success) {
+      const reason = parsed.error.issues.map((i) => i.message).join("; ");
+      failed.push({ index, reason });
+      return;
+    }
+    values.push({
+      sireName: parsed.data.sireName,
+      strawId: parsed.data.strawId,
+      supplier: parsed.data.supplier,
+      count: parsed.data.count,
+      tankLocation: parsed.data.tankLocation,
+      sireDamName: parsed.data.sireDamName,
+      sireSireName: parsed.data.sireSireName,
+      sirePatGranddamName: parsed.data.sirePatGranddamName,
+      sirePatGrandsireName: parsed.data.sirePatGrandsireName,
+      notes: parsed.data.notes,
+    });
+  });
+
+  let imported = 0;
+  if (values.length > 0) {
+    try {
+      await db.transaction(async (tx) => {
+        const inserted = await tx.insert(semenStrawsTable).values(values).returning();
+        imported = inserted.length;
+      });
+    } catch (err) {
+      // A DB-level failure rolls back the whole transaction; report every
+      // attempted row as failed so the count stays accurate.
+      const reason = err instanceof Error ? err.message : "Database error during import";
+      req.log.error({ err }, "Semen straw import transaction failed");
+      values.forEach((_, i) => failed.push({ index: i, reason }));
+      res.status(201).json({ imported: 0, skipped: failed.length, failed });
+      return;
+    }
+  }
+
+  res.status(201).json({ imported, skipped: failed.length, failed });
 });
 
 router.put("/semen-straws/:id", requireManager, async (req, res): Promise<void> => {

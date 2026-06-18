@@ -572,6 +572,25 @@ paths:
         "404":
           description: Semen straw entry not found
 
+  /semen-straws/import:
+    post:
+      operationId: importSemenStraws
+      tags: [semen]
+      summary: Bulk import semen straws into inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportSemenStrawsBody"
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportSemenStrawsResult"
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -1382,6 +1401,74 @@ components:
           type: string
         notes:
           type: string
+
+    ImportSemenStrawRow:
+      type: object
+      properties:
+        sireName:
+          type: string
+          minLength: 1
+        count:
+          type: integer
+          minimum: 0
+        strawId:
+          type: string
+        supplier:
+          type: string
+        tankLocation:
+          type: string
+        sireDamName:
+          type: string
+        sireSireName:
+          type: string
+        sirePatGranddamName:
+          type: string
+        sirePatGrandsireName:
+          type: string
+        notes:
+          type: string
+      required:
+        - sireName
+        - count
+
+    ImportSemenStrawsBody:
+      type: object
+      properties:
+        straws:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportSemenStrawRow"
+      required:
+        - straws
+
+    ImportSemenStrawFailure:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: Zero-based index of the failed row in the submitted array
+        reason:
+          type: string
+          description: Why this row was rejected
+      required:
+        - index
+        - reason
+
+    ImportSemenStrawsResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        failed:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportSemenStrawFailure"
+      required:
+        - imported
+        - skipped
+        - failed
 
     Kid:
       type: object

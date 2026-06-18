@@ -37,6 +37,8 @@ import type {
   HealthStatus,
   ImportGoatsBody,
   ImportGoatsResult,
+  ImportSemenStrawsBody,
+  ImportSemenStrawsResult,
   Kid,
   ListGoatsParams,
   LoginBody,
@@ -2185,6 +2187,92 @@ export const useDeleteSemenStraw = <
   TContext
 > => {
   return useMutation(getDeleteSemenStrawMutationOptions(options));
+};
+
+/**
+ * @summary Bulk import semen straws into inventory
+ */
+export const getImportSemenStrawsUrl = () => {
+  return `/api/semen-straws/import`;
+};
+
+export const importSemenStraws = async (
+  importSemenStrawsBody: ImportSemenStrawsBody,
+  options?: RequestInit,
+): Promise<ImportSemenStrawsResult> => {
+  return customFetch<ImportSemenStrawsResult>(getImportSemenStrawsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importSemenStrawsBody),
+  });
+};
+
+export const getImportSemenStrawsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importSemenStraws>>,
+    TError,
+    { data: BodyType<ImportSemenStrawsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importSemenStraws>>,
+  TError,
+  { data: BodyType<ImportSemenStrawsBody> },
+  TContext
+> => {
+  const mutationKey = ["importSemenStraws"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importSemenStraws>>,
+    { data: BodyType<ImportSemenStrawsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importSemenStraws(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportSemenStrawsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importSemenStraws>>
+>;
+export type ImportSemenStrawsMutationBody = BodyType<ImportSemenStrawsBody>;
+export type ImportSemenStrawsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk import semen straws into inventory
+ */
+export const useImportSemenStraws = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importSemenStraws>>,
+    TError,
+    { data: BodyType<ImportSemenStrawsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importSemenStraws>>,
+  TError,
+  { data: BodyType<ImportSemenStrawsBody> },
+  TContext
+> => {
+  return useMutation(getImportSemenStrawsMutationOptions(options));
 };
 
 /**
