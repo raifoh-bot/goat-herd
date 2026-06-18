@@ -59,6 +59,43 @@ function AncestorCell({ name, regNo }: { name?: string | null; regNo?: string | 
   );
 }
 
+const TATTOO_FIELDS: { key: keyof Goat; label: string }[] = [
+  { key: "rightEarTattoo", label: "RE" },
+  { key: "leftEarTattoo", label: "LE" },
+  { key: "rightTailTattoo", label: "RT" },
+  { key: "leftTailTattoo", label: "LT" },
+  { key: "centerTailTattoo", label: "CT" },
+];
+
+function Identification({ goat }: { goat: Goat }) {
+  const tattoos = TATTOO_FIELDS
+    .map((f) => ({ label: f.label, value: goat[f.key] as string | null | undefined }))
+    .filter((t) => t.value);
+
+  if (tattoos.length === 0 && !goat.eidNumber) return null;
+
+  return (
+    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground/70">
+      {tattoos.length > 0 && (
+        <div>
+          Tattoo:{" "}
+          {tattoos.map((t, i) => (
+            <span key={t.label}>
+              {i > 0 && " · "}
+              {t.label} <span className="font-mono uppercase">{t.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {goat.eidNumber && (
+        <div className="break-all">
+          EID: <span className="font-mono">{goat.eidNumber}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LineageReports() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -133,10 +170,11 @@ export default function LineageReports() {
               ) : (
                 sorted.map((goat) => (
                   <tr key={goat.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-medium align-top">
                       <Link href={`/goats/${goat.id}`} className="text-foreground hover:text-primary transition-colors">
                         {goat.name}
                       </Link>
+                      <Identification goat={goat} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {formatDate(goat.dateOfBirth, { month: "short", day: "numeric", year: "numeric" })}
