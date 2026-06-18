@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Printer, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
+import { ReportHeader } from "@/components/report-header";
 import { GoatForm } from "@/components/goat-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -152,8 +153,10 @@ export default function GoatDetails() {
 
   return (
     <Layout>
+      <ReportHeader title={`Pedigree — ${goat.name}`} />
+
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
           <Button variant="ghost" size="sm" onClick={() => setLocation("/goats")} className="text-muted-foreground hover:text-foreground self-start -ml-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Herd
           </Button>
@@ -161,6 +164,9 @@ export default function GoatDetails() {
           <div className="flex items-center gap-2">
             {!isEditing && (
               <>
+                <Button variant="outline" onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Print / Export
+                </Button>
                 <Button variant="outline" onClick={() => setIsEditing(true)}>
                   <Edit3 className="mr-2 h-4 w-4" /> Edit Record
                 </Button>

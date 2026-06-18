@@ -114,8 +114,8 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <div className="flex-1 overflow-auto p-4 md:p-8 lg:p-12 relative z-0">
+        <div className="no-print absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+        <div className="flex-1 overflow-auto p-4 md:p-8 lg:p-12 relative z-0 print:overflow-visible print:p-0">
           <div className="max-w-6xl mx-auto">{children}</div>
         </div>
       </main>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Printer } from "lucide-react";
 import { useListGoats } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReportHeader } from "@/components/report-header";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -76,12 +78,23 @@ export default function LineageReports() {
 
   return (
     <Layout>
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold text-foreground mb-1">Lineage Reports</h1>
-        <p className="text-muted-foreground text-sm">Full pedigree listing for every goat in the herd. Click any column header to sort.</p>
+      <ReportHeader title="Lineage Report" />
+
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-foreground mb-1">Lineage Reports</h1>
+          <p className="text-muted-foreground text-sm">Full pedigree listing for every goat in the herd. Click any column header to sort.</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => window.print()}
+          className="no-print self-start shrink-0"
+        >
+          <Printer className="mr-2 h-4 w-4" /> Print / Export
+        </Button>
       </div>
 
-      <div className="rounded-2xl border border-primary/10 shadow-md bg-card overflow-hidden">
+      <div className="rounded-2xl border border-primary/10 shadow-md bg-card overflow-hidden print:border-0 print:shadow-none">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

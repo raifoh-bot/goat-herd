@@ -185,3 +185,22 @@
     @apply font-serif tracking-tight;
   }
 }
+
+@media print {
+  body {
+    background-image: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide app chrome so only the report prints. */
+  aside,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Let the page flow naturally instead of clipping to the viewport. */
+  main {
+    overflow: visible !important;
+  }
+}
