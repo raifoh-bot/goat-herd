@@ -57,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
               <img
                 src={logoUrl}
                 alt={`${farmName} logo`}
-                className="h-10 w-10 rounded-xl object-cover shadow-inner bg-sidebar-primary"
+                className="h-10 w-10 rounded-xl object-cover shadow-inner bg-white"
               />
             ) : (
               <div className="h-10 w-10 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground shadow-inner">

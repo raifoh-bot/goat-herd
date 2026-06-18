@@ -277,7 +277,7 @@ function FarmTab() {
                 <img
                   src={settings.logoUrl}
                   alt="Farm logo"
-                  className="h-16 w-16 rounded-xl object-cover border border-border bg-muted"
+                  className="h-16 w-16 rounded-xl object-cover border border-border bg-white"
                 />
               ) : (
                 <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-border">

@@ -22,7 +22,7 @@ export function ReportHeader({ title }: ReportHeaderProps) {
         <img
           src={logoUrl}
           alt={`${farmName} logo`}
-          className="h-16 w-16 rounded-lg object-cover shrink-0"
+          className="h-16 w-16 rounded-lg object-cover shrink-0 bg-white"
         />
       ) : (
         <div className="h-16 w-16 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shrink-0">
