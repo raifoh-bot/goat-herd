@@ -27,6 +27,14 @@ export async function ensureFarmSettings(): Promise<void> {
   `);
   await pool.query(`
     ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "adga_number" varchar(50);
+  `);
+  await pool.query(`
+    ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "logo_url" text;
+  `);
+  await pool.query(`
+    ALTER TABLE "farm_settings"
       ADD COLUMN IF NOT EXISTS "weight_unit" text NOT NULL DEFAULT 'lb';
   `);
   await pool.query(`

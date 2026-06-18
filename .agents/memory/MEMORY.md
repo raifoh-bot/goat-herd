@@ -5,4 +5,5 @@
 - [Tests run as NODE_ENV=production](test-env-prod-cookies.md) — api-server vitest runs as production; gate HTTPS-only features behind an explicit override.
 - [drizzle push drops user_sessions](drizzle-push-drops-session-table.md) — never confirm db push; add columns via ALTER TABLE ... ADD COLUMN IF NOT EXISTS.
 - [Clearing fields needs null not undefined](clearing-fields-null-not-undefined.md) — form transforms must emit null so Drizzle .set() actually clears; undefined is omitted.
+- [Boot-ensure DDL must mirror schema](boot-ensure-schema-drift.md) — new Drizzle columns need a matching ADD COLUMN IF NOT EXISTS in ensure* helpers, or reads 500 in dev+prod.
 - [Dev DB loses Drizzle tables on rollback](dev-db-table-recovery.md) — only sessions/settings are boot-ensured; a DB reset drops users → login 500; recover via idempotent CREATE TABLE, not push.
