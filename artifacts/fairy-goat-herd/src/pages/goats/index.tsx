@@ -54,8 +54,8 @@ function GoatRow({ goat }: { goat: Goat }) {
         <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-7 gap-x-4 items-center">
           <div className="md:col-span-2">
             <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{goat.name}</p>
-            {goat.registeredName && <p className="text-xs text-muted-foreground/70 truncate italic">{goat.registeredName}</p>}
-            {goat.adgaId && <p className="text-xs text-muted-foreground/60 font-mono">#{goat.adgaId}</p>}
+            {goat.registeredName && <p className="text-sm sm:text-xs text-muted-foreground/70 truncate italic">{goat.registeredName}</p>}
+            {goat.adgaId && <p className="text-sm sm:text-xs text-muted-foreground/60 font-mono">#{goat.adgaId}</p>}
           </div>
           <div className="hidden md:block">
             <Badge variant="outline" className="text-xs capitalize">{breedLabels[goat.breed] ?? goat.breed}</Badge>
@@ -90,13 +90,13 @@ function CompactCard({ goat }: { goat: Goat }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">{goat.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabel(goat)}</p>
-          <p className="text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${lactationLabels[goat.lactationStatus]}` : ""}</p>
+          <p className="text-sm sm:text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabel(goat)}</p>
+          <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${lactationLabels[goat.lactationStatus]}` : ""}</p>
         </div>
         {(goat.rightEarTattoo || goat.leftEarTattoo) && (
           <div className="text-right shrink-0">
-            {goat.rightEarTattoo && <p className="text-xs font-mono text-muted-foreground/70">RE {goat.rightEarTattoo}</p>}
-            {goat.leftEarTattoo && <p className="text-xs font-mono text-muted-foreground/70">LE {goat.leftEarTattoo}</p>}
+            {goat.rightEarTattoo && <p className="text-sm sm:text-xs font-mono text-muted-foreground/70">RE {goat.rightEarTattoo}</p>}
+            {goat.leftEarTattoo && <p className="text-sm sm:text-xs font-mono text-muted-foreground/70">LE {goat.leftEarTattoo}</p>}
           </div>
         )}
       </div>
@@ -162,7 +162,7 @@ export default function GoatsList() {
       <div className="space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-serif font-bold text-foreground mb-2">The Herd</h2>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">The Herd</h2>
             <p className="text-muted-foreground">Manage your goats, production records, and health status.</p>
           </div>
           <div className="flex gap-2">

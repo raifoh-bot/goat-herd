@@ -154,17 +154,17 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
             {kid.kidStatus === "dead" && <Badge className="bg-destructive/10 text-destructive/70 text-xs px-2 py-0">Dead</Badge>}
             {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-sm sm:text-xs text-muted-foreground">
             {kid.birthWeight ? `${kid.birthWeight} ${weightUnitLabel(weightUnit)}` : null}
             {kid.birthDate ? ` • Born ${formatDate(kid.birthDate, { month: "short", day: "numeric", year: "numeric" })}` : null}
             {kid.notes ? ` • ${kid.notes}` : null}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-10 w-10 p-0 text-muted-foreground hover:text-foreground">
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setIsDeleting(true)} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+          <Button variant="ghost" size="sm" onClick={() => setIsDeleting(true)} className="h-10 w-10 p-0 text-muted-foreground hover:text-destructive">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>

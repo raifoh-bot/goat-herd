@@ -48,7 +48,7 @@ export default function Dashboard() {
       <div className="space-y-8 animate-in fade-in duration-500">
         <OnboardingBanner />
         <div>
-          <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
           <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
         </div>
 
@@ -216,14 +216,14 @@ function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number
           </div>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-              <span className="text-[10px]">♀</span> {summary?.doeCount ?? 0} Does
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-sm sm:text-xs font-medium text-secondary-foreground">
+              <span className="text-xs sm:text-[10px]">♀</span> {summary?.doeCount ?? 0} Does
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              <span className="text-[10px]">♂</span> {summary?.buckCount ?? 0} Bucks
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground">
+              <span className="text-xs sm:text-[10px]">♂</span> {summary?.buckCount ?? 0} Bucks
             </span>
             {(summary?.wetherCount ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground">
                 ⚬ {summary?.wetherCount ?? 0} Wethers
               </span>
             )}

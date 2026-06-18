@@ -64,8 +64,8 @@ export function Layout({ children }: LayoutProps) {
                 <GoatIcon className="h-6 w-6" />
               </div>
             )}
-            <div>
-              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground">{farmName}</h1>
+            <div className="min-w-0">
+              <h1 className="font-serif font-semibold text-lg text-sidebar-foreground truncate">{farmName}</h1>
             </div>
           </div>
 

@@ -221,7 +221,7 @@ export default function GoatDetails() {
                   )}
                 </div>
                 <CardContent className="p-6">
-                  <h1 className="text-3xl font-serif font-bold text-foreground mb-1">{goat.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-1">{goat.name}</h1>
                   {goat.registeredName && (
                     <p className="text-sm text-muted-foreground italic mb-1">{goat.registeredName}</p>
                   )}
