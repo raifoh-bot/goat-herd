@@ -7,6 +7,7 @@ import {
   useGetRecentActivity,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
+import { OnboardingBanner } from "@/components/onboarding-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-8 animate-in fade-in duration-500">
+        <OnboardingBanner />
         <div>
           <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
           <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
