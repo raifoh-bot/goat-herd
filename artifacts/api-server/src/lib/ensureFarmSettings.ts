@@ -43,7 +43,7 @@ export async function ensureFarmSettings(): Promise<void> {
   `);
   await pool.query(`
     ALTER TABLE "farm_settings"
-      ADD COLUMN IF NOT EXISTS "enabled_breeds" text[] NOT NULL DEFAULT '{alpine,angora,boer,kiko,lamancha,mixed,myotonic,nigerian-dwarf,nubian,oberhasli,pygmy,recorded-grade,saanen,sable,savanna,spanish,texmaster,toggenburg}'::text[];
+      ADD COLUMN IF NOT EXISTS "enabled_breeds" text[] NOT NULL DEFAULT '{alpine,angora,boer,guernsey,kiko,lamancha,mixed,myotonic,nigerian-dwarf,nubian,oberhasli,pygmy,recorded-grade,saanen,sable,savanna,spanish,texmaster,toggenburg}'::text[];
   `);
   await pool.query(`
     INSERT INTO "farm_settings" ("uses_ai")
