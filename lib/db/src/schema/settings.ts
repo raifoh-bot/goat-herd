@@ -17,6 +17,7 @@ export const farmSettingsTable = pgTable("farm_settings", {
       "alpine",
       "angora",
       "boer",
+      "guernsey",
       "kiko",
       "lamancha",
       "mixed",

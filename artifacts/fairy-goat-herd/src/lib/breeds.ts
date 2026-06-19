@@ -8,6 +8,7 @@ export const BREED_CATALOG = [
   { slug: "alpine", label: "Alpine" },
   { slug: "angora", label: "Angora" },
   { slug: "boer", label: "Boer" },
+  { slug: "guernsey", label: "Guernsey" },
   { slug: "kiko", label: "Kiko" },
   { slug: "lamancha", label: "LaMancha" },
   { slug: "mixed", label: "Mixed" },

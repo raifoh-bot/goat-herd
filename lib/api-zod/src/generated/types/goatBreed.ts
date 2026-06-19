@@ -12,6 +12,7 @@ export const GoatBreed = {
   alpine: "alpine",
   angora: "angora",
   boer: "boer",
+  guernsey: "guernsey",
   kiko: "kiko",
   lamancha: "lamancha",
   mixed: "mixed",

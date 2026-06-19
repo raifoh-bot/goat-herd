@@ -895,7 +895,7 @@ components:
           enum: [doe, buck, wether]
         breed:
           type: string
-          enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+          enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         status:
           type: string
           enum: [healthy, watch, treatment, dry]
@@ -997,7 +997,7 @@ components:
           enum: [doe, buck, wether]
         breed:
           type: string
-          enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+          enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         status:
           type: string
           enum: [healthy, watch, treatment, dry]
@@ -1091,7 +1091,7 @@ components:
           enum: [doe, buck, wether]
         breed:
           type: string
-          enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+          enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         status:
           type: string
           enum: [healthy, watch, treatment, dry]
@@ -1719,7 +1719,7 @@ components:
           enum: [doe, buck, wether]
         breed:
           type: string
-          enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+          enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         dateOfBirth:
           type: string
           format: date-time
@@ -1791,7 +1791,7 @@ components:
       properties:
         breed:
           type: string
-          enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+          enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         count:
           type: integer
       required:
@@ -1931,7 +1931,7 @@ components:
           description: The catalog breed slugs that exist on this farm. Only these appear in breed pickers.
           items:
             type: string
-            enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+            enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
         updatedAt:
           type: string
           format: date-time
@@ -1973,4 +1973,4 @@ components:
           description: The catalog breed slugs that exist on this farm.
           items:
             type: string
-            enum: [alpine, angora, boer, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+            enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
