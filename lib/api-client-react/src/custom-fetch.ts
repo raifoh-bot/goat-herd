@@ -382,7 +382,17 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // Always send cookies. The Replit dev preview runs inside a cross-site
+  // iframe, so the default `same-origin` credentials mode would drop the
+  // session cookie and every authenticated request would 401. `include`
+  // sends it for both same-origin and cross-origin requests; it is harmless
+  // for token-based (Expo) clients that carry no cookies.
+  const response = await fetch(input, {
+    ...init,
+    method,
+    headers,
+    credentials: init.credentials ?? "include",
+  });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
