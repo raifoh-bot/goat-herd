@@ -1,9 +1,11 @@
 import { boolean, doublePrecision, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { farmsTable } from "./farms";
 
 export const goatsTable = pgTable("goats", {
   id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   name: text("name").notNull(),
   registeredName: text("registered_name"),
   adgaId: text("adga_id"),

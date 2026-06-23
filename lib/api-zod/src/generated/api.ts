@@ -1689,7 +1689,13 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
-  role: zod.enum(["admin", "owner", "farmhand"]),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  farmSlug: zod
+    .string()
+    .nullish()
+    .describe(
+      "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
 });
 
 /**
@@ -1698,7 +1704,79 @@ export const LoginResponse = zod.object({
 export const GetCurrentUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
-  role: zod.enum(["admin", "owner", "farmhand"]),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  farmSlug: zod
+    .string()
+    .nullish()
+    .describe(
+      "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
+});
+
+/**
+ * @summary Self-service registration of a new farm with its first admin user
+ */
+
+export const registerFarmBodySlugMin = 3;
+export const registerFarmBodySlugMax = 32;
+
+export const registerFarmBodyPasswordMin = 8;
+
+export const RegisterFarmBody = zod.object({
+  farmName: zod.string().min(1),
+  slug: zod.string().min(registerFarmBodySlugMin).max(registerFarmBodySlugMax),
+  username: zod.string().min(1),
+  password: zod.string().min(registerFarmBodyPasswordMin),
+});
+
+/**
+ * @summary List all farms (superadmin only)
+ */
+export const ListFarmsResponseItem = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  status: zod.enum(["active", "suspended"]),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+  userCount: zod.number(),
+  goatCount: zod.number(),
+});
+export const ListFarmsResponse = zod.array(ListFarmsResponseItem);
+
+/**
+ * @summary Create a new farm with its first admin user (superadmin only)
+ */
+
+export const createFarmBodySlugMin = 3;
+export const createFarmBodySlugMax = 32;
+
+export const createFarmBodyAdminPasswordMin = 8;
+
+export const CreateFarmBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(createFarmBodySlugMin).max(createFarmBodySlugMax),
+  adminUsername: zod.string().min(1),
+  adminPassword: zod.string().min(createFarmBodyAdminPasswordMin),
+});
+
+/**
+ * @summary Update a farm's name or status (superadmin only)
+ */
+export const UpdateFarmParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateFarmBody = zod.object({
+  name: zod.string().min(1).optional(),
+  status: zod.enum(["active", "suspended"]).optional(),
+});
+
+export const UpdateFarmResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  status: zod.enum(["active", "suspended"]),
 });
 
 /**
@@ -1707,7 +1785,7 @@ export const GetCurrentUserResponse = zod.object({
 export const ListUsersResponseItem = zod.object({
   id: zod.number(),
   username: zod.string(),
-  role: zod.enum(["admin", "owner", "farmhand"]),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -1723,7 +1801,7 @@ export const createUserBodyPasswordMin = 8;
 export const CreateUserBody = zod.object({
   username: zod.string().min(1),
   password: zod.string().min(createUserBodyPasswordMin),
-  role: zod.enum(["admin", "owner", "farmhand"]),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
 });
 
 /**
@@ -1741,7 +1819,7 @@ export const UpdateUserBody = zod.object({
 export const UpdateUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
-  role: zod.enum(["admin", "owner", "farmhand"]),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),

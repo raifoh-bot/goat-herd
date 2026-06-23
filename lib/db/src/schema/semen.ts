@@ -1,9 +1,11 @@
 import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { farmsTable } from "./farms";
 
 export const semenStrawsTable = pgTable("semen_straws", {
   id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   sireName: text("sire_name").notNull(),
   strawId: text("straw_id"),
   supplier: text("supplier"),

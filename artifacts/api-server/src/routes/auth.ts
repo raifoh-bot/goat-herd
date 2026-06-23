@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, usersTable } from "@workspace/db";
 import { LoginBody, ChangeOwnPasswordBody } from "@workspace/api-zod";
@@ -16,10 +16,24 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const { username, password } = parsed.data;
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.username, username));
+  // Usernames are unique per-farm, so the lookup must be scoped. When a tenant
+  // is resolved, log in against that farm. With no tenant (the apex/no-farm
+  // context) only platform superadmins may authenticate.
+  const [user] = req.farm
+    ? await db
+        .select()
+        .from(usersTable)
+        .where(and(eq(usersTable.username, username), eq(usersTable.farmId, req.farm.id)))
+    : await db
+        .select()
+        .from(usersTable)
+        .where(
+          and(
+            eq(usersTable.username, username),
+            eq(usersTable.role, "superadmin"),
+            isNull(usersTable.farmId),
+          ),
+        );
 
   // Always run a comparison to avoid leaking whether the username exists.
   const hash = user?.passwordHash ?? "$2b$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinv";
@@ -31,7 +45,20 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
 
   req.session.userId = user.id;
-  res.json({ id: user.id, username: user.username, role: user.role });
+  // Persist the farm slug so subsequent same-session requests resolve the tenant
+  // without re-sending the X-Farm-Slug header. Superadmins carry no farm.
+  if (req.farm) {
+    req.session.farmSlug = req.farm.slug;
+  } else {
+    req.session.farmSlug = undefined;
+  }
+
+  res.json({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    farmSlug: req.farm?.slug ?? null,
+  });
 });
 
 router.post("/auth/logout", (req, res): void => {
@@ -47,7 +74,7 @@ router.post("/auth/logout", (req, res): void => {
 });
 
 router.get("/auth/me", requireAuth, (req, res): void => {
-  res.json(req.authUser);
+  res.json({ ...req.authUser, farmSlug: req.session.farmSlug ?? null });
 });
 
 router.put("/auth/password", requireAuth, async (req, res): Promise<void> => {

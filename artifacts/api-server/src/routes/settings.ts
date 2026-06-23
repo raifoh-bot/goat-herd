@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, farmSettingsTable } from "@workspace/db";
 import { UpdateSettingsBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { farmId } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
@@ -11,26 +12,26 @@ const router: IRouter = Router();
 const requireManager = requireRole("admin", "owner");
 
 /**
- * Returns the single farm settings row, creating it if it somehow does not
- * exist yet (boot-time `ensureFarmSettings` normally guarantees it).
+ * Returns the current farm's settings row, creating it if it somehow does not
+ * exist yet (boot-time `ensureFarmSettings` / farm creation normally guarantees it).
  */
-async function getOrCreateSettings() {
+async function getOrCreateSettings(fid: number) {
   const [existing] = await db
     .select()
     .from(farmSettingsTable)
-    .orderBy(asc(farmSettingsTable.id))
+    .where(eq(farmSettingsTable.farmId, fid))
     .limit(1);
   if (existing) return existing;
 
   const [created] = await db
     .insert(farmSettingsTable)
-    .values({ usesAi: true })
+    .values({ usesAi: true, farmId: fid })
     .returning();
   return created;
 }
 
-router.get("/settings", async (_req, res): Promise<void> => {
-  const settings = await getOrCreateSettings();
+router.get("/settings", async (req, res): Promise<void> => {
+  const settings = await getOrCreateSettings(farmId(req));
   res.json(settings);
 });
 
@@ -41,7 +42,7 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  const current = await getOrCreateSettings();
+  const current = await getOrCreateSettings(farmId(req));
 
   // Apply only the fields that were actually provided so the client can save a
   // single setting at a time without clobbering the others.

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, goatsTable, breedingsTable, kidsTable, usersTable, semenStrawsTable } from "@workspace/db";
+import { db, goatsTable, breedingsTable, kidsTable, usersTable, semenStrawsTable, farmsTable } from "@workspace/db";
 import app from "../app";
 
 // These integration tests exercise the doe lactation-status side effects driven by
@@ -17,13 +17,16 @@ const createdStrawIds: number[] = [];
 
 const TEST_USERNAME = `test-admin-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const TEST_PASSWORD = "test-password-123";
+const TEST_FARM_SLUG = "default";
 let testUserId: number;
+let testFarmId: number;
 let agent: Agent;
 
 async function createDoe(lactationStatus: "exposed" | "serviced" | "pregnant" | "dry" | "milking" = "exposed") {
   const [doe] = await db
     .insert(goatsTable)
     .values({
+      farmId: testFarmId,
       name: `Test Doe ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       sex: "doe",
       breed: "alpine",
@@ -38,6 +41,7 @@ async function createBreeding(doeId: number, status: "bred" | "confirmed-pregnan
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
+      farmId: testFarmId,
       doeId,
       sireName: "Test Sire",
       breedingMethod: "natural",
@@ -56,6 +60,7 @@ async function createStraw(pedigree?: {
   const [straw] = await db
     .insert(semenStrawsTable)
     .values({
+      farmId: testFarmId,
       sireName: `Test AI Sire ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       count: 5,
       sireDamName: pedigree?.sireDamName ?? null,
@@ -70,6 +75,7 @@ async function createAiBreeding(doeId: number, sireName: string, semenStrawId: n
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
+      farmId: testFarmId,
       doeId,
       sireName,
       breedingMethod: "ai",
@@ -113,18 +119,30 @@ afterEach(async () => {
 });
 
 beforeAll(async () => {
-  // Seed an admin user and log in so the cookie-bearing agent can reach the
-  // authentication-gated breeding endpoints.
+  // The default farm is created by the boot migration (ensureMultiTenant). All
+  // test data is scoped to it.
+  const [defaultFarm] = await db
+    .select()
+    .from(farmsTable)
+    .where(eq(farmsTable.slug, TEST_FARM_SLUG));
+  expect(defaultFarm).toBeTruthy();
+  testFarmId = defaultFarm.id;
+
+  // Seed an admin user in the default farm and log in so the cookie-bearing
+  // agent can reach the authentication-gated breeding endpoints.
   const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ username: TEST_USERNAME, passwordHash, role: "admin", active: true })
+    .values({ farmId: testFarmId, username: TEST_USERNAME, passwordHash, role: "admin", active: true })
     .returning();
   testUserId = user.id;
 
   agent = request.agent(app);
+  // The login request carries X-Farm-Slug so the tenant middleware can resolve
+  // the farm; the session then remembers it for subsequent requests.
   const loginRes = await agent
     .post("/api/auth/login")
+    .set("X-Farm-Slug", TEST_FARM_SLUG)
     .send({ username: TEST_USERNAME, password: TEST_PASSWORD });
   expect(loginRes.status).toBe(200);
 });

@@ -11,4 +11,6 @@ export interface AuthUser {
   id: number;
   username: string;
   role: AuthUserRole;
+  /** The slug of the farm this user belongs to. Null for platform superadmins. */
+  farmSlug?: string | null;
 }

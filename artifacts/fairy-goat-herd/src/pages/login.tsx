@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useLogin,
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { loadStoredFarmSlug, storeFarmSlug } from "@/lib/farm";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -19,6 +20,7 @@ export default function Login() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [farmSlug, setFarmSlugField] = useState(() => loadStoredFarmSlug() ?? "");
 
   const login = useLogin();
 
@@ -36,12 +38,18 @@ export default function Login() {
     e.preventDefault();
     if (!username.trim() || !password) return;
 
+    // Apply the chosen farm slug before logging in so the request is scoped to
+    // the right tenant in the dev preview (where there is no real subdomain).
+    storeFarmSlug(farmSlug.trim() || null);
+
     login.mutate(
       { data: { username: username.trim(), password } },
       {
         onSuccess: (user) => {
+          // Persist the server-confirmed farm slug (null for superadmins).
+          storeFarmSlug(user.farmSlug ?? null);
           queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
-          setLocation("/");
+          setLocation(user.role === "superadmin" ? "/superadmin/farms" : "/");
         },
         onError: () => {
           toast({
@@ -69,6 +77,21 @@ export default function Login() {
         <CardContent className="pb-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="farmSlug">Farm</Label>
+              <Input
+                id="farmSlug"
+                value={farmSlug}
+                onChange={(e) => setFarmSlugField(e.target.value)}
+                placeholder="your-farm"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+              <p className="text-xs text-muted-foreground">
+                Your farm's address. Leave blank if you're a platform admin.
+              </p>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
@@ -94,6 +117,12 @@ export default function Login() {
               {login.isPending ? "Signing in…" : "Sign In"}
             </Button>
           </form>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            New here?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Register your farm
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

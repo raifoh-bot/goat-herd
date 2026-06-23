@@ -27,11 +27,13 @@ import type {
   ChangePasswordBody,
   CreateBreedingBody,
   CreateBreedingEventBody,
+  CreateFarmBody,
   CreateGoatBody,
   CreateSemenStrawBody,
   CreateUserBody,
   DashboardSummary,
   ErrorEnvelope,
+  Farm,
   FarmSettings,
   Goat,
   HealthStatus,
@@ -42,10 +44,13 @@ import type {
   Kid,
   ListGoatsParams,
   LoginBody,
+  RegisterFarmBody,
   SemenStraw,
   SetUserPasswordBody,
+  SuperadminFarm,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
+  UpdateFarmBody,
   UpdateFarmSettingsBody,
   UpdateGoatBody,
   UpdateKidBody,
@@ -2739,6 +2744,332 @@ export function useGetCurrentUser<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Self-service registration of a new farm with its first admin user
+ */
+export const getRegisterFarmUrl = () => {
+  return `/api/farms/register`;
+};
+
+export const registerFarm = async (
+  registerFarmBody: RegisterFarmBody,
+  options?: RequestInit,
+): Promise<Farm> => {
+  return customFetch<Farm>(getRegisterFarmUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(registerFarmBody),
+  });
+};
+
+export const getRegisterFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerFarm>>,
+    TError,
+    { data: BodyType<RegisterFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerFarm>>,
+  TError,
+  { data: BodyType<RegisterFarmBody> },
+  TContext
+> => {
+  const mutationKey = ["registerFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerFarm>>,
+    { data: BodyType<RegisterFarmBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerFarm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerFarm>>
+>;
+export type RegisterFarmMutationBody = BodyType<RegisterFarmBody>;
+export type RegisterFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Self-service registration of a new farm with its first admin user
+ */
+export const useRegisterFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerFarm>>,
+    TError,
+    { data: BodyType<RegisterFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerFarm>>,
+  TError,
+  { data: BodyType<RegisterFarmBody> },
+  TContext
+> => {
+  return useMutation(getRegisterFarmMutationOptions(options));
+};
+
+/**
+ * @summary List all farms (superadmin only)
+ */
+export const getListFarmsUrl = () => {
+  return `/api/superadmin/farms`;
+};
+
+export const listFarms = async (
+  options?: RequestInit,
+): Promise<SuperadminFarm[]> => {
+  return customFetch<SuperadminFarm[]>(getListFarmsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFarmsQueryKey = () => {
+  return [`/api/superadmin/farms`] as const;
+};
+
+export const getListFarmsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFarms>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listFarms>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFarmsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listFarms>>> = ({
+    signal,
+  }) => listFarms({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFarms>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFarmsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFarms>>
+>;
+export type ListFarmsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all farms (superadmin only)
+ */
+
+export function useListFarms<
+  TData = Awaited<ReturnType<typeof listFarms>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listFarms>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFarmsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new farm with its first admin user (superadmin only)
+ */
+export const getCreateFarmUrl = () => {
+  return `/api/superadmin/farms`;
+};
+
+export const createFarm = async (
+  createFarmBody: CreateFarmBody,
+  options?: RequestInit,
+): Promise<Farm> => {
+  return customFetch<Farm>(getCreateFarmUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createFarmBody),
+  });
+};
+
+export const getCreateFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFarm>>,
+    TError,
+    { data: BodyType<CreateFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFarm>>,
+  TError,
+  { data: BodyType<CreateFarmBody> },
+  TContext
+> => {
+  const mutationKey = ["createFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFarm>>,
+    { data: BodyType<CreateFarmBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFarm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFarm>>
+>;
+export type CreateFarmMutationBody = BodyType<CreateFarmBody>;
+export type CreateFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Create a new farm with its first admin user (superadmin only)
+ */
+export const useCreateFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFarm>>,
+    TError,
+    { data: BodyType<CreateFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFarm>>,
+  TError,
+  { data: BodyType<CreateFarmBody> },
+  TContext
+> => {
+  return useMutation(getCreateFarmMutationOptions(options));
+};
+
+/**
+ * @summary Update a farm's name or status (superadmin only)
+ */
+export const getUpdateFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}`;
+};
+
+export const updateFarm = async (
+  id: number,
+  updateFarmBody: UpdateFarmBody,
+  options?: RequestInit,
+): Promise<Farm> => {
+  return customFetch<Farm>(getUpdateFarmUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateFarmBody),
+  });
+};
+
+export const getUpdateFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFarm>>,
+    TError,
+    { id: number; data: BodyType<UpdateFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateFarm>>,
+  TError,
+  { id: number; data: BodyType<UpdateFarmBody> },
+  TContext
+> => {
+  const mutationKey = ["updateFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateFarm>>,
+    { id: number; data: BodyType<UpdateFarmBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateFarm(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateFarm>>
+>;
+export type UpdateFarmMutationBody = BodyType<UpdateFarmBody>;
+export type UpdateFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Update a farm's name or status (superadmin only)
+ */
+export const useUpdateFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFarm>>,
+    TError,
+    { id: number; data: BodyType<UpdateFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateFarm>>,
+  TError,
+  { id: number; data: BodyType<UpdateFarmBody> },
+  TContext
+> => {
+  return useMutation(getUpdateFarmMutationOptions(options));
+};
 
 /**
  * @summary List all user accounts

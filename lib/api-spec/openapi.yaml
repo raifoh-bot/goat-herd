@@ -687,6 +687,112 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /farms/register:
+    post:
+      operationId: registerFarm
+      tags: [farms]
+      summary: Self-service registration of a new farm with its first admin user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterFarmBody"
+      responses:
+        "201":
+          description: The created farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Farm slug or username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms:
+    get:
+      operationId: listFarms
+      tags: [superadmin]
+      summary: List all farms (superadmin only)
+      responses:
+        "200":
+          description: List of farms with user and goat counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SuperadminFarm"
+    post:
+      operationId: createFarm
+      tags: [superadmin]
+      summary: Create a new farm with its first admin user (superadmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFarmBody"
+      responses:
+        "201":
+          description: The created farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Farm slug or username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms/{id}:
+    put:
+      operationId: updateFarm
+      tags: [superadmin]
+      summary: Update a farm's name or status (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFarmBody"
+      responses:
+        "200":
+          description: The updated farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /users:
     get:
       operationId: listUsers
@@ -1807,7 +1913,11 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, owner, farmhand]
+          enum: [admin, owner, farmhand, superadmin]
+        farmSlug:
+          type: string
+          nullable: true
+          description: The slug of the farm this user belongs to. Null for platform superadmins.
       required:
         - id
         - username
@@ -1822,7 +1932,7 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, owner, farmhand]
+          enum: [admin, owner, farmhand, superadmin]
         active:
           type: boolean
         createdAt:
@@ -1863,7 +1973,7 @@ components:
           minLength: 8
         role:
           type: string
-          enum: [admin, owner, farmhand]
+          enum: [admin, owner, farmhand, superadmin]
       required:
         - username
         - password
@@ -1899,6 +2009,108 @@ components:
       required:
         - currentPassword
         - newPassword
+
+    Farm:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+      required:
+        - id
+        - slug
+        - name
+        - status
+
+    SuperadminFarm:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userCount:
+          type: integer
+        goatCount:
+          type: integer
+      required:
+        - id
+        - slug
+        - name
+        - status
+        - userCount
+        - goatCount
+
+    RegisterFarmBody:
+      type: object
+      properties:
+        farmName:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 3
+          maxLength: 32
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 8
+      required:
+        - farmName
+        - slug
+        - username
+        - password
+
+    CreateFarmBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 3
+          maxLength: 32
+        adminUsername:
+          type: string
+          minLength: 1
+        adminPassword:
+          type: string
+          minLength: 8
+      required:
+        - name
+        - slug
+        - adminUsername
+        - adminPassword
+
+    UpdateFarmBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [active, suspended]
 
     FarmSettings:
       type: object

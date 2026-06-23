@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, goatsTable, usersTable } from "@workspace/db";
+import { db, goatsTable, usersTable, farmsTable } from "@workspace/db";
 import app from "../app";
 
 // These integration tests exercise tattoo/EID clearing semantics on goat updates.
@@ -14,7 +14,9 @@ const createdGoatIds: number[] = [];
 
 const TEST_USERNAME = `test-admin-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const TEST_PASSWORD = "test-password-123";
+const FARM_SLUG = "default";
 let testUserId: number;
+let testFarmId: number;
 let agent: Agent;
 
 async function getGoat(id: number) {
@@ -30,16 +32,24 @@ afterEach(async () => {
 });
 
 beforeAll(async () => {
+  const [defaultFarm] = await db
+    .select()
+    .from(farmsTable)
+    .where(eq(farmsTable.slug, FARM_SLUG));
+  expect(defaultFarm).toBeTruthy();
+  testFarmId = defaultFarm.id;
+
   const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ username: TEST_USERNAME, passwordHash, role: "admin", active: true })
+    .values({ farmId: testFarmId, username: TEST_USERNAME, passwordHash, role: "admin", active: true })
     .returning();
   testUserId = user.id;
 
   agent = request.agent(app);
   const loginRes = await agent
     .post("/api/auth/login")
+    .set("X-Farm-Slug", FARM_SLUG)
     .send({ username: TEST_USERNAME, password: TEST_PASSWORD });
   expect(loginRes.status).toBe(200);
 });

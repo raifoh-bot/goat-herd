@@ -6,6 +6,11 @@ import { db, usersTable, type UserRole } from "@workspace/db";
  * Rejects unauthenticated requests with 401. On success, loads the current
  * user from the database and attaches it to `req.authUser`. Sessions that
  * point at a missing or deactivated user are destroyed and rejected.
+ *
+ * Tenant membership is also enforced here: a non-superadmin user may only act
+ * within their own farm. If the resolved tenant (`req.farm`) does not match the
+ * user's `farmId`, the request is rejected — this prevents a session minted on
+ * one farm from being replayed against another.
  */
 export const requireAuth: RequestHandler = async (req, res, next) => {
   const userId = req.session.userId;
@@ -25,17 +30,36 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     return;
   }
 
-  req.authUser = { id: user.id, username: user.username, role: user.role };
+  // Superadmins are not bound to a farm and bypass tenant scoping entirely.
+  // Everyone else must be acting within their own farm.
+  if (user.role !== "superadmin") {
+    if (!req.farm || user.farmId !== req.farm.id) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+  }
+
+  req.authUser = {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    farmId: user.farmId,
+  };
   next();
 };
 
 /**
  * Restricts a route to the given roles. Must run after `requireAuth`.
+ * Superadmins implicitly pass every role check.
  */
 export function requireRole(...roles: UserRole[]): RequestHandler {
   return (req, res, next) => {
     if (!req.authUser) {
       res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+    if (req.authUser.role === "superadmin") {
+      next();
       return;
     }
     if (!roles.includes(req.authUser.role)) {

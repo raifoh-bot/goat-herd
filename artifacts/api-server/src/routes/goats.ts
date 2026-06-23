@@ -11,6 +11,7 @@ import {
   UpdateGoatParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { farmId } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
@@ -24,7 +25,7 @@ router.get("/goats", async (req, res): Promise<void> => {
     return;
   }
 
-  const conditions = [];
+  const conditions = [eq(goatsTable.farmId, farmId(req))];
   if (params.data.status) {
     conditions.push(eq(goatsTable.herdStatus, params.data.status));
   }
@@ -35,7 +36,7 @@ router.get("/goats", async (req, res): Promise<void> => {
   const goats = await db
     .select()
     .from(goatsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(goatsTable.createdAt));
 
   res.json(goats);
@@ -48,7 +49,10 @@ router.post("/goats", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  const [goat] = await db.insert(goatsTable).values(parsed.data).returning();
+  const [goat] = await db
+    .insert(goatsTable)
+    .values({ ...parsed.data, farmId: farmId(req) })
+    .returning();
   res.status(201).json(goat);
 });
 
@@ -66,6 +70,7 @@ router.post("/goats/import", requireManager, async (req, res): Promise<void> => 
     const row = parsed.data.goats[i];
     try {
       await db.insert(goatsTable).values({
+        farmId: farmId(req),
         name: row.name,
         registeredName: row.registeredName ?? null,
         adgaId: row.adgaId ?? null,
@@ -105,7 +110,7 @@ router.get("/goats/:id", async (req, res): Promise<void> => {
   const [goat] = await db
     .select()
     .from(goatsTable)
-    .where(eq(goatsTable.id, params.data.id));
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))));
 
   if (!goat) {
     res.status(404).json({ error: "Goat not found" });
@@ -131,7 +136,7 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
   const [goat] = await db
     .update(goatsTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(goatsTable.id, params.data.id))
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
     .returning();
 
   if (!goat) {
@@ -151,7 +156,7 @@ router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {
 
   const [goat] = await db
     .delete(goatsTable)
-    .where(eq(goatsTable.id, params.data.id))
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
     .returning();
 
   if (!goat) {

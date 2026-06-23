@@ -9,6 +9,7 @@ import {
   getListUsersQueryKey,
   UserRole,
   type User,
+  type UpdateUserBodyRole,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,7 @@ export function UsersTab() {
 
   const handleRoleChange = (target: User, newRole: string) => {
     updateUser.mutate(
-      { id: target.id, data: { role: newRole as (typeof UserRole)[keyof typeof UserRole] } },
+      { id: target.id, data: { role: newRole as UpdateUserBodyRole } },
       {
         onSuccess: () => invalidate(),
         onError: () =>

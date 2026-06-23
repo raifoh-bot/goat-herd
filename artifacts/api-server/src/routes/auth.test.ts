@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, usersTable, goatsTable } from "@workspace/db";
+import { db, usersTable, goatsTable, farmsTable } from "@workspace/db";
 import app from "../app";
 import { ensureSessionTable } from "../lib/ensureSessionTable";
 
@@ -14,6 +14,9 @@ const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const ADMIN = { username: `auth-admin-${suffix}`, password: "admin-password-123" };
 const HAND = { username: `auth-hand-${suffix}`, password: "hand-password-123" };
 const INACTIVE = { username: `auth-inactive-${suffix}`, password: "inactive-password-123" };
+
+const FARM_SLUG = "default";
+let testFarmId: number;
 
 const createdUserIds: number[] = [];
 const createdGoatIds: number[] = [];
@@ -27,7 +30,7 @@ async function seedUser(
   const passwordHash = await bcrypt.hash(password, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ username, passwordHash, role, active })
+    .values({ farmId: testFarmId, username, passwordHash, role, active })
     .returning();
   createdUserIds.push(user.id);
   return user;
@@ -35,13 +38,20 @@ async function seedUser(
 
 async function login(creds: { username: string; password: string }): Promise<Agent> {
   const agent = request.agent(app);
-  const res = await agent.post("/api/auth/login").send(creds);
+  const res = await agent.post("/api/auth/login").set("X-Farm-Slug", FARM_SLUG).send(creds);
   expect(res.status).toBe(200);
   return agent;
 }
 
 beforeAll(async () => {
   await ensureSessionTable();
+  const [defaultFarm] = await db
+    .select()
+    .from(farmsTable)
+    .where(eq(farmsTable.slug, FARM_SLUG));
+  expect(defaultFarm).toBeTruthy();
+  testFarmId = defaultFarm.id;
+
   await seedUser(ADMIN.username, ADMIN.password, "admin");
   await seedUser(HAND.username, HAND.password, "farmhand");
   await seedUser(INACTIVE.username, INACTIVE.password, "admin", false);
@@ -67,6 +77,7 @@ describe("authentication", () => {
   it("rejects invalid credentials", async () => {
     const res = await request(app)
       .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
       .send({ username: ADMIN.username, password: "wrong" });
     expect(res.status).toBe(401);
   });
@@ -74,6 +85,7 @@ describe("authentication", () => {
   it("rejects login for a deactivated user", async () => {
     const res = await request(app)
       .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
       .send({ username: INACTIVE.username, password: INACTIVE.password });
     expect(res.status).toBe(401);
   });
@@ -161,11 +173,13 @@ describe("admin password reset", () => {
     // Old password no longer works; new one does.
     const oldLogin = await request(app)
       .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
       .send({ username: target.username, password: "original-password-1" });
     expect(oldLogin.status).toBe(401);
 
     const newLogin = await request(app)
       .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
       .send({ username: target.username, password: "brand-new-password-2" });
     expect(newLogin.status).toBe(200);
   });
@@ -218,6 +232,7 @@ describe("self-service password change", () => {
 
     const newLogin = await request(app)
       .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
       .send({ username, password: "second-password-2" });
     expect(newLogin.status).toBe(200);
   });

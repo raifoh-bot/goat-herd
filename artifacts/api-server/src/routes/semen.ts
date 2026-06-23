@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, semenStrawsTable } from "@workspace/db";
 import { CreateSemenStrawBody, UpdateSemenStrawBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { farmId } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
@@ -28,10 +29,11 @@ const importStrawRowSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.get("/semen-straws", async (_req, res): Promise<void> => {
+router.get("/semen-straws", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(semenStrawsTable)
+    .where(eq(semenStrawsTable.farmId, farmId(req)))
     .orderBy(desc(semenStrawsTable.createdAt));
   res.json(rows);
 });
@@ -46,6 +48,7 @@ router.post("/semen-straws", requireManager, async (req, res): Promise<void> => 
   const [straw] = await db
     .insert(semenStrawsTable)
     .values({
+      farmId: farmId(req),
       sireName: parsed.data.sireName,
       strawId: parsed.data.strawId,
       supplier: parsed.data.supplier,
@@ -82,6 +85,7 @@ router.post("/semen-straws/import", requireManager, async (req, res): Promise<vo
       return;
     }
     values.push({
+      farmId: farmId(req),
       sireName: parsed.data.sireName,
       strawId: parsed.data.strawId,
       supplier: parsed.data.supplier,
@@ -144,7 +148,7 @@ router.put("/semen-straws/:id", requireManager, async (req, res): Promise<void> 
   const [straw] = await db
     .update(semenStrawsTable)
     .set(updateData)
-    .where(eq(semenStrawsTable.id, id))
+    .where(and(eq(semenStrawsTable.id, id), eq(semenStrawsTable.farmId, farmId(req))))
     .returning();
 
   if (!straw) {
@@ -162,13 +166,18 @@ router.delete("/semen-straws/:id", requireManager, async (req, res): Promise<voi
     return;
   }
 
-  const [straw] = await db.select().from(semenStrawsTable).where(eq(semenStrawsTable.id, id));
+  const [straw] = await db
+    .select()
+    .from(semenStrawsTable)
+    .where(and(eq(semenStrawsTable.id, id), eq(semenStrawsTable.farmId, farmId(req))));
   if (!straw) {
     res.status(404).json({ error: "Semen straw entry not found" });
     return;
   }
 
-  await db.delete(semenStrawsTable).where(eq(semenStrawsTable.id, id));
+  await db
+    .delete(semenStrawsTable)
+    .where(and(eq(semenStrawsTable.id, id), eq(semenStrawsTable.farmId, farmId(req))));
   res.status(204).send();
 });
 

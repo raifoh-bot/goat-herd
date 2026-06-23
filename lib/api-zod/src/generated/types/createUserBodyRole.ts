@@ -13,4 +13,5 @@ export const CreateUserBodyRole = {
   admin: "admin",
   owner: "owner",
   farmhand: "farmhand",
+  superadmin: "superadmin",
 } as const;

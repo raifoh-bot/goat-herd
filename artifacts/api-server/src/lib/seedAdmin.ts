@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, farmsTable } from "@workspace/db";
 import { logger } from "./logger";
 
 /**
@@ -25,10 +25,22 @@ export async function seedAdmin(): Promise<void> {
     return;
   }
 
+  // The seeded admin belongs to the `default` farm (created by ensureMultiTenant,
+  // which absorbs any pre-existing single-farm data).
+  const [defaultFarm] = await db
+    .select()
+    .from(farmsTable)
+    .where(eq(farmsTable.slug, "default"));
+
+  if (!defaultFarm) {
+    logger.warn("Default farm not found; skipping admin seed.");
+    return;
+  }
+
   const [existing] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.username, username));
+    .where(and(eq(usersTable.username, username), eq(usersTable.farmId, defaultFarm.id)));
 
   if (existing) {
     return;
@@ -37,8 +49,7 @@ export async function seedAdmin(): Promise<void> {
   const passwordHash = await bcrypt.hash(password, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ username, passwordHash, role: "admin", active: true })
-    .onConflictDoNothing({ target: usersTable.username })
+    .values({ username, passwordHash, role: "admin", active: true, farmId: defaultFarm.id })
     .returning();
 
   if (user) {

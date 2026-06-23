@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { asc, desc, eq, max } from "drizzle-orm";
+import { and, asc, desc, eq, max } from "drizzle-orm";
 import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable, semenStrawsTable } from "@workspace/db";
+import { farmId } from "../middlewares/tenant";
 import {
   CreateBreedingBody,
   UpdateBreedingBody,
@@ -31,9 +32,14 @@ router.get("/breedings", async (req, res): Promise<void> => {
     .select()
     .from(breedingsTable)
     .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
+    .where(eq(breedingsTable.farmId, farmId(req)))
     .orderBy(desc(breedingsTable.breedingDate));
 
-  const allKids = await db.select().from(kidsTable).orderBy(kidsTable.createdAt);
+  const allKids = await db
+    .select()
+    .from(kidsTable)
+    .where(eq(kidsTable.farmId, farmId(req)))
+    .orderBy(kidsTable.createdAt);
 
   const kidsByBreeding = allKids.reduce<Record<number, typeof allKids>>((acc, kid) => {
     if (!acc[kid.breedingId]) acc[kid.breedingId] = [];
@@ -41,7 +47,10 @@ router.get("/breedings", async (req, res): Promise<void> => {
     return acc;
   }, {});
 
-  const allEvents = await db.select().from(breedingEventsTable);
+  const allEvents = await db
+    .select()
+    .from(breedingEventsTable)
+    .where(eq(breedingEventsTable.farmId, farmId(req)));
 
   const eventsByBreeding = allEvents.reduce<Record<number, typeof allEvents>>((acc, event) => {
     if (!acc[event.breedingId]) acc[event.breedingId] = [];
@@ -115,7 +124,10 @@ router.post("/breedings", async (req, res): Promise<void> => {
     return;
   }
 
-  const doe = await db.select().from(goatsTable).where(eq(goatsTable.id, parsed.data.doeId));
+  const doe = await db
+    .select()
+    .from(goatsTable)
+    .where(and(eq(goatsTable.id, parsed.data.doeId), eq(goatsTable.farmId, farmId(req))));
   if (!doe.length) {
     res.status(404).json({ error: "Doe not found" });
     return;
@@ -130,7 +142,7 @@ router.post("/breedings", async (req, res): Promise<void> => {
     [drawStraw] = await db
       .select()
       .from(semenStrawsTable)
-      .where(eq(semenStrawsTable.id, parsed.data.semenStrawId));
+      .where(and(eq(semenStrawsTable.id, parsed.data.semenStrawId), eq(semenStrawsTable.farmId, farmId(req))));
     if (!drawStraw) {
       res.status(404).json({ error: "Semen straw not found" });
       return;
@@ -144,6 +156,7 @@ router.post("/breedings", async (req, res): Promise<void> => {
   const [breeding] = await db
     .insert(breedingsTable)
     .values({
+      farmId: farmId(req),
       doeId: parsed.data.doeId,
       sireName: parsed.data.sireName,
       breedingMethod,
@@ -161,14 +174,14 @@ router.post("/breedings", async (req, res): Promise<void> => {
   await db
     .update(goatsTable)
     .set({ lactationStatus: breedingMethod === "ai" ? "serviced" : "exposed", updatedAt: new Date() })
-    .where(eq(goatsTable.id, parsed.data.doeId));
+    .where(and(eq(goatsTable.id, parsed.data.doeId), eq(goatsTable.farmId, farmId(req))));
 
   // Decrement the drawn straw from inventory (one straw per insemination).
   if (drawStraw) {
     await db
       .update(semenStrawsTable)
       .set({ count: drawStraw.count - 1, updatedAt: new Date() })
-      .where(eq(semenStrawsTable.id, drawStraw.id));
+      .where(and(eq(semenStrawsTable.id, drawStraw.id), eq(semenStrawsTable.farmId, farmId(req))));
   }
 
   res.status(201).json(breeding);
@@ -187,7 +200,7 @@ router.get("/breedings/:id", async (req, res): Promise<void> => {
     .select()
     .from(breedingsTable)
     .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
-    .where(eq(breedingsTable.id, id));
+    .where(and(eq(breedingsTable.id, id), eq(breedingsTable.farmId, farmId(req))));
 
   if (!rows.length) {
     res.status(404).json({ error: "Breeding not found" });
@@ -232,7 +245,7 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
   const [existing] = await db
     .select()
     .from(breedingsTable)
-    .where(eq(breedingsTable.id, id));
+    .where(and(eq(breedingsTable.id, id), eq(breedingsTable.farmId, farmId(req))));
 
   if (!existing) {
     res.status(404).json({ error: "Breeding not found" });
@@ -251,7 +264,7 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
   const [breeding] = await db
     .update(breedingsTable)
     .set(updateData)
-    .where(eq(breedingsTable.id, id))
+    .where(and(eq(breedingsTable.id, id), eq(breedingsTable.farmId, farmId(req))))
     .returning();
 
   if (!breeding) {
@@ -260,12 +273,15 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
   }
 
   if (parsed.data.status === "open") {
-    const doe = await db.select().from(goatsTable).where(eq(goatsTable.id, breeding.doeId));
+    const doe = await db
+      .select()
+      .from(goatsTable)
+      .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
     if (doe.length && doe[0].lactationStatus === "pregnant") {
       await db
         .update(goatsTable)
         .set({ lactationStatus: "dry", updatedAt: new Date() })
-        .where(eq(goatsTable.id, breeding.doeId));
+        .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
     }
   }
 
@@ -273,7 +289,7 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
     await db
       .update(goatsTable)
       .set({ lactationStatus: "pregnant", updatedAt: new Date() })
-      .where(eq(goatsTable.id, breeding.doeId));
+      .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
   }
 
   res.json(breeding);
@@ -299,7 +315,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     .select()
     .from(breedingsTable)
     .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
-    .where(eq(breedingsTable.id, breedingId));
+    .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
 
   if (!breedingRows.length) {
     res.status(404).json({ error: "Breeding not found" });
@@ -319,13 +335,14 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     [sireStraw] = await db
       .select()
       .from(semenStrawsTable)
-      .where(eq(semenStrawsTable.id, breeding.semenStrawId));
+      .where(and(eq(semenStrawsTable.id, breeding.semenStrawId), eq(semenStrawsTable.farmId, farmId(req))));
   }
 
   const birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
 
   // Insert kid records first (without goatId)
   const kidRows = parsed.data.kids.map((kid) => ({
+    farmId: farmId(req),
     breedingId,
     name: kid.name,
     sex: kid.sex,
@@ -347,6 +364,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     const [newGoat] = await db
       .insert(goatsTable)
       .values({
+        farmId: farmId(req),
         name: kidName,
         sex: kid.sex,
         breed: doe?.breed ?? "mixed",
@@ -370,22 +388,25 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     await db
       .update(kidsTable)
       .set({ goatId: newGoat.id })
-      .where(eq(kidsTable.id, kid.id));
+      .where(and(eq(kidsTable.id, kid.id), eq(kidsTable.farmId, farmId(req))));
   }
 
   // Mark breeding as kidded and update doe's lactation status
   await db
     .update(breedingsTable)
     .set({ status: "kidded", updatedAt: new Date() })
-    .where(eq(breedingsTable.id, breedingId));
+    .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
 
   await db
     .update(goatsTable)
     .set({ lactationStatus: "milking", updatedAt: new Date() })
-    .where(eq(goatsTable.id, breeding.doeId));
+    .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
 
   // Return kids with goatId populated
-  const finalKids = await db.select().from(kidsTable).where(eq(kidsTable.breedingId, breedingId));
+  const finalKids = await db
+    .select()
+    .from(kidsTable)
+    .where(and(eq(kidsTable.breedingId, breedingId), eq(kidsTable.farmId, farmId(req))));
   res.status(201).json(finalKids);
 });
 
@@ -402,8 +423,11 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
     return;
   }
 
-  const [existing] = await db.select().from(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
-  if (!existing) {
+  const [existing] = await db
+    .select()
+    .from(kidsTable)
+    .where(and(eq(kidsTable.id, paramsParsed.data.kidId), eq(kidsTable.farmId, farmId(req))));
+  if (!existing || existing.breedingId !== paramsParsed.data.id) {
     res.status(404).json({ error: "Kid not found" });
     return;
   }
@@ -416,7 +440,11 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   if (parsed.data.birthWeight !== undefined) updateData.birthWeight = parsed.data.birthWeight ?? null;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
 
-  const [updated] = await db.update(kidsTable).set(updateData).where(eq(kidsTable.id, paramsParsed.data.kidId)).returning();
+  const [updated] = await db
+    .update(kidsTable)
+    .set(updateData)
+    .where(and(eq(kidsTable.id, paramsParsed.data.kidId), eq(kidsTable.farmId, farmId(req))))
+    .returning();
 
   // Sync the linked goat's name, sex, and herdStatus if it exists
   if (updated.goatId) {
@@ -429,7 +457,10 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
       else if (parsed.data.kidStatus === "alive") goatUpdate.herdStatus = "on-farm";
     }
     if (Object.keys(goatUpdate).length > 1) {
-      await db.update(goatsTable).set(goatUpdate).where(eq(goatsTable.id, updated.goatId));
+      await db
+        .update(goatsTable)
+        .set(goatUpdate)
+        .where(and(eq(goatsTable.id, updated.goatId), eq(goatsTable.farmId, farmId(req))));
     }
   }
 
@@ -443,13 +474,18 @@ router.delete("/breedings/:id/kids/:kidId", requireManager, async (req, res): Pr
     return;
   }
 
-  const [kid] = await db.select().from(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
-  if (!kid) {
+  const [kid] = await db
+    .select()
+    .from(kidsTable)
+    .where(and(eq(kidsTable.id, paramsParsed.data.kidId), eq(kidsTable.farmId, farmId(req))));
+  if (!kid || kid.breedingId !== paramsParsed.data.id) {
     res.status(404).json({ error: "Kid not found" });
     return;
   }
 
-  await db.delete(kidsTable).where(eq(kidsTable.id, paramsParsed.data.kidId));
+  await db
+    .delete(kidsTable)
+    .where(and(eq(kidsTable.id, paramsParsed.data.kidId), eq(kidsTable.farmId, farmId(req))));
 
   res.status(204).send();
 });
@@ -467,7 +503,10 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
     return;
   }
 
-  const [breeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, idParsed.data.id));
+  const [breeding] = await db
+    .select()
+    .from(breedingsTable)
+    .where(and(eq(breedingsTable.id, idParsed.data.id), eq(breedingsTable.farmId, farmId(req))));
   if (!breeding) {
     res.status(404).json({ error: "Breeding not found" });
     return;
@@ -476,6 +515,7 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
   const [event] = await db
     .insert(breedingEventsTable)
     .values({
+      farmId: farmId(req),
       breedingId: idParsed.data.id,
       eventType: parsed.data.eventType,
       eventDate: new Date(parsed.data.eventDate),
@@ -498,13 +538,13 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
       await db
         .update(breedingsTable)
         .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
-        .where(eq(breedingsTable.id, idParsed.data.id));
+        .where(and(eq(breedingsTable.id, idParsed.data.id), eq(breedingsTable.farmId, farmId(req))));
     }
 
     await db
       .update(goatsTable)
       .set({ lactationStatus: "serviced", updatedAt: new Date() })
-      .where(eq(goatsTable.id, breeding.doeId));
+      .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
   }
 
   res.status(201).json(event);
@@ -529,7 +569,7 @@ router.put("/breedings/:id/events/:eventId", async (req, res): Promise<void> => 
   const [existing] = await db
     .select()
     .from(breedingEventsTable)
-    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+    .where(and(eq(breedingEventsTable.id, paramsParsed.data.eventId), eq(breedingEventsTable.farmId, farmId(req))));
 
   if (!existing || existing.breedingId !== paramsParsed.data.id) {
     res.status(404).json({ error: "Event not found" });
@@ -543,7 +583,7 @@ router.put("/breedings/:id/events/:eventId", async (req, res): Promise<void> => 
   const [updated] = await db
     .update(breedingEventsTable)
     .set(updateData)
-    .where(eq(breedingEventsTable.id, paramsParsed.data.eventId))
+    .where(and(eq(breedingEventsTable.id, paramsParsed.data.eventId), eq(breedingEventsTable.farmId, farmId(req))))
     .returning();
 
   // If a cover event's date changed, recalculate expectedKiddingDate from the latest cover
@@ -561,7 +601,7 @@ router.put("/breedings/:id/events/:eventId", async (req, res): Promise<void> => 
       await db
         .update(breedingsTable)
         .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
-        .where(eq(breedingsTable.id, paramsParsed.data.id));
+        .where(and(eq(breedingsTable.id, paramsParsed.data.id), eq(breedingsTable.farmId, farmId(req))));
     }
   }
 
@@ -581,16 +621,16 @@ router.delete("/breedings/:id/events/:eventId", requireManager, async (req, res)
   const [event] = await db
     .select()
     .from(breedingEventsTable)
-    .where(
-      eq(breedingEventsTable.id, paramsParsed.data.eventId)
-    );
+    .where(and(eq(breedingEventsTable.id, paramsParsed.data.eventId), eq(breedingEventsTable.farmId, farmId(req))));
 
   if (!event || event.breedingId !== paramsParsed.data.id) {
     res.status(404).json({ error: "Event not found" });
     return;
   }
 
-  await db.delete(breedingEventsTable).where(eq(breedingEventsTable.id, paramsParsed.data.eventId));
+  await db
+    .delete(breedingEventsTable)
+    .where(and(eq(breedingEventsTable.id, paramsParsed.data.eventId), eq(breedingEventsTable.farmId, farmId(req))));
 
   // If it was a cover event, recalculate expectedKiddingDate from remaining covers
   if (event.eventType === "cover") {
@@ -607,7 +647,7 @@ router.delete("/breedings/:id/events/:eventId", requireManager, async (req, res)
       await db
         .update(breedingsTable)
         .set({ expectedKiddingDate: newKiddingDate, updatedAt: new Date() })
-        .where(eq(breedingsTable.id, paramsParsed.data.id));
+        .where(and(eq(breedingsTable.id, paramsParsed.data.id), eq(breedingsTable.farmId, farmId(req))));
     }
     // If no covers remain, leave expectedKiddingDate as-is (preserve manually entered value)
   }
@@ -624,15 +664,20 @@ router.delete("/breedings/:id", requireManager, async (req, res): Promise<void> 
 
   const { id } = idParsed.data;
 
-  const [breeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, id));
+  const [breeding] = await db
+    .select()
+    .from(breedingsTable)
+    .where(and(eq(breedingsTable.id, id), eq(breedingsTable.farmId, farmId(req))));
   if (!breeding) {
     res.status(404).json({ error: "Breeding not found" });
     return;
   }
 
-  await db.delete(kidsTable).where(eq(kidsTable.breedingId, id));
-  await db.delete(breedingEventsTable).where(eq(breedingEventsTable.breedingId, id));
-  await db.delete(breedingsTable).where(eq(breedingsTable.id, id));
+  await db.delete(kidsTable).where(and(eq(kidsTable.breedingId, id), eq(kidsTable.farmId, farmId(req))));
+  await db
+    .delete(breedingEventsTable)
+    .where(and(eq(breedingEventsTable.breedingId, id), eq(breedingEventsTable.farmId, farmId(req))));
+  await db.delete(breedingsTable).where(and(eq(breedingsTable.id, id), eq(breedingsTable.farmId, farmId(req))));
 
   res.status(204).send();
 });

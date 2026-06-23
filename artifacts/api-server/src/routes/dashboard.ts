@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
-import { count, desc } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { db, goatsTable } from "@workspace/db";
+import { farmId } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
-router.get("/dashboard/summary", async (_req, res): Promise<void> => {
-  const allGoats = await db.select().from(goatsTable);
+router.get("/dashboard/summary", async (req, res): Promise<void> => {
+  const allGoats = await db.select().from(goatsTable).where(eq(goatsTable.farmId, farmId(req)));
   const ownedGoats = allGoats.filter((g) => !g.leasedBuck && g.herdStatus !== "dead" && g.herdStatus !== "sold");
   const totalGoats = ownedGoats.length;
 
@@ -54,22 +55,24 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   });
 });
 
-router.get("/dashboard/breed-breakdown", async (_req, res): Promise<void> => {
+router.get("/dashboard/breed-breakdown", async (req, res): Promise<void> => {
   const breakdown = await db
     .select({
       breed: goatsTable.breed,
       count: count(),
     })
     .from(goatsTable)
+    .where(eq(goatsTable.farmId, farmId(req)))
     .groupBy(goatsTable.breed);
 
   res.json(breakdown);
 });
 
-router.get("/dashboard/recent-activity", async (_req, res): Promise<void> => {
+router.get("/dashboard/recent-activity", async (req, res): Promise<void> => {
   const recent = await db
     .select()
     .from(goatsTable)
+    .where(eq(goatsTable.farmId, farmId(req)))
     .orderBy(desc(goatsTable.updatedAt))
     .limit(5);
 

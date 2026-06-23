@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _farmSlug: string | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +43,21 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Set the active farm slug. When set, an `X-Farm-Slug` header is attached to
+ * every request so the server can resolve the tenant in environments where the
+ * subdomain is not available (e.g. the Replit dev preview). Pass `null` to
+ * clear it (e.g. for platform superadmins, who are not scoped to a farm).
+ */
+export function setFarmSlug(slug: string | null): void {
+  _farmSlug = slug ? slug.trim() || null : null;
+}
+
+/** Return the currently configured farm slug, or null when none is set. */
+export function getFarmSlug(): string | null {
+  return _farmSlug;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -347,6 +363,12 @@ export async function customFetch<T = unknown>(
 
   if (responseType === "json" && !headers.has("accept")) {
     headers.set("accept", DEFAULT_JSON_ACCEPT);
+  }
+
+  // Attach the active farm slug so the server can resolve the tenant when the
+  // subdomain is unavailable (dev preview). Never override an explicit header.
+  if (_farmSlug && !headers.has("x-farm-slug")) {
+    headers.set("x-farm-slug", _farmSlug);
   }
 
   // Attach bearer token when an auth getter is configured and no

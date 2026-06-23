@@ -861,12 +861,15 @@ export const AuthUserRole = {
   admin: "admin",
   owner: "owner",
   farmhand: "farmhand",
+  superadmin: "superadmin",
 } as const;
 
 export interface AuthUser {
   id: number;
   username: string;
   role: AuthUserRole;
+  /** The slug of the farm this user belongs to. Null for platform superadmins. */
+  farmSlug?: string | null;
 }
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
@@ -875,6 +878,7 @@ export const UserRole = {
   admin: "admin",
   owner: "owner",
   farmhand: "farmhand",
+  superadmin: "superadmin",
 } as const;
 
 export interface User {
@@ -900,6 +904,7 @@ export const CreateUserBodyRole = {
   admin: "admin",
   owner: "owner",
   farmhand: "farmhand",
+  superadmin: "superadmin",
 } as const;
 
 export interface CreateUserBody {
@@ -934,6 +939,81 @@ export interface ChangePasswordBody {
   currentPassword: string;
   /** @minLength 8 */
   newPassword: string;
+}
+
+export type FarmStatus = (typeof FarmStatus)[keyof typeof FarmStatus];
+
+export const FarmStatus = {
+  active: "active",
+  suspended: "suspended",
+} as const;
+
+export interface Farm {
+  id: number;
+  slug: string;
+  name: string;
+  status: FarmStatus;
+}
+
+export type SuperadminFarmStatus =
+  (typeof SuperadminFarmStatus)[keyof typeof SuperadminFarmStatus];
+
+export const SuperadminFarmStatus = {
+  active: "active",
+  suspended: "suspended",
+} as const;
+
+export interface SuperadminFarm {
+  id: number;
+  slug: string;
+  name: string;
+  status: SuperadminFarmStatus;
+  createdAt?: string;
+  updatedAt?: string;
+  userCount: number;
+  goatCount: number;
+}
+
+export interface RegisterFarmBody {
+  /** @minLength 1 */
+  farmName: string;
+  /**
+   * @minLength 3
+   * @maxLength 32
+   */
+  slug: string;
+  /** @minLength 1 */
+  username: string;
+  /** @minLength 8 */
+  password: string;
+}
+
+export interface CreateFarmBody {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 3
+   * @maxLength 32
+   */
+  slug: string;
+  /** @minLength 1 */
+  adminUsername: string;
+  /** @minLength 8 */
+  adminPassword: string;
+}
+
+export type UpdateFarmBodyStatus =
+  (typeof UpdateFarmBodyStatus)[keyof typeof UpdateFarmBodyStatus];
+
+export const UpdateFarmBodyStatus = {
+  active: "active",
+  suspended: "suspended",
+} as const;
+
+export interface UpdateFarmBody {
+  /** @minLength 1 */
+  name?: string;
+  status?: UpdateFarmBodyStatus;
 }
 
 /**

@@ -1,22 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
-import { asc, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, usersTable, farmSettingsTable } from "@workspace/db";
+import { db, usersTable, farmSettingsTable, farmsTable } from "@workspace/db";
 import app from "../app";
-import { ensureFarmSettings } from "../lib/ensureFarmSettings";
 
 // Integration tests for the farm-level "uses AI" setting. Reads are open to any
 // authenticated user; writes are restricted to admin/owner. These run against the
-// live database, so the single farm_settings row's original value is snapshotted
-// up front and restored afterwards, and the seeded test users are removed.
+// live database, so the default farm's farm_settings row value is snapshotted up
+// front and restored afterwards, and the seeded test users are removed.
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const FARM_SLUG = "default";
 const ADMIN = { username: `settings-admin-${suffix}`, password: "admin-password-123" };
 const OWNER = { username: `settings-owner-${suffix}`, password: "owner-password-123" };
 const HAND = { username: `settings-hand-${suffix}`, password: "hand-password-123" };
 
 const createdUserIds: number[] = [];
+let testFarmId: number;
 let originalUsesAi: boolean;
 let settingsRowId: number;
 
@@ -28,7 +29,7 @@ async function seedUser(
   const passwordHash = await bcrypt.hash(password, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ username, passwordHash, role, active: true })
+    .values({ farmId: testFarmId, username, passwordHash, role, active: true })
     .returning();
   createdUserIds.push(user.id);
   return user;
@@ -36,25 +37,33 @@ async function seedUser(
 
 async function login(creds: { username: string; password: string }): Promise<Agent> {
   const agent = request.agent(app);
-  const res = await agent.post("/api/auth/login").send(creds);
+  const res = await agent.post("/api/auth/login").set("X-Farm-Slug", FARM_SLUG).send(creds);
   expect(res.status).toBe(200);
   return agent;
 }
 
 beforeAll(async () => {
-  // Guarantee the table and default row exist, then snapshot the current value.
-  await ensureFarmSettings();
-  const [row] = await db
+  const [defaultFarm] = await db
     .select()
-    .from(farmSettingsTable)
-    .orderBy(asc(farmSettingsTable.id))
-    .limit(1);
-  settingsRowId = row.id;
-  originalUsesAi = row.usesAi;
+    .from(farmsTable)
+    .where(eq(farmsTable.slug, FARM_SLUG));
+  expect(defaultFarm).toBeTruthy();
+  testFarmId = defaultFarm.id;
 
   await seedUser(ADMIN.username, ADMIN.password, "admin");
   await seedUser(OWNER.username, OWNER.password, "owner");
   await seedUser(HAND.username, HAND.password, "farmhand");
+
+  // A read lazily provisions the default farm's settings row if absent; snapshot
+  // its current value so teardown can restore it.
+  const adminAgent = await login(ADMIN);
+  await adminAgent.get("/api/settings");
+  const [row] = await db
+    .select()
+    .from(farmSettingsTable)
+    .where(eq(farmSettingsTable.farmId, testFarmId));
+  settingsRowId = row.id;
+  originalUsesAi = row.usesAi;
 });
 
 afterAll(async () => {
@@ -72,25 +81,26 @@ afterAll(async () => {
 });
 
 describe("farm settings default row", () => {
-  it("is seeded with uses_ai = true after boot", async () => {
-    // Prove ensureFarmSettings provisions a default row with uses_ai = true on a
-    // table with no rows. Empty the table in isolation, re-run the boot routine,
-    // then assert exactly one row exists and its default is true. The afterAll
-    // hook restores originalUsesAi onto whatever row id results.
-    await db.delete(farmSettingsTable);
+  it("lazily provisions a default row with uses_ai = true for the farm", async () => {
+    // Remove the default farm's settings row, then a read should recreate it with
+    // the default value. The afterAll hook restores originalUsesAi onto whatever
+    // row id results.
+    await db.delete(farmSettingsTable).where(eq(farmSettingsTable.farmId, testFarmId));
 
-    await ensureFarmSettings();
+    const agent = await login(ADMIN);
+    const res = await agent.get("/api/settings");
+    expect(res.status).toBe(200);
+    expect(res.body.usesAi).toBe(true);
 
-    const rows = await db
+    const [row] = await db
       .select()
       .from(farmSettingsTable)
-      .orderBy(asc(farmSettingsTable.id));
-    expect(rows).toHaveLength(1);
-    expect(rows[0].usesAi).toBe(true);
+      .where(eq(farmSettingsTable.farmId, testFarmId));
+    expect(row).toBeTruthy();
 
     // Re-point the snapshot id so teardown restores the original value onto the
     // freshly seeded row.
-    settingsRowId = rows[0].id;
+    settingsRowId = row.id;
   });
 });
 

@@ -1,11 +1,13 @@
 import { doublePrecision, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { farmsTable } from "./farms";
 import { goatsTable } from "./goats";
 import { semenStrawsTable } from "./semen";
 
 export const breedingEventsTable = pgTable("breeding_events", {
   id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   breedingId: integer("breeding_id").notNull().references(() => breedingsTable.id),
   eventType: text("event_type", { enum: ["exposed", "cover", "removed"] }).notNull(),
   eventDate: timestamp("event_date").notNull(),
@@ -16,6 +18,7 @@ export const breedingEventsTable = pgTable("breeding_events", {
 
 export const breedingsTable = pgTable("breedings", {
   id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   doeId: integer("doe_id").notNull().references(() => goatsTable.id),
   sireName: text("sire_name").notNull(),
   breedingMethod: text("breeding_method", { enum: ["natural", "ai"] }).notNull().default("natural"),
@@ -31,6 +34,7 @@ export const breedingsTable = pgTable("breedings", {
 
 export const kidsTable = pgTable("kids", {
   id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   breedingId: integer("breeding_id").notNull().references(() => breedingsTable.id),
   goatId: integer("goat_id").references(() => goatsTable.id),
   name: text("name"),

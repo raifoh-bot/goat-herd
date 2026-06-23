@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, usersTable } from "@workspace/db";
 import { CreateUserBody, UpdateUserBody, SetUserPasswordBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { farmId } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
@@ -21,8 +22,12 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/users", async (_req, res): Promise<void> => {
-  const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
+router.get("/users", async (req, res): Promise<void> => {
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.farmId, farmId(req)))
+    .orderBy(desc(usersTable.createdAt));
   res.json(users.map(toPublicUser));
 });
 
@@ -42,7 +47,7 @@ router.post("/users", async (req, res): Promise<void> => {
   const [existing] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.username, username));
+    .where(and(eq(usersTable.username, username), eq(usersTable.farmId, farmId(req))));
   if (existing) {
     res.status(409).json({ error: "Username already taken" });
     return;
@@ -52,7 +57,7 @@ router.post("/users", async (req, res): Promise<void> => {
 
   const [user] = await db
     .insert(usersTable)
-    .values({ username, passwordHash, role: parsed.data.role })
+    .values({ username, passwordHash, role: parsed.data.role, farmId: farmId(req) })
     .returning();
 
   res.status(201).json(toPublicUser(user));
@@ -91,7 +96,7 @@ router.put("/users/:id", async (req, res): Promise<void> => {
   const [user] = await db
     .update(usersTable)
     .set(updateData)
-    .where(eq(usersTable.id, id))
+    .where(and(eq(usersTable.id, id), eq(usersTable.farmId, farmId(req))))
     .returning();
 
   if (!user) {
@@ -120,7 +125,7 @@ router.put("/users/:id/password", async (req, res): Promise<void> => {
   const [user] = await db
     .update(usersTable)
     .set({ passwordHash, updatedAt: new Date() })
-    .where(eq(usersTable.id, id))
+    .where(and(eq(usersTable.id, id), eq(usersTable.farmId, farmId(req))))
     .returning();
 
   if (!user) {
