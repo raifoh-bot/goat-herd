@@ -7,4 +7,5 @@
 - [Clearing fields needs null not undefined](clearing-fields-null-not-undefined.md) — form transforms must emit null so Drizzle .set() actually clears; undefined is omitted.
 - [Boot-ensure DDL must mirror schema](boot-ensure-schema-drift.md) — new Drizzle columns need a matching ADD COLUMN IF NOT EXISTS in ensure* helpers, or reads 500 in dev+prod.
 - [Dev DB loses Drizzle tables on rollback](dev-db-table-recovery.md) — only sessions/settings are boot-ensured; a DB reset drops users → login 500; recover via idempotent CREATE TABLE, not push.
+- [Multi-tenant login needs farm slug](multi-tenant-login-default-farm.md) — post-tenancy, preview login 401s with blank Farm; seeded admin is in `default` farm.
 - [Drizzle unique constraint naming](drizzle-unique-constraint-naming.md) — .unique() makes `<table>_<col>_key` not `_unique`; dropping wrong name leaves it live → runtime 500 on per-tenant dupes.
