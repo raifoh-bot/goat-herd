@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal } from "lucide-react";
+import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint } from "lucide-react";
 import {
+  getGetBreedBreakdownQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
   getGetSettingsQueryKey,
+  getListBreedingsQueryKey,
+  useGetBreedBreakdown,
   useGetDashboardSummary,
   useGetRecentActivity,
   useGetSettings,
+  useListBreedings,
+  type BreedingWithDoe,
+  type BreedCount,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { breedLabels } from "@/lib/breeds";
@@ -39,7 +45,20 @@ const LACTATION_COLORS: Record<string, string> = {
 };
 
 /** Widgets that take a full-width / wide column slot in the grid. */
-const WIDE_WIDGETS = new Set<DashboardWidgetId>(["does-breakdown", "recent-activity"]);
+const WIDE_WIDGETS = new Set<DashboardWidgetId>([
+  "does-breakdown",
+  "upcoming-kiddings",
+  "breed-breakdown",
+  "recent-activity",
+]);
+
+const BREED_BAR_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
 
 export default function Dashboard() {
   const isManager = useIsManager();
@@ -51,6 +70,15 @@ export default function Dashboard() {
 
   const layout = resolveDashboardLayout(settings?.dashboardLayout);
   const visibleWidgets = layout.filter((w) => w.visible);
+  const showUpcomingKiddings = visibleWidgets.some((w) => w.id === "upcoming-kiddings");
+  const showBreedBreakdown = visibleWidgets.some((w) => w.id === "breed-breakdown");
+
+  const { data: breedings, isLoading: isLoadingBreedings } = useListBreedings({
+    query: { queryKey: getListBreedingsQueryKey(), enabled: showUpcomingKiddings },
+  });
+  const { data: breedBreakdown, isLoading: isLoadingBreedBreakdown } = useGetBreedBreakdown({
+    query: { queryKey: getGetBreedBreakdownQueryKey(), enabled: showBreedBreakdown },
+  });
 
   const lactationChartData = summary?.doeLactationBreakdown
     ? [
@@ -88,6 +116,16 @@ export default function Dashboard() {
             description="Currently in milk"
           />
         );
+      case "avg-milk":
+        return (
+          <StatCard
+            title="Average Milk/Day"
+            value={summary ? `${summary.averageMilkPerDay} L` : undefined}
+            icon={Milk}
+            isLoading={isLoadingSummary}
+            description="Across the whole herd"
+          />
+        );
       case "does-breakdown":
         return (
           <DoesBreakdownCard
@@ -96,6 +134,10 @@ export default function Dashboard() {
             chartData={lactationChartData}
           />
         );
+      case "upcoming-kiddings":
+        return <UpcomingKiddingsCard breedings={breedings} isLoading={isLoadingBreedings} />;
+      case "breed-breakdown":
+        return <BreedBreakdownCard breakdown={breedBreakdown} isLoading={isLoadingBreedBreakdown} />;
       case "recent-activity":
         return (
           <RecentActivityCard recentActivity={recentActivity} isLoading={isLoadingActivity} />
@@ -227,6 +269,144 @@ function DoesBreakdownCard({
           <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
             <Milk className="h-8 w-8 mb-2 opacity-40" />
             <p className="text-sm">No does recorded yet</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function UpcomingKiddingsCard({
+  breedings,
+  isLoading,
+}: {
+  breedings?: BreedingWithDoe[];
+  isLoading: boolean;
+}) {
+  const now = Date.now();
+  const upcoming = (breedings ?? [])
+    .filter(
+      (b) =>
+        (b.status === "bred" || b.status === "confirmed-pregnant") &&
+        b.expectedKiddingDate != null,
+    )
+    .map((b) => ({ ...b, due: new Date(b.expectedKiddingDate as string) }))
+    .filter((b) => !Number.isNaN(b.due.getTime()))
+    .sort((a, b) => a.due.getTime() - b.due.getTime())
+    .slice(0, 5);
+
+  const formatDue = (due: Date) => {
+    const days = Math.round((due.getTime() - now) / (24 * 60 * 60 * 1000));
+    const dateLabel = due.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    if (days < 0) return { dateLabel, rel: `${Math.abs(days)}d overdue`, overdue: true };
+    if (days === 0) return { dateLabel, rel: "Due today", overdue: false };
+    return { dateLabel, rel: `in ${days}d`, overdue: false };
+  };
+
+  return (
+    <Card className="h-full shadow-md border-primary/10">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="font-serif text-lg">Upcoming Kiddings</CardTitle>
+        <Link href="/breedings" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+          View all →
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-lg" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : upcoming.length > 0 ? (
+          <div className="space-y-2">
+            {upcoming.map((b) => {
+              const { dateLabel, rel, overdue } = formatDue(b.due);
+              return (
+                <Link key={b.id} href={`/breedings/${b.id}`}>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <CalendarHeart className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-foreground truncate">{b.doe?.name ?? "Unknown doe"}</h4>
+                      <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                    </div>
+                    <Badge variant={overdue ? "destructive" : "secondary"} className="shrink-0">{rel}</Badge>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+            <CalendarHeart className="h-8 w-8 mb-2 opacity-40" />
+            <p className="text-sm">No upcoming kiddings</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function BreedBreakdownCard({
+  breakdown,
+  isLoading,
+}: {
+  breakdown?: BreedCount[];
+  isLoading: boolean;
+}) {
+  const sorted = [...(breakdown ?? [])].sort((a, b) => b.count - a.count);
+  const max = sorted.reduce((m, b) => Math.max(m, b.count), 0);
+
+  return (
+    <Card className="h-full shadow-md border-primary/10">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="font-serif text-lg">Breed Breakdown</CardTitle>
+        <Link href="/goats" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+          View all →
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-3 w-1/4" />
+                <Skeleton className="h-3 w-full rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : sorted.length > 0 ? (
+          <div className="space-y-3">
+            {sorted.map((b, i) => (
+              <div key={b.breed} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground">{breedLabels[b.breed] ?? b.breed}</span>
+                  <span className="text-sm text-muted-foreground">{b.count}</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: max > 0 ? `${(b.count / max) * 100}%` : "0%",
+                      background: BREED_BAR_COLORS[i % BREED_BAR_COLORS.length],
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+            <PawPrint className="h-8 w-8 mb-2 opacity-40" />
+            <p className="text-sm">No goats recorded yet</p>
           </div>
         )}
       </CardContent>

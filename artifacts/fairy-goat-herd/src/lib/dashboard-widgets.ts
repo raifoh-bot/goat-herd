@@ -5,7 +5,10 @@ export type DashboardWidgetId =
   | "total-goats"
   | "health-status"
   | "milking-status"
+  | "avg-milk"
   | "does-breakdown"
+  | "upcoming-kiddings"
+  | "breed-breakdown"
   | "recent-activity";
 
 export interface DashboardWidgetDef {
@@ -26,7 +29,10 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
   { id: "total-goats", label: "Total Goats", description: "Herd totals split by does, bucks, and wethers." },
   { id: "health-status", label: "Healthy", description: "Count of goats with no current health concerns." },
   { id: "milking-status", label: "Milking", description: "Count of does currently in milk." },
+  { id: "avg-milk", label: "Average Milk/Day", description: "Average daily milk production across the herd." },
   { id: "does-breakdown", label: "Does Breakdown", description: "Lactation status breakdown chart for does." },
+  { id: "upcoming-kiddings", label: "Upcoming Kiddings", description: "Does due to kid soon, sorted by date." },
+  { id: "breed-breakdown", label: "Breed Breakdown", description: "Goat counts grouped by breed." },
   { id: "recent-activity", label: "Recent Herd Updates", description: "Recently updated goats in your herd." },
 ];
 

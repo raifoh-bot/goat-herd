@@ -10,7 +10,10 @@ export const DEFAULT_DASHBOARD_WIDGET_IDS = [
   "total-goats",
   "health-status",
   "milking-status",
+  "avg-milk",
   "does-breakdown",
+  "upcoming-kiddings",
+  "breed-breakdown",
   "recent-activity",
 ] as const;
 
