@@ -13,6 +13,12 @@ import { logger } from "./logger";
  * 4), so the `center_tail_tattoo` column is widened from varchar(4) to
  * varchar(8). The widening is guarded on the current column length so the table
  * is only rewritten once; subsequent boots are no-ops.
+ *
+ * The Herd page defaults its Herd Status filter to "On Farm", which the list API
+ * applies as an exact-match filter. Goats predate the herd_status column, so any
+ * row with a NULL herd_status would otherwise vanish from that default view. We
+ * give the column a default of 'on-farm' and backfill existing NULLs to 'on-farm'
+ * so unstatused goats are treated as on the farm. Both statements are idempotent.
  */
 export async function ensureGoatColumns(): Promise<void> {
   await pool.query(`
@@ -29,5 +35,7 @@ export async function ensureGoatColumns(): Promise<void> {
       END IF;
     END $$;
   `);
-  logger.info("Ensured goats column adjustments (center_tail_tattoo varchar(8))");
+  await pool.query(`ALTER TABLE "goats" ALTER COLUMN "herd_status" SET DEFAULT 'on-farm';`);
+  await pool.query(`UPDATE "goats" SET "herd_status" = 'on-farm' WHERE "herd_status" IS NULL;`);
+  logger.info("Ensured goats column adjustments (center_tail_tattoo varchar(8), herd_status default on-farm)");
 }

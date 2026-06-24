@@ -106,7 +106,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         : (defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
       imageUrl: defaultValues?.imageUrl || "",
-      herdStatus: (defaultValues?.herdStatus as "dead" | "first-freshener" | "leased" | "on-farm" | "retired" | "sold" | null | undefined) ?? null,
+      herdStatus: (defaultValues?.herdStatus as "dead" | "first-freshener" | "leased" | "on-farm" | "retired" | "sold" | null | undefined) ?? "on-farm",
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",

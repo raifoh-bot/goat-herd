@@ -105,7 +105,7 @@ function CompactCard({ goat }: { goat: Goat }) {
 }
 
 export default function GoatsList() {
-  const [statusFilter, setStatusFilter] = useState<ListGoatsStatus | undefined>();
+  const [statusFilter, setStatusFilter] = useState<ListGoatsStatus | undefined>("on-farm");
   const [sexFilter, setSexFilter] = useState<ListGoatsSex | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -319,7 +319,7 @@ export default function GoatsList() {
             </div>
             <h3 className="text-xl font-serif font-medium text-foreground mb-2">No goats found</h3>
             <p className="text-muted-foreground max-w-md">We couldn't find any goats matching your current filters. Try adjusting them or add a new goat to the herd.</p>
-            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter(undefined); setSortKey(null); }}>
+            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter("on-farm"); setSortKey(null); }}>
               Clear Filters
             </Button>
           </div>

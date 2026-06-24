@@ -33,7 +33,7 @@ export const goatsTable = pgTable("goats", {
   age: integer("age"),
   description: text("description"),
   imageUrl: text("image_url"),
-  herdStatus: text("herd_status", { enum: ["dead", "first-freshener", "leased", "on-farm", "retired", "sold"] }),
+  herdStatus: text("herd_status", { enum: ["dead", "first-freshener", "leased", "on-farm", "retired", "sold"] }).default("on-farm"),
   leasedBuck: boolean("leased_buck").default(false).notNull(),
   rightEarTattoo: varchar("right_ear_tattoo", { length: 4 }),
   leftEarTattoo: varchar("left_ear_tattoo", { length: 4 }),
