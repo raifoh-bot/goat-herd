@@ -1,20 +1,31 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { Activity, Milk, ShieldPlus, Stethoscope } from "lucide-react";
+import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal } from "lucide-react";
 import {
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
+  getGetSettingsQueryKey,
   useGetDashboardSummary,
   useGetRecentActivity,
+  useGetSettings,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { breedLabels } from "@/lib/breeds";
+import { useIsManager } from "@/lib/auth";
+import {
+  DASHBOARD_WIDGETS,
+  resolveDashboardLayout,
+  type DashboardWidgetId,
+} from "@/lib/dashboard-widgets";
+import { CustomizeDashboard } from "@/components/customize-dashboard";
 import { OnboardingBanner } from "@/components/onboarding-banner";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   PieChart, Pie, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Cell, Legend,
+  ResponsiveContainer, Cell,
 } from "recharts";
 
 const LACTATION_COLORS: Record<string, string> = {
@@ -27,9 +38,19 @@ const LACTATION_COLORS: Record<string, string> = {
   Retired: "hsl(var(--chart-5))",
 };
 
+/** Widgets that take a full-width / wide column slot in the grid. */
+const WIDE_WIDGETS = new Set<DashboardWidgetId>(["does-breakdown", "recent-activity"]);
+
 export default function Dashboard() {
+  const isManager = useIsManager();
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: recentActivity, isLoading: isLoadingActivity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey(), staleTime: 30_000 } });
+
+  const layout = resolveDashboardLayout(settings?.dashboardLayout);
+  const visibleWidgets = layout.filter((w) => w.visible);
 
   const lactationChartData = summary?.doeLactationBreakdown
     ? [
@@ -43,18 +64,12 @@ export default function Dashboard() {
       ].filter((d) => d.value > 0)
     : [];
 
-  return (
-    <Layout>
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <OnboardingBanner />
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
-          <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <TotalGoatsCard summary={summary} isLoading={isLoadingSummary} />
-
+  const renderWidget = (id: string) => {
+    switch (id as DashboardWidgetId) {
+      case "total-goats":
+        return <TotalGoatsCard summary={summary} isLoading={isLoadingSummary} />;
+      case "health-status":
+        return (
           <StatCard
             title="Healthy"
             value={summary?.healthyCount}
@@ -62,6 +77,9 @@ export default function Dashboard() {
             isLoading={isLoadingSummary}
             description="No current concerns"
           />
+        );
+      case "milking-status":
+        return (
           <StatCard
             title="Milking"
             value={summary?.milkingCount}
@@ -69,134 +87,224 @@ export default function Dashboard() {
             isLoading={isLoadingSummary}
             description="Currently in milk"
           />
+        );
+      case "does-breakdown":
+        return (
+          <DoesBreakdownCard
+            doeCount={summary?.doeCount}
+            isLoading={isLoadingSummary}
+            chartData={lactationChartData}
+          />
+        );
+      case "recent-activity":
+        return (
+          <RecentActivityCard recentActivity={recentActivity} isLoading={isLoadingActivity} />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <OnboardingBanner />
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
+            <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
+          </div>
+          {isManager && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setCustomizeOpen(true)}
+            >
+              <SlidersHorizontal className="mr-2 h-4 w-4" /> Customize
+            </Button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-1 shadow-md border-primary/10">
-            <CardHeader>
-              <div className="flex items-baseline justify-between gap-2">
-                <CardTitle className="font-serif text-lg">Does</CardTitle>
-                {isLoadingSummary
-                  ? <Skeleton className="h-7 w-10" />
-                  : <span className="text-3xl font-serif font-bold text-primary">{summary?.doeCount ?? 0}</span>
-                }
+        {visibleWidgets.length === 0 ? (
+          <Card className="border-dashed border-primary/20">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <SlidersHorizontal className="h-8 w-8 mb-3 opacity-40" />
+              <p className="font-medium text-foreground">All widgets are hidden</p>
+              <p className="text-sm">
+                {isManager
+                  ? "Use Customize to show dashboard widgets again."
+                  : "Ask a farm admin to show dashboard widgets."}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 [grid-auto-flow:row_dense] items-start">
+            {visibleWidgets.map((w) => (
+              <div
+                key={w.id}
+                className={WIDE_WIDGETS.has(w.id as DashboardWidgetId) ? "md:col-span-2" : "md:col-span-1"}
+              >
+                {renderWidget(w.id)}
               </div>
-              <p className="text-sm text-muted-foreground">Lactation status breakdown</p>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSummary ? (
-                <div className="flex justify-center items-center h-[220px]">
-                  <Skeleton className="h-[180px] w-full rounded-lg" />
-                </div>
-              ) : lactationChartData.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={lactationChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={58}
-                          outerRadius={80}
-                          paddingAngle={3}
-                          dataKey="value"
-                          isAnimationActive={false}
-                        >
-                          {lactationChartData.map((entry) => (
-                            <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip
-                          contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)", fontSize: 12 }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
-                    {lactationChartData.map((entry) => (
-                      <div key={entry.name} className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full shrink-0" style={{ background: LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))" }} />
-                        <span className="text-xs text-muted-foreground">{entry.name} <span className="font-medium text-foreground">{entry.value}</span></span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
-                  <Milk className="h-8 w-8 mb-2 opacity-40" />
-                  <p className="text-sm">No does recorded yet</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2 shadow-md border-primary/10">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="font-serif text-lg">Recent Herd Updates</CardTitle>
-              <Link href="/goats" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-                View all →
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {isLoadingActivity ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <Skeleton className="h-12 w-12 rounded-lg" />
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-1/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : recentActivity && recentActivity.length > 0 ? (
-                <div className="space-y-4">
-                  {recentActivity.map((goat, i) => (
-                    <Link key={goat.id} href={`/goats/${goat.id}`}>
-                      <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${i * 100}ms` }}>
-                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary overflow-hidden border border-primary/20">
-                          {goat.imageUrl ? <img src={goat.imageUrl} alt={goat.name} className="w-full h-full object-cover" /> : <Milk className="h-5 w-5" />}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">{goat.name}</h4>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            {breedLabels[goat.breed]} · {goat.lactationStatus ?? "—"}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge variant="outline" className="capitalize">{breedLabels[goat.breed]}</Badge>
-                          <Badge variant={goat.status === "treatment" ? "destructive" : goat.status === "watch" ? "secondary" : "default"} className="capitalize">
-                            {goat.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <Stethoscope className="h-8 w-8 text-muted-foreground/50" />
-                  </div>
-                  <p>Your herd list is empty.</p>
-                  <Link href="/goats/new" className="mt-4 text-primary font-medium hover:underline">
-                    Add your first goat
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {isManager && (
+        <CustomizeDashboard
+          open={customizeOpen}
+          onOpenChange={setCustomizeOpen}
+          savedLayout={settings?.dashboardLayout}
+        />
+      )}
     </Layout>
+  );
+}
+
+function DoesBreakdownCard({
+  doeCount,
+  isLoading,
+  chartData,
+}: {
+  doeCount?: number;
+  isLoading: boolean;
+  chartData: { name: string; value: number }[];
+}) {
+  return (
+    <Card className="h-full shadow-md border-primary/10">
+      <CardHeader>
+        <div className="flex items-baseline justify-between gap-2">
+          <CardTitle className="font-serif text-lg">Does</CardTitle>
+          {isLoading
+            ? <Skeleton className="h-7 w-10" />
+            : <span className="text-3xl font-serif font-bold text-primary">{doeCount ?? 0}</span>
+          }
+        </div>
+        <p className="text-sm text-muted-foreground">Lactation status breakdown</p>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[220px]">
+            <Skeleton className="h-[180px] w-full rounded-lg" />
+          </div>
+        ) : chartData.length > 0 ? (
+          <div className="space-y-3">
+            <div className="h-[200px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={58}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                    isAnimationActive={false}
+                  >
+                    {chartData.map((entry) => (
+                      <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--shadow-md)", fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+              {chartData.map((entry) => (
+                <div key={entry.name} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full shrink-0" style={{ background: LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))" }} />
+                  <span className="text-xs text-muted-foreground">{entry.name} <span className="font-medium text-foreground">{entry.value}</span></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
+            <Milk className="h-8 w-8 mb-2 opacity-40" />
+            <p className="text-sm">No does recorded yet</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecentActivityCard({
+  recentActivity,
+  isLoading,
+}: {
+  recentActivity?: { id: number; name: string; breed: string; status: string; lactationStatus?: string | null; imageUrl?: string | null }[];
+  isLoading: boolean;
+}) {
+  return (
+    <Card className="h-full shadow-md border-primary/10">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="font-serif text-lg">Recent Herd Updates</CardTitle>
+        <Link href="/goats" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+          View all →
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : recentActivity && recentActivity.length > 0 ? (
+          <div className="space-y-4">
+            {recentActivity.map((goat, i) => (
+              <Link key={goat.id} href={`/goats/${goat.id}`}>
+                <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary overflow-hidden border border-primary/20">
+                    {goat.imageUrl ? <img src={goat.imageUrl} alt={goat.name} className="w-full h-full object-cover" /> : <Milk className="h-5 w-5" />}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-foreground">{goat.name}</h4>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      {breedLabels[goat.breed]} · {goat.lactationStatus ?? "—"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="capitalize">{breedLabels[goat.breed]}</Badge>
+                    <Badge variant={goat.status === "treatment" ? "destructive" : goat.status === "watch" ? "secondary" : "default"} className="capitalize">
+                      {goat.status}
+                    </Badge>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Stethoscope className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p>Your herd list is empty.</p>
+            <Link href="/goats/new" className="mt-4 text-primary font-medium hover:underline">
+              Add your first goat
+            </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
 function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number; doeCount: number; buckCount: number; wetherCount: number } | null; isLoading: boolean }) {
   return (
-    <Card className="shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
+    <Card className="h-full shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Goats</CardTitle>
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -236,7 +344,7 @@ function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number
 
 function StatCard({ title, value, icon: Icon, isLoading, description }: { title: string; value?: number | string; icon: any; isLoading: boolean; description?: string }) {
   return (
-    <Card className="shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
+    <Card className="h-full shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">

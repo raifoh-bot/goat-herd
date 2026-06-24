@@ -1932,6 +1932,24 @@ export const GetSettingsResponse = zod.object({
     .describe(
       "The catalog breed slugs that exist on this farm. Only these appear in breed pickers.",
     ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+        })
+        .describe("A single dashboard widget's visibility and order position."),
+    )
+    .describe(
+      "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
+    ),
   updatedAt: zod.coerce.date(),
 });
 
@@ -1983,6 +2001,25 @@ export const UpdateSettingsBody = zod
       )
       .optional()
       .describe("The catalog breed slugs that exist on this farm."),
+    dashboardLayout: zod
+      .array(
+        zod
+          .object({
+            id: zod
+              .string()
+              .describe(
+                "The widget identifier (e.g. total-goats, health-status).",
+              ),
+            visible: zod
+              .boolean()
+              .describe("Whether the widget is shown on the dashboard."),
+          })
+          .describe(
+            "A single dashboard widget's visibility and order position.",
+          ),
+      )
+      .optional()
+      .describe("Ordered list of dashboard widgets with their visibility."),
   })
   .describe(
     "Partial update of the farm settings. Only the provided fields are changed.",
@@ -2046,6 +2083,24 @@ export const UpdateSettingsResponse = zod.object({
     )
     .describe(
       "The catalog breed slugs that exist on this farm. Only these appear in breed pickers.",
+    ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+        })
+        .describe("A single dashboard widget's visibility and order position."),
+    )
+    .describe(
+      "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
     ),
   updatedAt: zod.coerce.date(),
 });

@@ -5,6 +5,7 @@
  * MyGoatHerd API
  * OpenAPI spec version: 0.1.0
  */
+import type { DashboardWidget } from "./dashboardWidget";
 import type { FarmSettingsEnabledBreedsItem } from "./farmSettingsEnabledBreedsItem";
 import type { FarmSettingsWeightUnit } from "./farmSettingsWeightUnit";
 
@@ -24,5 +25,7 @@ export interface FarmSettings {
   gestationDays: number;
   /** The catalog breed slugs that exist on this farm. Only these appear in breed pickers. */
   enabledBreeds: FarmSettingsEnabledBreedsItem[];
+  /** Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order. */
+  dashboardLayout: DashboardWidget[];
   updatedAt: Date;
 }

@@ -1087,6 +1087,16 @@ export const FarmSettingsEnabledBreedsItem = {
   toggenburg: "toggenburg",
 } as const;
 
+/**
+ * A single dashboard widget's visibility and order position.
+ */
+export interface DashboardWidget {
+  /** The widget identifier (e.g. total-goats, health-status). */
+  id: string;
+  /** Whether the widget is shown on the dashboard. */
+  visible: boolean;
+}
+
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
@@ -1103,6 +1113,8 @@ export interface FarmSettings {
   gestationDays: number;
   /** The catalog breed slugs that exist on this farm. Only these appear in breed pickers. */
   enabledBreeds: FarmSettingsEnabledBreedsItem[];
+  /** Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order. */
+  dashboardLayout: DashboardWidget[];
   updatedAt: string;
 }
 
@@ -1160,6 +1172,8 @@ export interface UpdateFarmSettingsBody {
   gestationDays?: number;
   /** The catalog breed slugs that exist on this farm. */
   enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
+  /** Ordered list of dashboard widgets with their visibility. */
+  dashboardLayout?: DashboardWidget[];
 }
 
 export type ListGoatsParams = {

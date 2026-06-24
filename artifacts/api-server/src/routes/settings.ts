@@ -4,6 +4,7 @@ import { db, farmSettingsTable } from "@workspace/db";
 import { UpdateSettingsBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
+import { normalizeDashboardLayout } from "../lib/dashboardWidgets";
 
 const router: IRouter = Router();
 
@@ -32,7 +33,10 @@ async function getOrCreateSettings(fid: number) {
 
 router.get("/settings", async (req, res): Promise<void> => {
   const settings = await getOrCreateSettings(farmId(req));
-  res.json(settings);
+  res.json({
+    ...settings,
+    dashboardLayout: normalizeDashboardLayout(settings.dashboardLayout),
+  });
 });
 
 router.put("/settings", requireManager, async (req, res): Promise<void> => {
@@ -46,8 +50,16 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
 
   // Apply only the fields that were actually provided so the client can save a
   // single setting at a time without clobbering the others.
-  const { usesAi, farmName, adgaNumber, logoUrl, weightUnit, gestationDays, enabledBreeds } =
-    parsed.data;
+  const {
+    usesAi,
+    farmName,
+    adgaNumber,
+    logoUrl,
+    weightUnit,
+    gestationDays,
+    enabledBreeds,
+    dashboardLayout,
+  } = parsed.data;
   const changes: Partial<typeof farmSettingsTable.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -64,6 +76,11 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     // De-dupe while preserving the catalog-validated entries Zod already checked.
     changes.enabledBreeds = Array.from(new Set(enabledBreeds));
   }
+  if (dashboardLayout !== undefined) {
+    // Normalize before persisting so unknown ids never get stored and any
+    // missing widgets are filled in with defaults.
+    changes.dashboardLayout = normalizeDashboardLayout(dashboardLayout);
+  }
 
   const [updated] = await db
     .update(farmSettingsTable)
@@ -71,7 +88,10 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     .where(eq(farmSettingsTable.id, current.id))
     .returning();
 
-  res.json(updated);
+  res.json({
+    ...updated,
+    dashboardLayout: normalizeDashboardLayout(updated.dashboardLayout),
+  });
 });
 
 export default router;

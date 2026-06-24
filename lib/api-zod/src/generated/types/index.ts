@@ -38,6 +38,7 @@ export * from "./createSemenStrawBody";
 export * from "./createUserBody";
 export * from "./createUserBodyRole";
 export * from "./dashboardSummary";
+export * from "./dashboardWidget";
 export * from "./doeLactationBreakdown";
 export * from "./errorEnvelope";
 export * from "./farm";

@@ -2222,6 +2222,11 @@ components:
           items:
             type: string
             enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+        dashboardLayout:
+          type: array
+          description: Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.
+          items:
+            $ref: "#/components/schemas/DashboardWidget"
         updatedAt:
           type: string
           format: date-time
@@ -2232,7 +2237,22 @@ components:
         - weightUnit
         - gestationDays
         - enabledBreeds
+        - dashboardLayout
         - updatedAt
+
+    DashboardWidget:
+      type: object
+      description: A single dashboard widget's visibility and order position.
+      properties:
+        id:
+          type: string
+          description: The widget identifier (e.g. total-goats, health-status).
+        visible:
+          type: boolean
+          description: Whether the widget is shown on the dashboard.
+      required:
+        - id
+        - visible
 
     UpdateFarmSettingsBody:
       type: object
@@ -2264,3 +2284,8 @@ components:
           items:
             type: string
             enum: [alpine, angora, boer, guernsey, kiko, lamancha, mixed, myotonic, nigerian-dwarf, nubian, oberhasli, pygmy, recorded-grade, saanen, sable, savanna, spanish, texmaster, toggenburg]
+        dashboardLayout:
+          type: array
+          description: Ordered list of dashboard widgets with their visibility.
+          items:
+            $ref: "#/components/schemas/DashboardWidget"

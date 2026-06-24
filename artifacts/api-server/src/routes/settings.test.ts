@@ -207,3 +207,66 @@ describe("PUT /api/settings", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("dashboard layout customization", () => {
+  it("returns a normalized default layout when none is saved", async () => {
+    await db
+      .update(farmSettingsTable)
+      .set({ dashboardLayout: null })
+      .where(eq(farmSettingsTable.id, settingsRowId));
+
+    const agent = await login(ADMIN);
+    const res = await agent.get("/api/settings");
+    expect(res.status).toBe(200);
+    expect(res.body.dashboardLayout).toEqual([
+      { id: "total-goats", visible: true },
+      { id: "health-status", visible: true },
+      { id: "milking-status", visible: true },
+      { id: "does-breakdown", visible: true },
+      { id: "recent-activity", visible: true },
+    ]);
+  });
+
+  it("persists a reordered + hidden layout for an admin", async () => {
+    const agent = await login(ADMIN);
+    const layout = [
+      { id: "recent-activity", visible: true },
+      { id: "total-goats", visible: false },
+      { id: "health-status", visible: true },
+      { id: "milking-status", visible: true },
+      { id: "does-breakdown", visible: true },
+    ];
+    const res = await agent.put("/api/settings").send({ dashboardLayout: layout });
+    expect(res.status).toBe(200);
+    expect(res.body.dashboardLayout).toEqual(layout);
+
+    const readBack = await agent.get("/api/settings");
+    expect(readBack.body.dashboardLayout).toEqual(layout);
+  });
+
+  it("strips unknown widget ids and appends missing ones on save", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.put("/api/settings").send({
+      dashboardLayout: [
+        { id: "milking-status", visible: false },
+        { id: "totally-fake-widget", visible: true },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.dashboardLayout).toEqual([
+      { id: "milking-status", visible: false },
+      { id: "total-goats", visible: true },
+      { id: "health-status", visible: true },
+      { id: "does-breakdown", visible: true },
+      { id: "recent-activity", visible: true },
+    ]);
+  });
+
+  it("forbids a farm hand from changing the layout", async () => {
+    const agent = await login(HAND);
+    const res = await agent
+      .put("/api/settings")
+      .send({ dashboardLayout: [{ id: "total-goats", visible: false }] });
+    expect(res.status).toBe(403);
+  });
+});

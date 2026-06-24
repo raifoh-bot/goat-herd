@@ -1,7 +1,10 @@
-import { boolean, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { farmsTable } from "./farms";
+
+/** One dashboard widget's persisted visibility/order state. */
+export type DashboardWidgetLayout = { id: string; visible: boolean };
 
 export const farmSettingsTable = pgTable("farm_settings", {
   id: serial("id").primaryKey(),
@@ -36,6 +39,7 @@ export const farmSettingsTable = pgTable("farm_settings", {
       "texmaster",
       "toggenburg",
     ]),
+  dashboardLayout: jsonb("dashboard_layout").$type<DashboardWidgetLayout[]>(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
