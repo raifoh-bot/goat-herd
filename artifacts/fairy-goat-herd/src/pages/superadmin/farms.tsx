@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { storeFarmSlug } from "@/lib/farm";
+import { storeAuthToken } from "@/lib/token";
 
 function slugify(value: string): string {
   return value
@@ -264,6 +265,7 @@ export default function SuperadminFarms() {
     logout.mutate(undefined, {
       onSuccess: () => {
         storeFarmSlug(null);
+        storeAuthToken(null);
         queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
         setLocation("/login");
       },

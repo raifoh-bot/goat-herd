@@ -44,6 +44,7 @@ import type {
   Kid,
   ListGoatsParams,
   LoginBody,
+  LoginResponse,
   RegisterFarmBody,
   SemenStraw,
   SetUserPasswordBody,
@@ -2515,8 +2516,8 @@ export const getLoginUrl = () => {
 export const login = async (
   loginBody: LoginBody,
   options?: RequestInit,
-): Promise<AuthUser> => {
-  return customFetch<AuthUser>(getLoginUrl(), {
+): Promise<LoginResponse> => {
+  return customFetch<LoginResponse>(getLoginUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

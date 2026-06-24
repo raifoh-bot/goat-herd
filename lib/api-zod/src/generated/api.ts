@@ -1696,6 +1696,12 @@ export const LoginResponse = zod.object({
     .describe(
       "The slug of the farm this user belongs to. Null for platform superadmins.",
     ),
+  token: zod
+    .string()
+    .optional()
+    .describe(
+      "Bearer token (the session id) for the Authorization header. Only present where the session cookie is blocked, e.g. the Replit preview (cross-site iframe); production responses omit it and rely on the HttpOnly session cookie.",
+    ),
 });
 
 /**

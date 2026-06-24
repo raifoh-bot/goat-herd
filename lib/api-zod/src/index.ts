@@ -18,6 +18,7 @@ export {
   ImportGoatsBody,
   ImportSemenStrawsBody,
   LoginBody,
+  LoginResponse,
   RegisterFarmBody,
   SetUserPasswordBody,
   UpdateBreedingBody,

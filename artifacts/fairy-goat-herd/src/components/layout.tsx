@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { GoatIcon } from "@/components/goat-icon";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { storeAuthToken } from "@/lib/token";
 import { useFarmSettings } from "@/lib/settings";
 
 interface LayoutProps {
@@ -31,6 +32,7 @@ export function Layout({ children }: LayoutProps) {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSettled: () => {
+        storeAuthToken(null);
         queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
         queryClient.clear();
         setLocation("/login");

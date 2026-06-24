@@ -14,3 +14,17 @@ The Replit dev preview renders the app inside a cross-site iframe (top-level is 
 **curl cannot reproduce it:** over plain `localhost:80` there is no `X-Forwarded-Proto: https`, so Express won't set the `Secure` cookie at all and the cookie jar stays empty — inconclusive. Verify in the real browser preview instead.
 
 **Why:** both halves were needed historically — the cookie attrs were fixed first, but a later symptom (superadmin "Could not create farm") traced to the client `fetch` missing `credentials: include`.
+
+## The real fix: cookies can be BLOCKED outright → use a bearer-token bridge
+
+Even with `SameSite=None; Secure` + `credentials: include` BOTH correct, modern browsers (Chrome third-party-cookie phaseout, Safari ITP, strict privacy modes) may **block the third-party cookie entirely** in the cross-site preview iframe. Then login still 200s but every authed call 401s — identical symptom, but no cookie config can fix it because the cookie never gets stored/sent.
+
+**Solution that worked:** a bearer-token bridge piggybacking on the existing express-session store — no second auth system.
+- Login returns `req.sessionID` as a `token`; the web client stores it in **localStorage** (first-party to the iframe origin, so not blocked) and sends `Authorization: Bearer <token>`.
+- A middleware **before** `session()` signs the token exactly like express-session signs its cookie (`s:` + `cookie-signature` sign with `SESSION_SECRET`, same cookie name) and injects it into `req.headers.cookie`, but only when no real session cookie is present. express-session then loads the session normally — all store/expiry/rolling machinery reused.
+
+**Two security must-dos** (flagged by code review, easy to miss):
+1. **Gate the bridge to non-production** (`NODE_ENV !== production`, override via env flag). Published apps are served same-site → cookies work → keep auth HttpOnly-cookie-only. Returning the session id as a JS-readable token everywhere is an XSS-exfiltration downgrade.
+2. **Regenerate the session on login** (`req.session.regenerate` then set userId, then `req.session.save` before responding) — prevents session fixation, which matters more once a bearer token is accepted.
+
+**curl CAN verify the bridge** (unlike the pure-cookie path): it's cookie-independent. Login → grab `token` from JSON → `Authorization: Bearer <token>` → expect 200/201. In production mode the login response omits `token` by design.

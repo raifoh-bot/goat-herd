@@ -647,11 +647,11 @@ paths:
               $ref: "#/components/schemas/LoginBody"
       responses:
         "200":
-          description: Logged in; returns the authenticated user
+          description: Logged in; returns the authenticated user and a bearer token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthUser"
+                $ref: "#/components/schemas/LoginResponse"
         "401":
           description: Invalid username or password
           content:
@@ -1918,6 +1918,32 @@ components:
           type: string
           nullable: true
           description: The slug of the farm this user belongs to. Null for platform superadmins.
+      required:
+        - id
+        - username
+        - role
+
+    LoginResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+          enum: [admin, owner, farmhand, superadmin]
+        farmSlug:
+          type: string
+          nullable: true
+          description: The slug of the farm this user belongs to. Null for platform superadmins.
+        token:
+          type: string
+          description: >-
+            Bearer token (the session id) for the Authorization header. Only
+            present where the session cookie is blocked, e.g. the Replit preview
+            (cross-site iframe); production responses omit it and rely on the
+            HttpOnly session cookie.
       required:
         - id
         - username

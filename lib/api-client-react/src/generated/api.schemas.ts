@@ -872,6 +872,26 @@ export interface AuthUser {
   farmSlug?: string | null;
 }
 
+export type LoginResponseRole =
+  (typeof LoginResponseRole)[keyof typeof LoginResponseRole];
+
+export const LoginResponseRole = {
+  admin: "admin",
+  owner: "owner",
+  farmhand: "farmhand",
+  superadmin: "superadmin",
+} as const;
+
+export interface LoginResponse {
+  id: number;
+  username: string;
+  role: LoginResponseRole;
+  /** The slug of the farm this user belongs to. Null for platform superadmins. */
+  farmSlug?: string | null;
+  /** Bearer token (the session id) for the Authorization header. Only present where the session cookie is blocked, e.g. the Replit preview (cross-site iframe); production responses omit it and rely on the HttpOnly session cookie. */
+  token?: string;
+}
+
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const UserRole = {

@@ -5,6 +5,26 @@ import { pool } from "@workspace/db";
 
 const DEFAULT_IDLE_TIMEOUT_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
+/** The name of the session cookie. Also used by the bearer-token bridge. */
+export const SESSION_COOKIE_NAME = "mygoatherd.sid";
+
+/**
+ * Whether to enable the bearer-token bridge (login returns the session id as a
+ * token and the server accepts `Authorization: Bearer <token>`).
+ *
+ * This exists solely for the cross-site Replit dev preview iframe, where the
+ * browser blocks the third-party session cookie. Published production apps are
+ * served same-site, so cookies work there — keep auth HttpOnly-cookie-only and
+ * never expose the session id as a JS-readable token. Set AUTH_BEARER_BRIDGE
+ * explicitly to override the NODE_ENV default.
+ */
+export function isBearerBridgeEnabled(): boolean {
+  if (process.env.AUTH_BEARER_BRIDGE !== undefined) {
+    return process.env.AUTH_BEARER_BRIDGE === "true";
+  }
+  return process.env.NODE_ENV !== "production";
+}
+
 function resolveIdleTimeout(): number {
   const raw = process.env.SESSION_IDLE_TIMEOUT_MS;
   if (!raw) return DEFAULT_IDLE_TIMEOUT_MS;
@@ -49,7 +69,7 @@ export function createSessionMiddleware(): RequestHandler {
 
   const options: SessionOptions = {
     store,
-    name: "mygoatherd.sid",
+    name: SESSION_COOKIE_NAME,
     secret,
     resave: false,
     saveUninitialized: false,

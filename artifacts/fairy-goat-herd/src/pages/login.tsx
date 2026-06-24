@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { loadStoredFarmSlug, storeFarmSlug } from "@/lib/farm";
+import { storeAuthToken } from "@/lib/token";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -46,8 +47,10 @@ export default function Login() {
       { data: { username: username.trim(), password } },
       {
         onSuccess: (user) => {
-          // Persist the server-confirmed farm slug (null for superadmins).
+          // Persist the server-confirmed farm slug (null for superadmins) and
+          // the bearer token used when the session cookie is blocked (iframe).
           storeFarmSlug(user.farmSlug ?? null);
+          storeAuthToken(user.token ?? null);
           queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
           setLocation(user.role === "superadmin" ? "/superadmin/farms" : "/");
         },

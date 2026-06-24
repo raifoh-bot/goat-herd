@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { db, usersTable } from "@workspace/db";
 import { LoginBody, ChangeOwnPasswordBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { isBearerBridgeEnabled } from "../lib/session";
 
 const router: IRouter = Router();
 
@@ -44,6 +45,18 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  // Regenerate the session on login to issue a fresh id, preventing
+  // session-fixation (an attacker-known pre-login id carrying over post-auth).
+  try {
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to regenerate session on login");
+    res.status(500).json({ error: "Failed to log in" });
+    return;
+  }
+
   req.session.userId = user.id;
   // Persist the farm slug so subsequent same-session requests resolve the tenant
   // without re-sending the X-Farm-Slug header. Superadmins carry no farm.
@@ -53,11 +66,27 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     req.session.farmSlug = undefined;
   }
 
+  // Persist the session before responding so the returned bearer token (when
+  // enabled) is immediately usable against the store.
+  try {
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => (err ? reject(err) : resolve()));
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to persist session on login");
+    res.status(500).json({ error: "Failed to log in" });
+    return;
+  }
+
   res.json({
     id: user.id,
     username: user.username,
     role: user.role,
     farmSlug: req.farm?.slug ?? null,
+    // The session id doubles as a bearer token for clients whose session cookie
+    // is blocked (the cross-site Replit preview iframe). Only issued when the
+    // bridge is enabled (non-production); production stays cookie-only.
+    ...(isBearerBridgeEnabled() ? { token: req.sessionID } : {}),
   });
 });
 
