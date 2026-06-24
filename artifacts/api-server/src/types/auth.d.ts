@@ -1,4 +1,4 @@
-import type { UserRole, FarmStatus } from "@workspace/db";
+import type { UserRole, FarmStatus, DashboardWidgetLayout } from "@workspace/db";
 
 declare module "express-session" {
   interface SessionData {
@@ -18,6 +18,9 @@ declare global {
         role: UserRole;
         // null for superadmin accounts (which are not bound to a farm).
         farmId: number | null;
+        // The user's personal dashboard layout override, or null to use the
+        // farm-wide default.
+        dashboardLayout: DashboardWidgetLayout[] | null;
       };
       // The resolved tenant for this request, if any. Populated by resolveTenant.
       farm?: {

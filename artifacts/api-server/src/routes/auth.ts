@@ -2,9 +2,10 @@ import { Router, type IRouter } from "express";
 import { and, eq, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, usersTable } from "@workspace/db";
-import { LoginBody, ChangeOwnPasswordBody } from "@workspace/api-zod";
+import { LoginBody, ChangeOwnPasswordBody, UpdateDashboardLayoutBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
 import { isBearerBridgeEnabled } from "../lib/session";
+import { normalizePersonalDashboardLayout } from "../lib/dashboardWidgets";
 
 const router: IRouter = Router();
 
@@ -118,7 +119,39 @@ router.post("/auth/logout", (req, res): void => {
 });
 
 router.get("/auth/me", requireAuth, (req, res): void => {
-  res.json({ ...req.authUser, farmSlug: req.session.farmSlug ?? null });
+  res.json({
+    ...req.authUser,
+    farmSlug: req.session.farmSlug ?? null,
+    // Preserve null (no personal override) so the client falls back to the
+    // farm-wide layout; normalize a stored array against the current catalog.
+    dashboardLayout: normalizePersonalDashboardLayout(req.authUser!.dashboardLayout),
+  });
+});
+
+/**
+ * Sets or clears the current user's personal dashboard layout. Any authenticated
+ * user may arrange their own dashboard; sending `dashboardLayout: null` removes
+ * the personal override so the user falls back to the farm-wide default.
+ */
+router.put("/auth/dashboard-layout", requireAuth, async (req, res): Promise<void> => {
+  const parsed = UpdateDashboardLayoutBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const layout = normalizePersonalDashboardLayout(parsed.data.dashboardLayout);
+
+  await db
+    .update(usersTable)
+    .set({ dashboardLayout: layout, updatedAt: new Date() })
+    .where(eq(usersTable.id, req.authUser!.id));
+
+  res.json({
+    ...req.authUser,
+    farmSlug: req.session.farmSlug ?? null,
+    dashboardLayout: layout,
+  });
 });
 
 router.put("/auth/password", requireAuth, async (req, res): Promise<void> => {

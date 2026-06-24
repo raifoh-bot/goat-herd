@@ -52,6 +52,7 @@ import type {
   SuperadminFarm,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
+  UpdateDashboardLayoutBody,
   UpdateFarmBody,
   UpdateFarmSettingsBody,
   UpdateGoatBody,
@@ -3718,4 +3719,92 @@ export const useChangeOwnPassword = <
   TContext
 > => {
   return useMutation(getChangeOwnPasswordMutationOptions(options));
+};
+
+/**
+ * Saves a per-user dashboard arrangement that overrides the farm-wide default for this user only. Send `dashboardLayout: null` to remove the personal override and fall back to the farm default.
+ * @summary Set or clear the current user's personal dashboard layout
+ */
+export const getUpdateDashboardLayoutUrl = () => {
+  return `/api/auth/dashboard-layout`;
+};
+
+export const updateDashboardLayout = async (
+  updateDashboardLayoutBody: UpdateDashboardLayoutBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getUpdateDashboardLayoutUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDashboardLayoutBody),
+  });
+};
+
+export const getUpdateDashboardLayoutMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDashboardLayout>>,
+    TError,
+    { data: BodyType<UpdateDashboardLayoutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDashboardLayout>>,
+  TError,
+  { data: BodyType<UpdateDashboardLayoutBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDashboardLayout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDashboardLayout>>,
+    { data: BodyType<UpdateDashboardLayoutBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateDashboardLayout(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDashboardLayoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDashboardLayout>>
+>;
+export type UpdateDashboardLayoutMutationBody =
+  BodyType<UpdateDashboardLayoutBody>;
+export type UpdateDashboardLayoutMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Set or clear the current user's personal dashboard layout
+ */
+export const useUpdateDashboardLayout = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDashboardLayout>>,
+    TError,
+    { data: BodyType<UpdateDashboardLayoutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDashboardLayout>>,
+  TError,
+  { data: BodyType<UpdateDashboardLayoutBody> },
+  TContext
+> => {
+  return useMutation(getUpdateDashboardLayoutMutationOptions(options));
 };

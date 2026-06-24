@@ -1,7 +1,8 @@
-import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { farmsTable } from "./farms";
+import type { DashboardWidgetLayout } from "./settings";
 
 export const userRoles = ["superadmin", "admin", "owner", "farmhand"] as const;
 export type UserRole = (typeof userRoles)[number];
@@ -19,6 +20,9 @@ export const usersTable = pgTable("users", {
   // Null until the user's first successful login. Drives the first-login
   // onboarding redirect (new farm admins land on Farm Settings).
   lastLoginAt: timestamp("last_login_at"),
+  // Optional per-user dashboard arrangement. NULL means "use the farm-wide
+  // default layout"; a non-null array overrides it for this user only.
+  dashboardLayout: jsonb("dashboard_layout").$type<DashboardWidgetLayout[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

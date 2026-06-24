@@ -47,3 +47,17 @@ export function normalizeDashboardLayout(
 
   return result;
 }
+
+/**
+ * Normalizes a per-user personal dashboard layout. Unlike the farm-wide
+ * variant, a `null`/`undefined` input is preserved as `null` (meaning "this
+ * user has no personal override; fall back to the farm default"). A non-null
+ * array is reconciled against the catalog exactly like the farm layout so
+ * unknown ids are dropped and newly-shipped widgets are appended (visible).
+ */
+export function normalizePersonalDashboardLayout(
+  saved: DashboardWidgetLayout[] | null | undefined,
+): DashboardWidgetLayout[] | null {
+  if (saved == null) return null;
+  return normalizeDashboardLayout(saved);
+}

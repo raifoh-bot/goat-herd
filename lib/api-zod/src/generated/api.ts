@@ -1722,6 +1722,25 @@ export const GetCurrentUserResponse = zod.object({
     .describe(
       "The slug of the farm this user belongs to. Null for platform superadmins.",
     ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+        })
+        .describe("A single dashboard widget's visibility and order position."),
+    )
+    .nullish()
+    .describe(
+      "The user's personal dashboard layout override. Null means the user uses the farm-wide default layout.",
+    ),
 });
 
 /**
@@ -2114,4 +2133,67 @@ export const changeOwnPasswordBodyNewPasswordMin = 8;
 export const ChangeOwnPasswordBody = zod.object({
   currentPassword: zod.string().min(1),
   newPassword: zod.string().min(changeOwnPasswordBodyNewPasswordMin),
+});
+
+/**
+ * Saves a per-user dashboard arrangement that overrides the farm-wide default for this user only. Send `dashboardLayout: null` to remove the personal override and fall back to the farm default.
+ * @summary Set or clear the current user's personal dashboard layout
+ */
+export const UpdateDashboardLayoutBody = zod
+  .object({
+    dashboardLayout: zod
+      .array(
+        zod
+          .object({
+            id: zod
+              .string()
+              .describe(
+                "The widget identifier (e.g. total-goats, health-status).",
+              ),
+            visible: zod
+              .boolean()
+              .describe("Whether the widget is shown on the dashboard."),
+          })
+          .describe(
+            "A single dashboard widget's visibility and order position.",
+          ),
+      )
+      .nullable()
+      .describe(
+        "The personal widget arrangement, or null to use the farm default.",
+      ),
+  })
+  .describe(
+    "Sets the current user's personal dashboard layout. A null value clears the personal override so the farm-wide default applies.",
+  );
+
+export const UpdateDashboardLayoutResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  farmSlug: zod
+    .string()
+    .nullish()
+    .describe(
+      "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+        })
+        .describe("A single dashboard widget's visibility and order position."),
+    )
+    .nullish()
+    .describe(
+      "The user's personal dashboard layout override. Null means the user uses the farm-wide default layout.",
+    ),
 });

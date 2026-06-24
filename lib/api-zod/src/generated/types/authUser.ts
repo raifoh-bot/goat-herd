@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AuthUserRole } from "./authUserRole";
+import type { DashboardWidget } from "./dashboardWidget";
 
 export interface AuthUser {
   id: number;
@@ -13,4 +14,6 @@ export interface AuthUser {
   role: AuthUserRole;
   /** The slug of the farm this user belongs to. Null for platform superadmins. */
   farmSlug?: string | null;
+  /** The user's personal dashboard layout override. Null means the user uses the farm-wide default layout. */
+  dashboardLayout?: DashboardWidget[] | null;
 }

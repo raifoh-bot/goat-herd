@@ -21,6 +21,7 @@ export {
   LoginResponse,
   RegisterFarmBody,
   SetUserPasswordBody,
+  UpdateDashboardLayoutBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
   UpdateFarmBody,

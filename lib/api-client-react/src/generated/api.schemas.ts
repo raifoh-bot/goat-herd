@@ -864,12 +864,24 @@ export const AuthUserRole = {
   superadmin: "superadmin",
 } as const;
 
+/**
+ * A single dashboard widget's visibility and order position.
+ */
+export interface DashboardWidget {
+  /** The widget identifier (e.g. total-goats, health-status). */
+  id: string;
+  /** Whether the widget is shown on the dashboard. */
+  visible: boolean;
+}
+
 export interface AuthUser {
   id: number;
   username: string;
   role: AuthUserRole;
   /** The slug of the farm this user belongs to. Null for platform superadmins. */
   farmSlug?: string | null;
+  /** The user's personal dashboard layout override. Null means the user uses the farm-wide default layout. */
+  dashboardLayout?: DashboardWidget[] | null;
 }
 
 export type LoginResponseRole =
@@ -1087,16 +1099,6 @@ export const FarmSettingsEnabledBreedsItem = {
   toggenburg: "toggenburg",
 } as const;
 
-/**
- * A single dashboard widget's visibility and order position.
- */
-export interface DashboardWidget {
-  /** The widget identifier (e.g. total-goats, health-status). */
-  id: string;
-  /** Whether the widget is shown on the dashboard. */
-  visible: boolean;
-}
-
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
@@ -1174,6 +1176,14 @@ export interface UpdateFarmSettingsBody {
   enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
   /** Ordered list of dashboard widgets with their visibility. */
   dashboardLayout?: DashboardWidget[];
+}
+
+/**
+ * Sets the current user's personal dashboard layout. A null value clears the personal override so the farm-wide default applies.
+ */
+export interface UpdateDashboardLayoutBody {
+  /** The personal widget arrangement, or null to use the farm default. */
+  dashboardLayout: DashboardWidget[] | null;
 }
 
 export type ListGoatsParams = {

@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { breedLabels } from "@/lib/breeds";
-import { useIsManager } from "@/lib/auth";
+import { useAuth, useIsManager } from "@/lib/auth";
 import {
   DASHBOARD_WIDGETS,
   resolveDashboardLayout,
@@ -62,13 +62,18 @@ const BREED_BAR_COLORS = [
 
 export default function Dashboard() {
   const isManager = useIsManager();
+  const { user } = useAuth();
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: recentActivity, isLoading: isLoadingActivity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey(), staleTime: 30_000 } });
 
-  const layout = resolveDashboardLayout(settings?.dashboardLayout);
+  // A user's personal layout wins when set; otherwise fall back to the
+  // farm-wide default. resolveDashboardLayout keeps either stable against the
+  // current widget catalog.
+  const personalLayout = user.dashboardLayout;
+  const layout = resolveDashboardLayout(personalLayout ?? settings?.dashboardLayout);
   const visibleWidgets = layout.filter((w) => w.visible);
   const showUpcomingKiddings = visibleWidgets.some((w) => w.id === "upcoming-kiddings");
   const showBreedBreakdown = visibleWidgets.some((w) => w.id === "breed-breakdown");
@@ -156,16 +161,14 @@ export default function Dashboard() {
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
             <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
           </div>
-          {isManager && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => setCustomizeOpen(true)}
-            >
-              <SlidersHorizontal className="mr-2 h-4 w-4" /> Customize
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => setCustomizeOpen(true)}
+          >
+            <SlidersHorizontal className="mr-2 h-4 w-4" /> Customize
+          </Button>
         </div>
 
         {visibleWidgets.length === 0 ? (
@@ -173,11 +176,7 @@ export default function Dashboard() {
             <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <SlidersHorizontal className="h-8 w-8 mb-3 opacity-40" />
               <p className="font-medium text-foreground">All widgets are hidden</p>
-              <p className="text-sm">
-                {isManager
-                  ? "Use Customize to show dashboard widgets again."
-                  : "Ask a farm admin to show dashboard widgets."}
-              </p>
+              <p className="text-sm">Use Customize to show dashboard widgets again.</p>
             </CardContent>
           </Card>
         ) : (
@@ -194,13 +193,13 @@ export default function Dashboard() {
         )}
       </div>
 
-      {isManager && (
-        <CustomizeDashboard
-          open={customizeOpen}
-          onOpenChange={setCustomizeOpen}
-          savedLayout={settings?.dashboardLayout}
-        />
-      )}
+      <CustomizeDashboard
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        farmLayout={settings?.dashboardLayout}
+        personalLayout={personalLayout}
+        isManager={isManager}
+      />
     </Layout>
   );
 }

@@ -961,6 +961,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /auth/dashboard-layout:
+    put:
+      operationId: updateDashboardLayout
+      tags: [auth]
+      summary: Set or clear the current user's personal dashboard layout
+      description: >-
+        Saves a per-user dashboard arrangement that overrides the farm-wide
+        default for this user only. Send `dashboardLayout: null` to remove the
+        personal override and fall back to the farm default.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDashboardLayoutBody"
+      responses:
+        "200":
+          description: The updated current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid layout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
 components:
   schemas:
     HealthStatus:
@@ -1931,6 +1966,12 @@ components:
           type: string
           nullable: true
           description: The slug of the farm this user belongs to. Null for platform superadmins.
+        dashboardLayout:
+          type: array
+          nullable: true
+          description: The user's personal dashboard layout override. Null means the user uses the farm-wide default layout.
+          items:
+            $ref: "#/components/schemas/DashboardWidget"
       required:
         - id
         - username
@@ -2289,3 +2330,18 @@ components:
           description: Ordered list of dashboard widgets with their visibility.
           items:
             $ref: "#/components/schemas/DashboardWidget"
+
+    UpdateDashboardLayoutBody:
+      type: object
+      description: >-
+        Sets the current user's personal dashboard layout. A null value clears
+        the personal override so the farm-wide default applies.
+      properties:
+        dashboardLayout:
+          type: array
+          nullable: true
+          description: The personal widget arrangement, or null to use the farm default.
+          items:
+            $ref: "#/components/schemas/DashboardWidget"
+      required:
+        - dashboardLayout

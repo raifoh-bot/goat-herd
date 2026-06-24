@@ -82,6 +82,7 @@ export * from "./updateBreedingBody";
 export * from "./updateBreedingBodyBreedingMethod";
 export * from "./updateBreedingBodyStatus";
 export * from "./updateBreedingEventBody";
+export * from "./updateDashboardLayoutBody";
 export * from "./updateFarmBody";
 export * from "./updateFarmBodyStatus";
 export * from "./updateFarmSettingsBody";
