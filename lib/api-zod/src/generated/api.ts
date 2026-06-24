@@ -1696,6 +1696,11 @@ export const LoginResponse = zod.object({
     .describe(
       "The slug of the farm this user belongs to. Null for platform superadmins.",
     ),
+  firstLogin: zod
+    .boolean()
+    .describe(
+      "True only on the user's very first successful login. The web client uses this to send new farm admins to Farm Settings to finish setup.",
+    ),
   token: zod
     .string()
     .optional()

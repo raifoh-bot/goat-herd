@@ -16,6 +16,9 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("farmhand"),
   active: boolean("active").notNull().default(true),
+  // Null until the user's first successful login. Drives the first-login
+  // onboarding redirect (new farm admins land on Farm Settings).
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

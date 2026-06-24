@@ -52,7 +52,15 @@ export default function Login() {
           storeFarmSlug(user.farmSlug ?? null);
           storeAuthToken(user.token ?? null);
           queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
-          setLocation(user.role === "superadmin" ? "/superadmin/farms" : "/");
+          const isManager = user.role === "admin" || user.role === "owner";
+          if (user.role === "superadmin") {
+            setLocation("/superadmin/farms");
+          } else if (user.firstLogin && isManager) {
+            // First-time farm admins land on Farm Settings to finish setup.
+            setLocation("/admin/settings?tab=farm");
+          } else {
+            setLocation("/");
+          }
         },
         onError: () => {
           toast({

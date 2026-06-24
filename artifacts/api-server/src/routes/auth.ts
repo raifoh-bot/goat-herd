@@ -45,6 +45,12 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  // Whether this is the user's first ever login, used to drive the onboarding
+  // redirect to Farm Settings. We only stamp last_login_at once the login has
+  // fully succeeded (session regenerated + saved) so a mid-login failure can't
+  // silently consume the one-time flag.
+  const firstLogin = user.lastLoginAt == null;
+
   // Regenerate the session on login to issue a fresh id, preventing
   // session-fixation (an attacker-known pre-login id carrying over post-auth).
   try {
@@ -78,11 +84,20 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  // Login fully succeeded; stamp last_login_at so firstLogin only fires once.
+  if (firstLogin) {
+    await db
+      .update(usersTable)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(usersTable.id, user.id));
+  }
+
   res.json({
     id: user.id,
     username: user.username,
     role: user.role,
     farmSlug: req.farm?.slug ?? null,
+    firstLogin,
     // The session id doubles as a bearer token for clients whose session cookie
     // is blocked (the cross-site Replit preview iframe). Only issued when the
     // bridge is enabled (non-production); production stays cookie-only.

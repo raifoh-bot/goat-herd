@@ -1937,6 +1937,11 @@ components:
           type: string
           nullable: true
           description: The slug of the farm this user belongs to. Null for platform superadmins.
+        firstLogin:
+          type: boolean
+          description: >-
+            True only on the user's very first successful login. The web client
+            uses this to send new farm admins to Farm Settings to finish setup.
         token:
           type: string
           description: >-
@@ -1948,6 +1953,7 @@ components:
         - id
         - username
         - role
+        - firstLogin
 
     User:
       type: object

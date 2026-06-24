@@ -72,6 +72,7 @@ export async function ensureMultiTenant(): Promise<void> {
   const usersPresent = await tableExists("users");
   if (usersPresent) {
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "farm_id" integer;`);
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "last_login_at" timestamp;`);
   }
   const presentTenantTables: string[] = [];
   for (const table of TENANT_TABLES) {
