@@ -219,7 +219,7 @@ export default function InventoryList() {
               </Button>
             )}
             <Button onClick={openAdd} size="lg" className="shadow-md">
-              <Plus className="mr-2 h-4 w-4" /> Add Straws
+              <Plus className="mr-2 h-4 w-4" /> Add AI Straws
             </Button>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function InventoryList() {
                 Add your frozen AI straws to track what you have on hand.
               </p>
               <Button onClick={openAdd}>
-                <Plus className="mr-2 h-4 w-4" /> Add Straws
+                <Plus className="mr-2 h-4 w-4" /> Add AI Straws
               </Button>
             </CardContent>
           </Card>
