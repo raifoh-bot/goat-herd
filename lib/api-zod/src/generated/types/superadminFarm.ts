@@ -16,4 +16,7 @@ export interface SuperadminFarm {
   updatedAt?: Date;
   userCount: number;
   goatCount: number;
+  breedingCount: number;
+  /** Most recent session activity for any user in this farm. Null when the farm has never had a session. */
+  lastActiveAt: Date | null;
 }

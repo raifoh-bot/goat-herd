@@ -994,6 +994,19 @@ export interface SuperadminFarm {
   updatedAt?: string;
   userCount: number;
   goatCount: number;
+  breedingCount: number;
+  /** Most recent session activity for any user in this farm. Null when the farm has never had a session. */
+  lastActiveAt: string | null;
+}
+
+export interface PlatformSummary {
+  totalFarms: number;
+  activeFarms: number;
+  suspendedFarms: number;
+  totalUsers: number;
+  totalGoats: number;
+  /** Number of farms created in the current calendar month. */
+  farmsThisMonth: number;
 }
 
 export interface RegisterFarmBody {

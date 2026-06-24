@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { asc, count, eq } from "drizzle-orm";
-import { db, farmsTable, goatsTable, usersTable } from "@workspace/db";
-import { CreateFarmBody, UpdateFarmBody } from "@workspace/api-zod";
+import { asc, count, eq, isNotNull } from "drizzle-orm";
+import { db, pool, breedingsTable, farmsTable, goatsTable, usersTable } from "@workspace/db";
+import { CreateFarmBody, UpdateFarmBody, GetPlatformSummaryResponse } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { createFarm } from "../lib/createFarm";
 
@@ -9,6 +9,79 @@ const router: IRouter = Router();
 
 // The entire superadmin surface is restricted to platform superadmins.
 router.use("/superadmin", requireRole("superadmin"));
+
+/**
+ * Durable per-farm activity floor: the newest `updated_at` across every tenant
+ * table for the farm. Unlike session rows (which connect-pg-simple prunes once
+ * expired), these rows persist indefinitely, so a farm that has been dormant for
+ * months still reports an accurate, old last-active instant instead of collapsing
+ * to "never". Keyed by farm id. Superadmin users (farm_id NULL) are excluded.
+ */
+async function dataActivityByFarmId(): Promise<Map<number, Date>> {
+  const result = await pool.query<{ farm_id: number; last_active: Date }>(`
+    SELECT farm_id, MAX(updated_at) AS last_active FROM (
+      SELECT farm_id, updated_at FROM goats
+      UNION ALL SELECT farm_id, updated_at FROM breedings
+      UNION ALL SELECT farm_id, updated_at FROM breeding_events
+      UNION ALL SELECT farm_id, updated_at FROM kids
+      UNION ALL SELECT farm_id, updated_at FROM semen_straws
+      UNION ALL SELECT farm_id, updated_at FROM farm_settings
+      UNION ALL SELECT farm_id, updated_at FROM users WHERE farm_id IS NOT NULL
+    ) activity
+    GROUP BY farm_id
+  `);
+  return new Map(result.rows.map((r) => [r.farm_id, r.last_active]));
+}
+
+/**
+ * Recent login recency per farm from the connect-pg-simple session store.
+ * Sessions persist `farmSlug` and a rolling `expire` (last touch + the cookie's
+ * maxAge), so the real last-touch instant is `expire - originalMaxAge`. This only
+ * covers sessions still within their retention window, so it is layered ON TOP of
+ * the durable data floor to capture pure-login activity (a user who signs in but
+ * edits nothing). Superadmin sessions have no farmSlug and are excluded.
+ */
+async function sessionActivityByFarmSlug(): Promise<Map<string, Date>> {
+  const result = await pool.query<{ slug: string; last_active: Date }>(`
+    SELECT
+      sess->>'farmSlug' AS slug,
+      MAX(
+        expire - make_interval(
+          secs => COALESCE((sess->'cookie'->>'originalMaxAge')::double precision, 0) / 1000
+        )
+      ) AS last_active
+    FROM user_sessions
+    WHERE sess->>'farmSlug' IS NOT NULL
+    GROUP BY sess->>'farmSlug'
+  `);
+  return new Map(result.rows.map((r) => [r.slug, r.last_active]));
+}
+
+router.get("/superadmin/summary", async (_req, res): Promise<void> => {
+  const farms = await db.select().from(farmsTable);
+  // Count only farm-bound users; the platform superadmin (farmId null) is not a
+  // tenant user, so excluding it keeps the platform total equal to the sum of
+  // each farm's user count.
+  const [{ value: totalUsers }] = await db
+    .select({ value: count() })
+    .from(usersTable)
+    .where(isNotNull(usersTable.farmId));
+  const [{ value: totalGoats }] = await db.select({ value: count() }).from(goatsTable);
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const summary = GetPlatformSummaryResponse.parse({
+    totalFarms: farms.length,
+    activeFarms: farms.filter((f) => f.status === "active").length,
+    suspendedFarms: farms.filter((f) => f.status === "suspended").length,
+    totalUsers,
+    totalGoats,
+    farmsThisMonth: farms.filter((f) => f.createdAt && f.createdAt >= startOfMonth).length,
+  });
+
+  res.json(summary);
+});
 
 router.get("/superadmin/farms", async (_req, res): Promise<void> => {
   const farms = await db.select().from(farmsTable).orderBy(asc(farmsTable.createdAt));
@@ -21,15 +94,35 @@ router.get("/superadmin/farms", async (_req, res): Promise<void> => {
     .select({ farmId: goatsTable.farmId, value: count() })
     .from(goatsTable)
     .groupBy(goatsTable.farmId);
+  const breedingCounts = await db
+    .select({ farmId: breedingsTable.farmId, value: count() })
+    .from(breedingsTable)
+    .groupBy(breedingsTable.farmId);
 
   const userCountByFarm = new Map(userCounts.map((r) => [r.farmId, r.value]));
   const goatCountByFarm = new Map(goatCounts.map((r) => [r.farmId, r.value]));
+  const breedingCountByFarm = new Map(breedingCounts.map((r) => [r.farmId, r.value]));
+
+  // Last active = the newest of the durable data floor (per farm id) and the
+  // recent session signal (per farm slug). Combining the two keeps dormancy
+  // accurate beyond session retention while still reflecting pure logins.
+  const dataActive = await dataActivityByFarmId();
+  const sessionActive = await sessionActivityByFarmSlug();
+  const lastActiveAt = (farmId: number, slug: string): string | null => {
+    const candidates = [dataActive.get(farmId), sessionActive.get(slug)].filter(
+      (d): d is Date => d instanceof Date,
+    );
+    if (candidates.length === 0) return null;
+    return new Date(Math.max(...candidates.map((d) => d.getTime()))).toISOString();
+  };
 
   res.json(
     farms.map((farm) => ({
       ...farm,
       userCount: userCountByFarm.get(farm.id) ?? 0,
       goatCount: goatCountByFarm.get(farm.id) ?? 0,
+      breedingCount: breedingCountByFarm.get(farm.id) ?? 0,
+      lastActiveAt: lastActiveAt(farm.id, farm.slug),
     })),
   );
 });

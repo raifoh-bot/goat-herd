@@ -718,6 +718,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /superadmin/summary:
+    get:
+      operationId: getPlatformSummary
+      tags: [superadmin]
+      summary: Platform-wide growth and totals (superadmin only)
+      responses:
+        "200":
+          description: Platform totals across all farms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformSummary"
+
   /superadmin/farms:
     get:
       operationId: listFarms
@@ -2082,6 +2095,13 @@ components:
           type: integer
         goatCount:
           type: integer
+        breedingCount:
+          type: integer
+        lastActiveAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Most recent session activity for any user in this farm. Null when the farm has never had a session.
       required:
         - id
         - slug
@@ -2089,6 +2109,32 @@ components:
         - status
         - userCount
         - goatCount
+        - breedingCount
+        - lastActiveAt
+
+    PlatformSummary:
+      type: object
+      properties:
+        totalFarms:
+          type: integer
+        activeFarms:
+          type: integer
+        suspendedFarms:
+          type: integer
+        totalUsers:
+          type: integer
+        totalGoats:
+          type: integer
+        farmsThisMonth:
+          type: integer
+          description: Number of farms created in the current calendar month.
+      required:
+        - totalFarms
+        - activeFarms
+        - suspendedFarms
+        - totalUsers
+        - totalGoats
+        - farmsThisMonth
 
     RegisterFarmBody:
       type: object

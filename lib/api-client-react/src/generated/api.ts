@@ -45,6 +45,7 @@ import type {
   ListGoatsParams,
   LoginBody,
   LoginResponse,
+  PlatformSummary,
   RegisterFarmBody,
   SemenStraw,
   SetUserPasswordBody,
@@ -2831,6 +2832,81 @@ export const useRegisterFarm = <
 > => {
   return useMutation(getRegisterFarmMutationOptions(options));
 };
+
+/**
+ * @summary Platform-wide growth and totals (superadmin only)
+ */
+export const getGetPlatformSummaryUrl = () => {
+  return `/api/superadmin/summary`;
+};
+
+export const getPlatformSummary = async (
+  options?: RequestInit,
+): Promise<PlatformSummary> => {
+  return customFetch<PlatformSummary>(getGetPlatformSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPlatformSummaryQueryKey = () => {
+  return [`/api/superadmin/summary`] as const;
+};
+
+export const getGetPlatformSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlatformSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPlatformSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPlatformSummary>>
+  > = ({ signal }) => getPlatformSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPlatformSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlatformSummary>>
+>;
+export type GetPlatformSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Platform-wide growth and totals (superadmin only)
+ */
+
+export function useGetPlatformSummary<
+  TData = Awaited<ReturnType<typeof getPlatformSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPlatformSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all farms (superadmin only)

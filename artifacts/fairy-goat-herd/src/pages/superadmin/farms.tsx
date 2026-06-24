@@ -3,10 +3,12 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListFarms,
+  useGetPlatformSummary,
   useCreateFarm,
   useUpdateFarm,
   useLogout,
   getListFarmsQueryKey,
+  getGetPlatformSummaryQueryKey,
   getGetCurrentUserQueryKey,
   type SuperadminFarm,
 } from "@workspace/api-client-react";
@@ -60,6 +62,33 @@ function formatDate(value?: string): string {
     : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+function formatRelative(value: string | null): string {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Never";
+  const days = Math.floor((Date.now() - date.getTime()) / DAY_MS);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  if (days < 60) return "1 month ago";
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  const years = Math.floor(days / 365);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
+}
+
+/** Tailwind text color for last-active age: green <7d, yellow <30d, red older/never. */
+function lastActiveColor(value: string | null): string {
+  if (!value) return "text-destructive";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "text-destructive";
+  const days = (Date.now() - date.getTime()) / DAY_MS;
+  if (days < 7) return "text-green-600 dark:text-green-500";
+  if (days < 30) return "text-yellow-600 dark:text-yellow-500";
+  return "text-destructive";
+}
+
 function CreateFarmDialog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -99,6 +128,7 @@ function CreateFarmDialog() {
       {
         onSuccess: (farm) => {
           queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
           toast({ title: "Farm created", description: `${farm.name} is ready.` });
           setOpen(false);
           reset();
@@ -204,6 +234,7 @@ function FarmRow({ farm }: { farm: SuperadminFarm }) {
   const updateFarm = useUpdateFarm();
 
   const suspended = farm.status === "suspended";
+  const abandoned = farm.goatCount === 0 || farm.userCount === 0;
 
   const toggleStatus = () => {
     updateFarm.mutate(
@@ -211,6 +242,7 @@ function FarmRow({ farm }: { farm: SuperadminFarm }) {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
           toast({
             title: suspended ? "Farm reactivated" : "Farm suspended",
             description: farm.name,
@@ -230,7 +262,14 @@ function FarmRow({ farm }: { farm: SuperadminFarm }) {
   return (
     <TableRow>
       <TableCell>
-        <div className="font-medium">{farm.name}</div>
+        <div className="flex items-center gap-2">
+          <div className="font-medium">{farm.name}</div>
+          {abandoned && (
+            <Badge variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-500">
+              Abandoned
+            </Badge>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground">{farm.slug}</div>
       </TableCell>
       <TableCell>
@@ -238,6 +277,10 @@ function FarmRow({ farm }: { farm: SuperadminFarm }) {
       </TableCell>
       <TableCell className="tabular-nums">{farm.userCount}</TableCell>
       <TableCell className="tabular-nums">{farm.goatCount}</TableCell>
+      <TableCell className="tabular-nums">{farm.breedingCount}</TableCell>
+      <TableCell className={`text-sm font-medium ${lastActiveColor(farm.lastActiveAt)}`}>
+        {formatRelative(farm.lastActiveAt)}
+      </TableCell>
       <TableCell>{formatDate(farm.createdAt)}</TableCell>
       <TableCell className="text-right">
         <Button
@@ -259,6 +302,9 @@ export default function SuperadminFarms() {
   const logout = useLogout();
   const { data: farms, isLoading, error } = useListFarms({
     query: { queryKey: getListFarmsQueryKey(), retry: false },
+  });
+  const { data: summary } = useGetPlatformSummary({
+    query: { queryKey: getGetPlatformSummaryQueryKey(), retry: false },
   });
 
   const handleLogout = () => {
@@ -292,6 +338,40 @@ export default function SuperadminFarms() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
+        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total farms</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{summary?.totalFarms ?? "—"}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground">
+              {summary
+                ? `${summary.activeFarms} active · ${summary.suspendedFarms} suspended`
+                : "\u00a0"}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total users</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{summary?.totalUsers ?? "—"}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground">across all farms</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total goats</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{summary?.totalGoats ?? "—"}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground">across all farms</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>New this month</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{summary?.farmsThisMonth ?? "—"}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground">farms registered</CardContent>
+          </Card>
+        </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <div>
@@ -319,6 +399,8 @@ export default function SuperadminFarms() {
                     <TableHead>Status</TableHead>
                     <TableHead>Users</TableHead>
                     <TableHead>Goats</TableHead>
+                    <TableHead>Breedings</TableHead>
+                    <TableHead>Last active</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>

@@ -71,6 +71,7 @@ export * from "./listGoatsStatus";
 export * from "./loginBody";
 export * from "./loginResponse";
 export * from "./loginResponseRole";
+export * from "./platformSummary";
 export * from "./registerFarmBody";
 export * from "./semenStraw";
 export * from "./setUserPasswordBody";

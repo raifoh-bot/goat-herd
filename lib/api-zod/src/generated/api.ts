@@ -1741,6 +1741,20 @@ export const RegisterFarmBody = zod.object({
 });
 
 /**
+ * @summary Platform-wide growth and totals (superadmin only)
+ */
+export const GetPlatformSummaryResponse = zod.object({
+  totalFarms: zod.number(),
+  activeFarms: zod.number(),
+  suspendedFarms: zod.number(),
+  totalUsers: zod.number(),
+  totalGoats: zod.number(),
+  farmsThisMonth: zod
+    .number()
+    .describe("Number of farms created in the current calendar month."),
+});
+
+/**
  * @summary List all farms (superadmin only)
  */
 export const ListFarmsResponseItem = zod.object({
@@ -1752,6 +1766,13 @@ export const ListFarmsResponseItem = zod.object({
   updatedAt: zod.coerce.date().optional(),
   userCount: zod.number(),
   goatCount: zod.number(),
+  breedingCount: zod.number(),
+  lastActiveAt: zod.coerce
+    .date()
+    .nullable()
+    .describe(
+      "Most recent session activity for any user in this farm. Null when the farm has never had a session.",
+    ),
 });
 export const ListFarmsResponse = zod.array(ListFarmsResponseItem);
 
