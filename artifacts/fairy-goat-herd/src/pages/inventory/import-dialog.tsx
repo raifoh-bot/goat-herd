@@ -134,7 +134,7 @@ function downloadTemplate() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "semen-inventory-template.csv";
+  link.download = "ai-inventory-template.csv";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -237,7 +237,7 @@ export function ImportStrawsDialog({ open, onOpenChange, onImported }: Props) {
         <DialogHeader>
           <DialogTitle>Import Straws from CSV</DialogTitle>
           <DialogDescription>
-            Bulk-load semen straw records from a spreadsheet. Download the template, fill it
+            Bulk-load AI straw records from a spreadsheet. Download the template, fill it
             in, and upload it here.
           </DialogDescription>
         </DialogHeader>

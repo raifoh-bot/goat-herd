@@ -44,7 +44,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/", label: "Dashboard", icon: ClipboardList, exact: true },
     { href: "/goats", label: "The Herd", icon: List, exact: false },
     { href: "/breedings", label: "Kiddings", icon: Heart, exact: false },
-    ...(usesAi ? [{ href: "/inventory", label: "Semen Inventory", icon: Snowflake, exact: false }] : []),
+    ...(usesAi ? [{ href: "/inventory", label: "AI Inventory", icon: Snowflake, exact: false }] : []),
     ...(isManager ? [{ href: "/goats/new", label: "Add Goat", icon: Milk, exact: true }] : []),
     { href: "/lineage", label: "Lineage Reports", icon: GitBranch, exact: false },
     { href: "/admin/settings", label: "Farm Settings", icon: Settings, exact: false },

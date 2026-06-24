@@ -366,7 +366,7 @@ function FarmTab() {
                 <Zap className="h-4 w-4 text-primary" /> This farm uses artificial insemination
               </Label>
               <p className="text-sm text-muted-foreground">
-                When off, the Semen Inventory, the Natural/AI breeding toggle, and AI-specific
+                When off, the AI Inventory, the Natural/AI breeding toggle, and AI-specific
                 fields and badges are hidden. Existing AI records are kept and still work.
               </p>
             </div>

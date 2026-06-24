@@ -206,7 +206,7 @@ export default function InventoryList() {
           <div>
             <h2 className="text-3xl font-serif font-bold text-foreground mb-2 flex items-center gap-2">
               <Snowflake className="h-7 w-7 text-primary" />
-              Semen Inventory
+              AI Inventory
             </h2>
             <p className="text-muted-foreground text-sm">
               Track frozen straws in the tank and what's available per sire.
@@ -267,7 +267,7 @@ export default function InventoryList() {
               <Snowflake className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
               <h3 className="font-serif text-lg font-bold text-foreground mb-1">No straws in inventory yet</h3>
               <p className="text-muted-foreground text-sm mb-6">
-                Add your frozen semen straws to track what you have on hand.
+                Add your frozen AI straws to track what you have on hand.
               </p>
               <Button onClick={openAdd}>
                 <Plus className="mr-2 h-4 w-4" /> Add Straws
@@ -330,7 +330,7 @@ export default function InventoryList() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Inventory Entry" : "Add Semen Straws"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit Inventory Entry" : "Add AI Straws"}</DialogTitle>
             <DialogDescription>
               {editing ? "Update the details for this straw entry." : "Record frozen straws you've added to the tank."}
             </DialogDescription>
