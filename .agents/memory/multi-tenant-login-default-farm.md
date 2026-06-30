@@ -12,3 +12,11 @@ After the subdomain-per-farm tenancy change, `POST /api/auth/login` is scoped to
 **Verify:** `curl -X POST localhost:80/api/auth/login -H 'X-Farm-Slug: default' -d '{"username":"Admin","password":"…"}'` → 200; same without the header → 401.
 
 **Why:** prevents re-diagnosing "preview login broken" as a DB/table problem when it is just a missing farm slug post-tenancy.
+
+## Production has the same trap (no subdomains configured)
+
+`FARM_BASE_DOMAIN` is NOT set in any environment, so prod has no per-farm subdomain resolution either — production login also depends entirely on the user typing their exact farm slug into the login **Farm** field (it rides as `X-Farm-Slug`). Blank or display-name-instead-of-slug → 401 "Invalid username or password" (NOT 404; a non-existent slug is what returns 404). This is real-user-facing fragility, not just a dev-preview quirk.
+
+**A "no one can log in to production" report was a stale cached frontend bundle** — the published static app served an old build that didn't attach the farm header; a hard browser refresh loaded the current build and logins worked again. Check for a stale bundle / hard-refresh before assuming a backend regression.
+
+**Robust fix (not yet built, user-approved direction pending):** make the Farm field optional and resolve the tenant from credentials at login — find users by username across active farms (+ superadmin), bcrypt-compare, log in the single match; if a username collides across farms (e.g. `admin` exists in multiple), return a disambiguation response. Removes the slug-required trap entirely.
