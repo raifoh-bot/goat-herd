@@ -37,8 +37,12 @@ import type {
   FarmSettings,
   Goat,
   HealthStatus,
+  ImportBreedingsBody,
+  ImportBreedingsResult,
   ImportGoatsBody,
   ImportGoatsResult,
+  ImportKidsBody,
+  ImportKidsResult,
   ImportSemenStrawsBody,
   ImportSemenStrawsResult,
   Kid,
@@ -1310,6 +1314,178 @@ export function useExportKids<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Bulk import breeding records from a spreadsheet
+ */
+export const getImportBreedingsUrl = () => {
+  return `/api/breedings/import`;
+};
+
+export const importBreedings = async (
+  importBreedingsBody: ImportBreedingsBody,
+  options?: RequestInit,
+): Promise<ImportBreedingsResult> => {
+  return customFetch<ImportBreedingsResult>(getImportBreedingsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importBreedingsBody),
+  });
+};
+
+export const getImportBreedingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importBreedings>>,
+    TError,
+    { data: BodyType<ImportBreedingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importBreedings>>,
+  TError,
+  { data: BodyType<ImportBreedingsBody> },
+  TContext
+> => {
+  const mutationKey = ["importBreedings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importBreedings>>,
+    { data: BodyType<ImportBreedingsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importBreedings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportBreedingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importBreedings>>
+>;
+export type ImportBreedingsMutationBody = BodyType<ImportBreedingsBody>;
+export type ImportBreedingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk import breeding records from a spreadsheet
+ */
+export const useImportBreedings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importBreedings>>,
+    TError,
+    { data: BodyType<ImportBreedingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importBreedings>>,
+  TError,
+  { data: BodyType<ImportBreedingsBody> },
+  TContext
+> => {
+  return useMutation(getImportBreedingsMutationOptions(options));
+};
+
+/**
+ * @summary Bulk import kidding outcomes from a spreadsheet
+ */
+export const getImportKidsUrl = () => {
+  return `/api/kids/import`;
+};
+
+export const importKids = async (
+  importKidsBody: ImportKidsBody,
+  options?: RequestInit,
+): Promise<ImportKidsResult> => {
+  return customFetch<ImportKidsResult>(getImportKidsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importKidsBody),
+  });
+};
+
+export const getImportKidsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importKids>>,
+    TError,
+    { data: BodyType<ImportKidsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importKids>>,
+  TError,
+  { data: BodyType<ImportKidsBody> },
+  TContext
+> => {
+  const mutationKey = ["importKids"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importKids>>,
+    { data: BodyType<ImportKidsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importKids(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportKidsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importKids>>
+>;
+export type ImportKidsMutationBody = BodyType<ImportKidsBody>;
+export type ImportKidsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk import kidding outcomes from a spreadsheet
+ */
+export const useImportKids = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importKids>>,
+    TError,
+    { data: BodyType<ImportKidsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importKids>>,
+  TError,
+  { data: BodyType<ImportKidsBody> },
+  TContext
+> => {
+  return useMutation(getImportKidsMutationOptions(options));
+};
 
 /**
  * @summary Get a breeding record with kids

@@ -311,3 +311,220 @@ describe("POST /api/breedings/:id/kids paternal pedigree inheritance", () => {
     expect(kidGoat.paternalGrandsireName).toBe("");
   });
 });
+
+describe("POST /api/breedings/import", () => {
+  it("imports a breeding for an existing doe and sets the doe's lactation status", async () => {
+    const doe = await createDoe("dry");
+
+    const res = await agent.post("/api/breedings/import").send({
+      breedings: [
+        {
+          doeName: doe.name,
+          sireName: "Imported Buck",
+          breedingMethod: "natural",
+          breedingDate: new Date().toISOString(),
+          status: "bred",
+          notes: "From spreadsheet",
+        },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(1);
+    expect(res.body.skipped).toBe(0);
+
+    const inserted = await db
+      .select()
+      .from(breedingsTable)
+      .where(eq(breedingsTable.doeId, doe.id));
+    expect(inserted).toHaveLength(1);
+    inserted.forEach((b) => createdBreedingIds.push(b.id));
+    expect(inserted[0].sireName).toBe("Imported Buck");
+
+    // status "bred" + natural method => doe becomes "exposed".
+    expect((await getDoe(doe.id)).lactationStatus).toBe("exposed");
+  });
+
+  it("defaults a blank sire to 'Unknown' and AI bred does to 'serviced'", async () => {
+    const doe = await createDoe("dry");
+
+    const res = await agent.post("/api/breedings/import").send({
+      breedings: [
+        {
+          doeName: doe.name,
+          breedingMethod: "ai",
+          breedingDate: new Date().toISOString(),
+          status: "bred",
+        },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(1);
+
+    const inserted = await db
+      .select()
+      .from(breedingsTable)
+      .where(eq(breedingsTable.doeId, doe.id));
+    inserted.forEach((b) => createdBreedingIds.push(b.id));
+    expect(inserted[0].sireName).toBe("Unknown");
+    expect((await getDoe(doe.id)).lactationStatus).toBe("serviced");
+  });
+
+  it("skips rows whose doe is not in the herd with a clear error", async () => {
+    const res = await agent.post("/api/breedings/import").send({
+      breedings: [
+        {
+          doeName: "Nonexistent Doe XYZ",
+          breedingDate: new Date().toISOString(),
+        },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(0);
+    expect(res.body.skipped).toBe(1);
+    expect(res.body.errors[0]).toContain("Nonexistent Doe XYZ");
+  });
+
+  it("matches the doe name case-insensitively", async () => {
+    const doe = await createDoe("dry");
+
+    const res = await agent.post("/api/breedings/import").send({
+      breedings: [
+        { doeName: doe.name.toUpperCase(), breedingDate: new Date().toISOString() },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(1);
+
+    const inserted = await db
+      .select()
+      .from(breedingsTable)
+      .where(eq(breedingsTable.doeId, doe.id));
+    inserted.forEach((b) => createdBreedingIds.push(b.id));
+    expect(inserted).toHaveLength(1);
+  });
+});
+
+describe("POST /api/kids/import", () => {
+  it("imports a kid by matching the doe name + breeding date", async () => {
+    const doe = await createDoe("pregnant");
+    const breedingDate = new Date("2026-01-15T00:00:00.000Z");
+    const [breeding] = await db
+      .insert(breedingsTable)
+      .values({
+        farmId: testFarmId,
+        doeId: doe.id,
+        sireName: "Sire",
+        breedingMethod: "natural",
+        breedingDate,
+        status: "kidded",
+      })
+      .returning();
+    createdBreedingIds.push(breeding.id);
+
+    const res = await agent.post("/api/kids/import").send({
+      kids: [
+        {
+          doeName: doe.name,
+          breedingDate: breedingDate.toISOString(),
+          name: "Imported Kid",
+          sex: "doe",
+          kidStatus: "alive",
+          birthWeight: 3.2,
+        },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(1);
+    expect(res.body.skipped).toBe(0);
+
+    const kids = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.breedingId, breeding.id));
+    expect(kids).toHaveLength(1);
+    expect(kids[0].name).toBe("Imported Kid");
+    expect(kids[0].sex).toBe("doe");
+    expect(kids[0].birthWeight).toBe(3.2);
+  });
+
+  it("skips a kid when no breeding matches the doe + date", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createBreeding(doe.id, "kidded");
+    // breeding above is dated 'now'; query a clearly different day.
+
+    const res = await agent.post("/api/kids/import").send({
+      kids: [
+        {
+          doeName: doe.name,
+          breedingDate: new Date("2020-06-01T00:00:00.000Z").toISOString(),
+          sex: "buck",
+        },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(0);
+    expect(res.body.skipped).toBe(1);
+    expect(res.body.errors[0]).toContain(doe.name);
+
+    const kids = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.breedingId, breeding.id));
+    expect(kids).toHaveLength(0);
+  });
+
+  it("picks the most recent breeding when several match the same day", async () => {
+    const doe = await createDoe("pregnant");
+    const breedingDate = new Date("2026-02-20T00:00:00.000Z");
+
+    const [older] = await db
+      .insert(breedingsTable)
+      .values({
+        farmId: testFarmId,
+        doeId: doe.id,
+        sireName: "Older",
+        breedingMethod: "natural",
+        breedingDate,
+        createdAt: new Date("2026-02-20T08:00:00.000Z"),
+        status: "kidded",
+      })
+      .returning();
+    createdBreedingIds.push(older.id);
+
+    const [newer] = await db
+      .insert(breedingsTable)
+      .values({
+        farmId: testFarmId,
+        doeId: doe.id,
+        sireName: "Newer",
+        breedingMethod: "natural",
+        breedingDate,
+        createdAt: new Date("2026-02-20T20:00:00.000Z"),
+        status: "kidded",
+      })
+      .returning();
+    createdBreedingIds.push(newer.id);
+
+    const res = await agent.post("/api/kids/import").send({
+      kids: [
+        { doeName: doe.name, breedingDate: breedingDate.toISOString(), sex: "doe" },
+      ],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.imported).toBe(1);
+
+    // The most recent breeding by breedingDate ordering should receive the kid.
+    const newerKids = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.breedingId, newer.id));
+    expect(newerKids).toHaveLength(1);
+  });
+});

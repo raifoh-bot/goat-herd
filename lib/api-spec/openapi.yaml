@@ -326,6 +326,44 @@ paths:
               schema:
                 type: string
 
+  /breedings/import:
+    post:
+      operationId: importBreedings
+      tags: [breedings]
+      summary: Bulk import breeding records from a spreadsheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportBreedingsBody"
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBreedingsResult"
+
+  /kids/import:
+    post:
+      operationId: importKids
+      tags: [breedings]
+      summary: Bulk import kidding outcomes from a spreadsheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportKidsBody"
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportKidsResult"
+
   /breedings/{id}:
     get:
       operationId: getBreeding
@@ -1974,6 +2012,119 @@ components:
         - goats
 
     ImportGoatsResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - imported
+        - skipped
+        - errors
+
+    ImportBreedingRow:
+      type: object
+      properties:
+        doeName:
+          type: string
+          description: Name of the doe — matched to an existing goat in the farm by name (case-insensitive)
+        sireName:
+          type: string
+          description: Sire/buck name — defaults to "Unknown" when blank
+        breedingMethod:
+          type: string
+          enum: [natural, ai]
+        breedingDate:
+          type: string
+          format: date-time
+        expectedKiddingDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [bred, confirmed-pregnant, kidded, open]
+        notes:
+          type: string
+      required:
+        - doeName
+        - breedingDate
+
+    ImportBreedingsBody:
+      type: object
+      properties:
+        breedings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportBreedingRow"
+      required:
+        - breedings
+
+    ImportBreedingsResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - imported
+        - skipped
+        - errors
+
+    ImportKidRow:
+      type: object
+      description: >-
+        A kidding outcome. Each kid is tied to a breeding by matching the doe's
+        name plus the breeding date (same calendar day). When several breedings
+        match, the most recent one is used.
+      properties:
+        doeName:
+          type: string
+          description: Name of the doe whose breeding this kid belongs to
+        breedingDate:
+          type: string
+          format: date-time
+          description: Breeding date used together with the doe name to find the parent breeding
+        name:
+          type: string
+        sex:
+          type: string
+          enum: [doe, buck]
+        kidStatus:
+          type: string
+          enum: [alive, dead, doa, sold]
+        birthDate:
+          type: string
+          format: date-time
+        birthWeight:
+          type: number
+        notes:
+          type: string
+      required:
+        - doeName
+        - breedingDate
+        - sex
+
+    ImportKidsBody:
+      type: object
+      properties:
+        kids:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportKidRow"
+      required:
+        - kids
+
+    ImportKidsResult:
       type: object
       properties:
         imported:

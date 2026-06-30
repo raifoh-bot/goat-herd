@@ -825,6 +825,90 @@ export interface ImportGoatsResult {
   errors: string[];
 }
 
+export type ImportBreedingRowBreedingMethod =
+  (typeof ImportBreedingRowBreedingMethod)[keyof typeof ImportBreedingRowBreedingMethod];
+
+export const ImportBreedingRowBreedingMethod = {
+  natural: "natural",
+  ai: "ai",
+} as const;
+
+export type ImportBreedingRowStatus =
+  (typeof ImportBreedingRowStatus)[keyof typeof ImportBreedingRowStatus];
+
+export const ImportBreedingRowStatus = {
+  bred: "bred",
+  "confirmed-pregnant": "confirmed-pregnant",
+  kidded: "kidded",
+  open: "open",
+} as const;
+
+export interface ImportBreedingRow {
+  /** Name of the doe — matched to an existing goat in the farm by name (case-insensitive) */
+  doeName: string;
+  /** Sire/buck name — defaults to "Unknown" when blank */
+  sireName?: string;
+  breedingMethod?: ImportBreedingRowBreedingMethod;
+  breedingDate: string;
+  expectedKiddingDate?: string;
+  status?: ImportBreedingRowStatus;
+  notes?: string;
+}
+
+export interface ImportBreedingsBody {
+  breedings: ImportBreedingRow[];
+}
+
+export interface ImportBreedingsResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
+export type ImportKidRowSex =
+  (typeof ImportKidRowSex)[keyof typeof ImportKidRowSex];
+
+export const ImportKidRowSex = {
+  doe: "doe",
+  buck: "buck",
+} as const;
+
+export type ImportKidRowKidStatus =
+  (typeof ImportKidRowKidStatus)[keyof typeof ImportKidRowKidStatus];
+
+export const ImportKidRowKidStatus = {
+  alive: "alive",
+  dead: "dead",
+  doa: "doa",
+  sold: "sold",
+} as const;
+
+/**
+ * A kidding outcome. Each kid is tied to a breeding by matching the doe's name plus the breeding date (same calendar day). When several breedings match, the most recent one is used.
+ */
+export interface ImportKidRow {
+  /** Name of the doe whose breeding this kid belongs to */
+  doeName: string;
+  /** Breeding date used together with the doe name to find the parent breeding */
+  breedingDate: string;
+  name?: string;
+  sex: ImportKidRowSex;
+  kidStatus?: ImportKidRowKidStatus;
+  birthDate?: string;
+  birthWeight?: number;
+  notes?: string;
+}
+
+export interface ImportKidsBody {
+  kids: ImportKidRow[];
+}
+
+export interface ImportKidsResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
 export type BreedCountBreed =
   (typeof BreedCountBreed)[keyof typeof BreedCountBreed];
 

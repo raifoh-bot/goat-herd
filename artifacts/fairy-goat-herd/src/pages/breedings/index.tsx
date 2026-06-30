@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download } from "lucide-react";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download, Upload } from "lucide-react";
 import {
   getListBreedingsQueryKey,
   useListBreedings,
@@ -335,6 +335,12 @@ export default function BreedingsList() {
             <p className="text-muted-foreground">Track breedings, confirm pregnancies, and record kidding outcomes.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/breedings/import">
+              <Button variant="outline" className="shadow-sm">
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            </Link>
             <Button variant="outline" className="shadow-sm" onClick={() => handleExport("breedings")} disabled={exporting !== null}>
               {exporting === "breedings" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
               Export Breedings CSV

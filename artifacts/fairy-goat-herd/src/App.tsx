@@ -14,6 +14,7 @@ import GoatImport from "@/pages/goats/import";
 import GoatDetails from "@/pages/goats/[id]";
 import BreedingsList from "@/pages/breedings/index";
 import BreedingNew from "@/pages/breedings/new";
+import BreedingImport from "@/pages/breedings/import";
 import BreedingDetail from "@/pages/breedings/[id]";
 import InventoryList from "@/pages/inventory/index";
 import LineageReports from "@/pages/lineage";
@@ -41,6 +42,7 @@ function AuthenticatedRoutes() {
         <Route path="/goats/:id" component={GoatDetails} />
         <Route path="/breedings" component={BreedingsList} />
         <Route path="/breedings/new" component={BreedingNew} />
+        <Route path="/breedings/import" component={BreedingImport} />
         <Route path="/breedings/:id" component={BreedingDetail} />
         <Route path="/inventory" component={InventoryList} />
         <Route path="/lineage" component={LineageReports} />

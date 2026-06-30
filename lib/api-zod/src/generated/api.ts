@@ -900,6 +900,60 @@ export const CreateBreedingBody = zod.object({
 });
 
 /**
+ * @summary Bulk import breeding records from a spreadsheet
+ */
+export const ImportBreedingsBody = zod.object({
+  breedings: zod.array(
+    zod.object({
+      doeName: zod
+        .string()
+        .describe(
+          "Name of the doe — matched to an existing goat in the farm by name (case-insensitive)",
+        ),
+      sireName: zod
+        .string()
+        .optional()
+        .describe('Sire\/buck name — defaults to \"Unknown\" when blank'),
+      breedingMethod: zod.enum(["natural", "ai"]).optional(),
+      breedingDate: zod.coerce.date(),
+      expectedKiddingDate: zod.coerce.date().optional(),
+      status: zod
+        .enum(["bred", "confirmed-pregnant", "kidded", "open"])
+        .optional(),
+      notes: zod.string().optional(),
+    }),
+  ),
+});
+
+/**
+ * @summary Bulk import kidding outcomes from a spreadsheet
+ */
+export const ImportKidsBody = zod.object({
+  kids: zod.array(
+    zod
+      .object({
+        doeName: zod
+          .string()
+          .describe("Name of the doe whose breeding this kid belongs to"),
+        breedingDate: zod.coerce
+          .date()
+          .describe(
+            "Breeding date used together with the doe name to find the parent breeding",
+          ),
+        name: zod.string().optional(),
+        sex: zod.enum(["doe", "buck"]),
+        kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+        birthDate: zod.coerce.date().optional(),
+        birthWeight: zod.number().optional(),
+        notes: zod.string().optional(),
+      })
+      .describe(
+        "A kidding outcome. Each kid is tied to a breeding by matching the doe's name plus the breeding date (same calendar day). When several breedings match, the most recent one is used.",
+      ),
+  ),
+});
+
+/**
  * @summary Get a breeding record with kids
  */
 export const GetBreedingParams = zod.object({

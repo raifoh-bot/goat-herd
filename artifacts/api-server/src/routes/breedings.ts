@@ -18,6 +18,8 @@ import {
   UpdateBreedingEventBody,
   UpdateBreedingEventParams,
   DeleteBreedingEventParams,
+  ImportBreedingsBody,
+  ImportKidsBody,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { sendCsv } from "../lib/csv";
@@ -264,6 +266,153 @@ router.post("/breedings", async (req, res): Promise<void> => {
   }
 
   res.status(201).json(breeding);
+});
+
+// Bulk import breeding records from a spreadsheet. Each row's doe is matched to
+// an existing goat in the farm by name (case-insensitive); rows whose doe can't
+// be matched are skipped with a clear error. Insert-only — never updates
+// existing breedings. Farm Hands may import (same as the create flow).
+router.post("/breedings/import", async (req, res): Promise<void> => {
+  const parsed = ImportBreedingsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  // Build a name → goat lookup for this farm (lowercased, trimmed).
+  const farmGoats = await db
+    .select()
+    .from(goatsTable)
+    .where(eq(goatsTable.farmId, farmId(req)));
+  const goatByName = new Map<string, typeof farmGoats[number]>();
+  for (const g of farmGoats) {
+    goatByName.set(g.name.trim().toLowerCase(), g);
+  }
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < parsed.data.breedings.length; i++) {
+    const row = parsed.data.breedings[i];
+    const doe = goatByName.get(row.doeName.trim().toLowerCase());
+    if (!doe) {
+      skipped++;
+      errors.push(`Row ${i + 1}: doe "${row.doeName}" not found in the herd — skipped`);
+      continue;
+    }
+
+    try {
+      const status = row.status ?? "bred";
+      const breedingMethod = row.breedingMethod ?? "natural";
+
+      await db.insert(breedingsTable).values({
+        farmId: farmId(req),
+        doeId: doe.id,
+        sireName: row.sireName?.trim() || "Unknown",
+        breedingMethod,
+        breedingDate: row.breedingDate,
+        expectedKiddingDate: row.expectedKiddingDate ?? null,
+        notes: row.notes ?? null,
+        status,
+      });
+
+      // Keep the doe's lactation status consistent with the create/kidding flows.
+      let lactationStatus: "exposed" | "serviced" | "pregnant" | "milking" | null = null;
+      if (status === "bred") lactationStatus = breedingMethod === "ai" ? "serviced" : "exposed";
+      else if (status === "confirmed-pregnant") lactationStatus = "pregnant";
+      else if (status === "kidded") lactationStatus = "milking";
+
+      if (lactationStatus) {
+        await db
+          .update(goatsTable)
+          .set({ lactationStatus, updatedAt: new Date() })
+          .where(and(eq(goatsTable.id, doe.id), eq(goatsTable.farmId, farmId(req))));
+      }
+
+      imported++;
+    } catch (err) {
+      skipped++;
+      errors.push(`Row ${i + 1} (${row.doeName}): ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  }
+
+  res.status(201).json({ imported, skipped, errors });
+});
+
+// Bulk import kidding outcomes. Each kid is tied to a breeding by matching the
+// doe's name + the breeding date (same calendar day). When several breedings
+// match, the most recent one is used. Rows that can't be matched are skipped.
+// Insert-only; does not create herd goat records (historical import).
+router.post("/kids/import", async (req, res): Promise<void> => {
+  const parsed = ImportKidsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  // Load all breedings joined to their doe so we can match by doe name + date.
+  // Order most-recent-first so the first same-day match is the newest breeding.
+  // Tie-break on createdAt then id so "most recent" is deterministic when
+  // several breedings share the same breedingDate.
+  const breedingRows = await db
+    .select()
+    .from(breedingsTable)
+    .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
+    .where(eq(breedingsTable.farmId, farmId(req)))
+    .orderBy(
+      desc(breedingsTable.breedingDate),
+      desc(breedingsTable.createdAt),
+      desc(breedingsTable.id),
+    );
+
+  const sameDay = (a: Date, b: Date): boolean =>
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate();
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < parsed.data.kids.length; i++) {
+    const row = parsed.data.kids[i];
+    const doeName = row.doeName.trim().toLowerCase();
+
+    // breedingRows are ordered most-recent-first, so the first match is newest.
+    const match = breedingRows.find(
+      (r) =>
+        (r.goats?.name.trim().toLowerCase() ?? "") === doeName &&
+        sameDay(new Date(r.breedings.breedingDate), row.breedingDate),
+    );
+
+    if (!match) {
+      skipped++;
+      errors.push(
+        `Row ${i + 1}: no breeding found for doe "${row.doeName}" on ${row.breedingDate.toISOString().slice(0, 10)} — skipped`,
+      );
+      continue;
+    }
+
+    try {
+      await db.insert(kidsTable).values({
+        farmId: farmId(req),
+        breedingId: match.breedings.id,
+        name: row.name?.trim() || null,
+        sex: row.sex,
+        kidStatus: row.kidStatus ?? "alive",
+        birthDate: row.birthDate ?? null,
+        birthWeight: row.birthWeight ?? null,
+        notes: row.notes ?? null,
+      });
+      imported++;
+    } catch (err) {
+      skipped++;
+      errors.push(`Row ${i + 1} (${row.doeName}): ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  }
+
+  res.status(201).json({ imported, skipped, errors });
 });
 
 router.get("/breedings/:id", async (req, res): Promise<void> => {
