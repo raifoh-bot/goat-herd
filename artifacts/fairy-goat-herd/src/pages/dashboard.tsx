@@ -24,6 +24,7 @@ import {
   type DashboardWidgetId,
 } from "@/lib/dashboard-widgets";
 import { CustomizeDashboard } from "@/components/customize-dashboard";
+import { BreedingCalendarWidget } from "@/components/dashboard/BreedingCalendarWidget";
 import { OnboardingBanner } from "@/components/onboarding-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ const WIDE_WIDGETS = new Set<DashboardWidgetId>([
   "upcoming-kiddings",
   "breed-breakdown",
   "recent-activity",
+  "breeding-calendar",
 ]);
 
 const BREED_BAR_COLORS = [
@@ -76,10 +78,14 @@ export default function Dashboard() {
   const layout = resolveDashboardLayout(personalLayout ?? settings?.dashboardLayout);
   const visibleWidgets = layout.filter((w) => w.visible);
   const showUpcomingKiddings = visibleWidgets.some((w) => w.id === "upcoming-kiddings");
+  const showBreedingCalendar = visibleWidgets.some((w) => w.id === "breeding-calendar");
   const showBreedBreakdown = visibleWidgets.some((w) => w.id === "breed-breakdown");
 
   const { data: breedings, isLoading: isLoadingBreedings } = useListBreedings({
-    query: { queryKey: getListBreedingsQueryKey(), enabled: showUpcomingKiddings },
+    query: {
+      queryKey: getListBreedingsQueryKey(),
+      enabled: showUpcomingKiddings || showBreedingCalendar,
+    },
   });
   const { data: breedBreakdown, isLoading: isLoadingBreedBreakdown } = useGetBreedBreakdown({
     query: { queryKey: getGetBreedBreakdownQueryKey(), enabled: showBreedBreakdown },
@@ -141,6 +147,8 @@ export default function Dashboard() {
         );
       case "upcoming-kiddings":
         return <UpcomingKiddingsCard breedings={breedings} isLoading={isLoadingBreedings} />;
+      case "breeding-calendar":
+        return <BreedingCalendarWidget breedings={breedings} isLoading={isLoadingBreedings} />;
       case "breed-breakdown":
         return <BreedBreakdownCard breakdown={breedBreakdown} isLoading={isLoadingBreedBreakdown} />;
       case "recent-activity":

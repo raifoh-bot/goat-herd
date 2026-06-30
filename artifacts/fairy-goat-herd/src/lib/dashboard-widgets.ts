@@ -9,7 +9,8 @@ export type DashboardWidgetId =
   | "does-breakdown"
   | "upcoming-kiddings"
   | "breed-breakdown"
-  | "recent-activity";
+  | "recent-activity"
+  | "breeding-calendar";
 
 export interface DashboardWidgetDef {
   id: DashboardWidgetId;
@@ -17,6 +18,13 @@ export interface DashboardWidgetDef {
   label: string;
   /** Short helper text describing what the widget shows. */
   description: string;
+  /**
+   * Whether the widget is shown by default (when no saved layout exists, and
+   * when appended to an existing layout). Opt-in widgets set this to `false` so
+   * they appear in the Customize panel but stay hidden until explicitly enabled.
+   * Defaults to `true` when omitted.
+   */
+  defaultVisible?: boolean;
 }
 
 /**
@@ -34,11 +42,20 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
   { id: "upcoming-kiddings", label: "Upcoming Kiddings", description: "Does due to kid soon, sorted by date." },
   { id: "breed-breakdown", label: "Breed Breakdown", description: "Goat counts grouped by breed." },
   { id: "recent-activity", label: "Recent Herd Updates", description: "Recently updated goats in your herd." },
+  {
+    id: "breeding-calendar",
+    label: "Breeding Calendar",
+    description: "Month-grid calendar of expected kidding dates with Google, Outlook, and .ics export.",
+    defaultVisible: false,
+  },
 ];
 
-/** The default layout: every widget visible, in canonical order. */
+/**
+ * The default layout in canonical order. Widgets are visible by default unless
+ * they opt out via `defaultVisible: false`.
+ */
 export function defaultDashboardLayout(): DashboardWidget[] {
-  return DASHBOARD_WIDGETS.map((w) => ({ id: w.id, visible: true }));
+  return DASHBOARD_WIDGETS.map((w) => ({ id: w.id, visible: w.defaultVisible !== false }));
 }
 
 const WIDGET_BY_ID = new Map(DASHBOARD_WIDGETS.map((w) => [w.id, w]));
@@ -67,7 +84,7 @@ export function resolveDashboardLayout(
   }
 
   for (const w of DASHBOARD_WIDGETS) {
-    if (!seen.has(w.id)) result.push({ id: w.id, visible: true });
+    if (!seen.has(w.id)) result.push({ id: w.id, visible: w.defaultVisible !== false });
   }
 
   return result;

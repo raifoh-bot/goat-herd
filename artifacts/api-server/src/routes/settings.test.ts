@@ -222,8 +222,13 @@ describe("dashboard layout customization", () => {
       { id: "total-goats", visible: true },
       { id: "health-status", visible: true },
       { id: "milking-status", visible: true },
+      { id: "avg-milk", visible: true },
       { id: "does-breakdown", visible: true },
+      { id: "upcoming-kiddings", visible: true },
+      { id: "breed-breakdown", visible: true },
       { id: "recent-activity", visible: true },
+      // Opt-in widget: present in the catalog but hidden by default.
+      { id: "breeding-calendar", visible: false },
     ]);
   });
 
@@ -234,7 +239,11 @@ describe("dashboard layout customization", () => {
       { id: "total-goats", visible: false },
       { id: "health-status", visible: true },
       { id: "milking-status", visible: true },
+      { id: "avg-milk", visible: true },
       { id: "does-breakdown", visible: true },
+      { id: "upcoming-kiddings", visible: true },
+      { id: "breed-breakdown", visible: true },
+      { id: "breeding-calendar", visible: true },
     ];
     const res = await agent.put("/api/settings").send({ dashboardLayout: layout });
     expect(res.status).toBe(200);
@@ -257,8 +266,13 @@ describe("dashboard layout customization", () => {
       { id: "milking-status", visible: false },
       { id: "total-goats", visible: true },
       { id: "health-status", visible: true },
+      { id: "avg-milk", visible: true },
       { id: "does-breakdown", visible: true },
+      { id: "upcoming-kiddings", visible: true },
+      { id: "breed-breakdown", visible: true },
       { id: "recent-activity", visible: true },
+      // Opt-in widget stays hidden when appended to an existing layout.
+      { id: "breeding-calendar", visible: false },
     ]);
   });
 

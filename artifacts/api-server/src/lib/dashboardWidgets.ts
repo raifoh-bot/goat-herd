@@ -15,7 +15,15 @@ export const DEFAULT_DASHBOARD_WIDGET_IDS = [
   "upcoming-kiddings",
   "breed-breakdown",
   "recent-activity",
+  "breeding-calendar",
 ] as const;
+
+/**
+ * Widgets that are opt-in: they belong to the catalog (so they aren't stripped)
+ * but stay hidden when appended to a layout that predates them. Mirrors the
+ * frontend's `defaultVisible: false` flag.
+ */
+const DEFAULT_HIDDEN_WIDGET_IDS = new Set<string>(["breeding-calendar"]);
 
 /**
  * Reconciles a (possibly stale or partial) persisted layout against the current
@@ -42,7 +50,7 @@ export function normalizeDashboardLayout(
   }
 
   for (const id of DEFAULT_DASHBOARD_WIDGET_IDS) {
-    if (!seen.has(id)) result.push({ id, visible: true });
+    if (!seen.has(id)) result.push({ id, visible: !DEFAULT_HIDDEN_WIDGET_IDS.has(id) });
   }
 
   return result;
