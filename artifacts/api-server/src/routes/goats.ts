@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
+import { sendCsv } from "../lib/csv";
 
 const router: IRouter = Router();
 
@@ -98,6 +99,64 @@ router.post("/goats/import", requireManager, async (req, res): Promise<void> => 
   }
 
   res.status(201).json({ imported, skipped: parsed.data.goats.length - imported - errors.length, errors });
+});
+
+// Export the farm's full herd as a CSV download. Read-only, so any
+// authenticated farm member (including Farm Hands) may export.
+router.get("/goats/export", async (req, res): Promise<void> => {
+  const goats = await db
+    .select()
+    .from(goatsTable)
+    .where(eq(goatsTable.farmId, farmId(req)))
+    .orderBy(desc(goatsTable.createdAt));
+
+  const headers = [
+    "id",
+    "name",
+    "registeredName",
+    "adgaId",
+    "sex",
+    "breed",
+    "status",
+    "herdStatus",
+    "lactationStatus",
+    "dateOfBirth",
+    "damName",
+    "sireName",
+    "maternalGranddamName",
+    "maternalGrandsireName",
+    "paternalGranddamName",
+    "paternalGrandsireName",
+    "milkPerDay",
+    "description",
+    "imageUrl",
+    "createdAt",
+  ];
+
+  const rows = goats.map((g) => [
+    g.id,
+    g.name,
+    g.registeredName,
+    g.adgaId,
+    g.sex,
+    g.breed,
+    g.status,
+    g.herdStatus,
+    g.lactationStatus,
+    g.dateOfBirth,
+    g.damName,
+    g.sireName,
+    g.maternalGranddamName,
+    g.maternalGrandsireName,
+    g.paternalGranddamName,
+    g.paternalGrandsireName,
+    g.milkPerDay,
+    g.description,
+    g.imageUrl,
+    g.createdAt,
+  ]);
+
+  sendCsv(res, `${req.farm!.slug}-herd`, headers, rows);
 });
 
 router.get("/goats/:id", async (req, res): Promise<void> => {

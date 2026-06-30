@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2 } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { GoatCard } from "@/components/goat-card";
 import { formatAge } from "@/lib/age";
 import { breedLabels } from "@/lib/breeds";
+import { downloadCsv, buildCsvFileName } from "@/lib/csvDownload";
+import { useToast } from "@/hooks/use-toast";
 
 const lactationLabels: Record<string, string> = {
   milking: "Milking",
@@ -113,6 +115,19 @@ export default function GoatsList() {
   });
   const [sortKey, setSortKey] = useState<"name" | "breed" | "sex" | "age" | "lactation" | "status" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await downloadCsv("/api/goats/export", buildCsvFileName("herd"));
+    } catch {
+      toast({ title: "Export failed", description: "Could not export the herd. Please try again.", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const { data: goats, isLoading } = useListGoats(
     { status: statusFilter, sex: sexFilter },
@@ -166,6 +181,10 @@ export default function GoatsList() {
             <p className="text-muted-foreground">Manage your goats, production records, and health status.</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" className="shadow-sm" onClick={handleExport} disabled={isExporting}>
+              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Export CSV
+            </Button>
             <Link href="/goats/import">
               <Button variant="outline" className="shadow-sm">
                 <Upload className="mr-2 h-4 w-4" />

@@ -20,6 +20,7 @@ import {
   DeleteBreedingEventParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { sendCsv } from "../lib/csv";
 
 const router: IRouter = Router();
 
@@ -115,6 +116,84 @@ router.get("/breedings", async (req, res): Promise<void> => {
   });
 
   res.json(result);
+});
+
+// Export all breeding records for the farm as a CSV download. Read-only, so any
+// authenticated farm member (including Farm Hands) may export. Defined before
+// `/breedings/:id` so "export" is never parsed as a breeding id.
+router.get("/breedings/export", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(breedingsTable)
+    .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
+    .where(eq(breedingsTable.farmId, farmId(req)))
+    .orderBy(desc(breedingsTable.breedingDate));
+
+  const headers = [
+    "id",
+    "doeName",
+    "sireName",
+    "breedingMethod",
+    "breedingDate",
+    "expectedKiddingDate",
+    "status",
+    "notes",
+    "createdAt",
+  ];
+
+  const data = rows.map((r) => [
+    r.breedings.id,
+    r.goats?.name ?? "",
+    r.breedings.sireName,
+    r.breedings.breedingMethod,
+    r.breedings.breedingDate,
+    r.breedings.expectedKiddingDate,
+    r.breedings.status,
+    r.breedings.notes,
+    r.breedings.createdAt,
+  ]);
+
+  sendCsv(res, `${req.farm!.slug}-breedings`, headers, data);
+});
+
+// Export all kid (kidding outcome) records for the farm as a CSV download,
+// joined to their breeding for the doe's name. Read-only.
+router.get("/breedings/kids/export", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(kidsTable)
+    .leftJoin(breedingsTable, eq(kidsTable.breedingId, breedingsTable.id))
+    .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
+    .where(eq(kidsTable.farmId, farmId(req)))
+    .orderBy(desc(kidsTable.createdAt));
+
+  const headers = [
+    "id",
+    "breedingId",
+    "doeName",
+    "name",
+    "sex",
+    "kidStatus",
+    "birthDate",
+    "birthWeight",
+    "notes",
+    "createdAt",
+  ];
+
+  const data = rows.map((r) => [
+    r.kids.id,
+    r.kids.breedingId,
+    r.goats?.name ?? "",
+    r.kids.name,
+    r.kids.sex,
+    r.kids.kidStatus,
+    r.kids.birthDate,
+    r.kids.birthWeight,
+    r.kids.notes,
+    r.kids.createdAt,
+  ]);
+
+  sendCsv(res, `${req.farm!.slug}-kids`, headers, data);
 });
 
 router.post("/breedings", async (req, res): Promise<void> => {

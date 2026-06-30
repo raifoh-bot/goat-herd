@@ -226,6 +226,22 @@ paths:
         "404":
           description: Goat not found
 
+  /goats/export:
+    get:
+      operationId: exportGoats
+      tags: [goats]
+      summary: Export the herd as a CSV file
+      description: >-
+        Streams the farm's full goat list as a CSV download. Available to any
+        authenticated farm member (read-only).
+      responses:
+        "200":
+          description: CSV file of all goats in the farm
+          content:
+            text/csv:
+              schema:
+                type: string
+
   /goats/import:
     post:
       operationId: importGoats
@@ -276,6 +292,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Breeding"
+
+  /breedings/export:
+    get:
+      operationId: exportBreedings
+      tags: [breedings]
+      summary: Export breeding records as a CSV file
+      description: >-
+        Streams all breeding records for the farm as a CSV download. Available to
+        any authenticated farm member (read-only).
+      responses:
+        "200":
+          description: CSV file of all breeding records in the farm
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /breedings/kids/export:
+    get:
+      operationId: exportKids
+      tags: [breedings]
+      summary: Export kidding outcomes as a CSV file
+      description: >-
+        Streams all kid records for the farm as a CSV download, joined to their
+        breeding for the doe's name. Available to any authenticated farm member
+        (read-only).
+      responses:
+        "200":
+          description: CSV file of all kid records in the farm
+          content:
+            text/csv:
+              schema:
+                type: string
 
   /breedings/{id}:
     get:

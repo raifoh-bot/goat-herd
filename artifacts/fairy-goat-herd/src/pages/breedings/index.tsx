@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame } from "lucide-react";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download } from "lucide-react";
 import {
   getListBreedingsQueryKey,
   useListBreedings,
@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useFarmSettings } from "@/lib/settings";
+import { downloadCsv, buildCsvFileName } from "@/lib/csvDownload";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const statusConfig = {
@@ -266,6 +267,19 @@ export default function BreedingsList() {
   const [dialogState, setDialogState] = useState<ExposureDialogState | null>(null);
   const [dialogDate, setDialogDate] = useState("");
   const [dialogNotes, setDialogNotes] = useState("");
+  const [exporting, setExporting] = useState<"breedings" | "kids" | null>(null);
+
+  const handleExport = async (kind: "breedings" | "kids") => {
+    setExporting(kind);
+    try {
+      const path = kind === "breedings" ? "/api/breedings/export" : "/api/breedings/kids/export";
+      await downloadCsv(path, buildCsvFileName(kind));
+    } catch {
+      toast({ title: "Export failed", description: "Could not export your records. Please try again.", variant: "destructive" });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const active = breedings?.filter((b) => b.status === "bred" || b.status === "confirmed-pregnant") ?? [];
   const past = breedings?.filter((b) => b.status === "kidded" || b.status === "open") ?? [];
@@ -320,12 +334,22 @@ export default function BreedingsList() {
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Kidding Records</h2>
             <p className="text-muted-foreground">Track breedings, confirm pregnancies, and record kidding outcomes.</p>
           </div>
-          <Link href="/breedings/new">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
-              <Plus className="mr-2 h-4 w-4" />
-              Record Breeding
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="shadow-sm" onClick={() => handleExport("breedings")} disabled={exporting !== null}>
+              {exporting === "breedings" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Export Breedings CSV
             </Button>
-          </Link>
+            <Button variant="outline" className="shadow-sm" onClick={() => handleExport("kids")} disabled={exporting !== null}>
+              {exporting === "kids" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Export Kids CSV
+            </Button>
+            <Link href="/breedings/new">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+                <Plus className="mr-2 h-4 w-4" />
+                Record Breeding
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {isLoading ? (

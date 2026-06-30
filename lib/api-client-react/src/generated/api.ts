@@ -841,6 +841,80 @@ export const useDeleteGoat = <
 };
 
 /**
+ * Streams the farm's full goat list as a CSV download. Available to any authenticated farm member (read-only).
+ * @summary Export the herd as a CSV file
+ */
+export const getExportGoatsUrl = () => {
+  return `/api/goats/export`;
+};
+
+export const exportGoats = async (options?: RequestInit): Promise<string> => {
+  return customFetch<string>(getExportGoatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportGoatsQueryKey = () => {
+  return [`/api/goats/export`] as const;
+};
+
+export const getExportGoatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportGoats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportGoatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportGoats>>> = ({
+    signal,
+  }) => exportGoats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportGoatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportGoats>>
+>;
+export type ExportGoatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export the herd as a CSV file
+ */
+
+export function useExportGoats<
+  TData = Awaited<ReturnType<typeof exportGoats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportGoatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Bulk import goats into the herd
  */
 export const getImportGoatsUrl = () => {
@@ -1086,6 +1160,156 @@ export const useCreateBreeding = <
 > => {
   return useMutation(getCreateBreedingMutationOptions(options));
 };
+
+/**
+ * Streams all breeding records for the farm as a CSV download. Available to any authenticated farm member (read-only).
+ * @summary Export breeding records as a CSV file
+ */
+export const getExportBreedingsUrl = () => {
+  return `/api/breedings/export`;
+};
+
+export const exportBreedings = async (
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getExportBreedingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportBreedingsQueryKey = () => {
+  return [`/api/breedings/export`] as const;
+};
+
+export const getExportBreedingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportBreedings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportBreedings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportBreedingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportBreedings>>> = ({
+    signal,
+  }) => exportBreedings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportBreedings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportBreedingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportBreedings>>
+>;
+export type ExportBreedingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export breeding records as a CSV file
+ */
+
+export function useExportBreedings<
+  TData = Awaited<ReturnType<typeof exportBreedings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportBreedings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportBreedingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Streams all kid records for the farm as a CSV download, joined to their breeding for the doe's name. Available to any authenticated farm member (read-only).
+ * @summary Export kidding outcomes as a CSV file
+ */
+export const getExportKidsUrl = () => {
+  return `/api/breedings/kids/export`;
+};
+
+export const exportKids = async (options?: RequestInit): Promise<string> => {
+  return customFetch<string>(getExportKidsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportKidsQueryKey = () => {
+  return [`/api/breedings/kids/export`] as const;
+};
+
+export const getExportKidsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportKids>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportKids>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportKidsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportKids>>> = ({
+    signal,
+  }) => exportKids({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportKids>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportKidsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportKids>>
+>;
+export type ExportKidsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export kidding outcomes as a CSV file
+ */
+
+export function useExportKids<
+  TData = Awaited<ReturnType<typeof exportKids>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportKids>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportKidsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get a breeding record with kids
