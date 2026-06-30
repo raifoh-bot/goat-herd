@@ -27,6 +27,8 @@ const GOAT_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: "sireName", label: "Sire Name" },
   { key: "maternalGranddamName", label: "Maternal Granddam" },
   { key: "maternalGrandsireName", label: "Maternal Grandsire" },
+  { key: "paternalGranddamName", label: "Paternal Granddam" },
+  { key: "paternalGrandsireName", label: "Paternal Grandsire" },
   { key: "rightEarTattoo", label: "Right Ear Tattoo" },
   { key: "leftEarTattoo", label: "Left Ear Tattoo" },
   { key: "rightTailTattoo", label: "Right Tail Tattoo" },
@@ -50,8 +52,10 @@ const AUTO_MAP: Record<string, string> = {
   "breed": "breed",
   "dam": "damName", "dam name": "damName", "mother": "damName",
   "sire": "sireName", "sire name": "sireName", "father": "sireName",
-  "grand dam": "maternalGranddamName", "granddam": "maternalGranddamName", "maternal granddam": "maternalGranddamName",
-  "grand sire": "maternalGrandsireName", "grandsire": "maternalGrandsireName", "maternal grandsire": "maternalGrandsireName",
+  "grand dam": "maternalGranddamName", "granddam": "maternalGranddamName", "maternal granddam": "maternalGranddamName", "mat granddam": "maternalGranddamName", "mat. granddam": "maternalGranddamName",
+  "grand sire": "maternalGrandsireName", "grandsire": "maternalGrandsireName", "maternal grandsire": "maternalGrandsireName", "mat grandsire": "maternalGrandsireName", "mat. grandsire": "maternalGrandsireName",
+  "paternal granddam": "paternalGranddamName", "pat granddam": "paternalGranddamName", "pat. granddam": "paternalGranddamName",
+  "paternal grandsire": "paternalGrandsireName", "pat grandsire": "paternalGrandsireName", "pat. grandsire": "paternalGrandsireName",
 };
 
 function excelDateToISO(value: unknown): string | undefined {
@@ -386,7 +390,7 @@ export default function ImportGoats() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      {["Name", "Sex", "Breed", "DOB", "Dam", "Sire", "Mat. Granddam", "Mat. Grandsire", "RE Tattoo", "LE Tattoo"].map((h) => (
+                      {["Name", "Sex", "Breed", "DOB", "Dam", "Sire", "Mat. Granddam", "Mat. Grandsire", "Pat. Granddam", "Pat. Grandsire", "RE Tattoo", "LE Tattoo"].map((h) => (
                         <th key={h} className="px-3 py-2.5 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -402,6 +406,8 @@ export default function ImportGoats() {
                         <td className="px-3 py-2">{String(r.sireName ?? "—")}</td>
                         <td className="px-3 py-2">{String(r.maternalGranddamName ?? "—")}</td>
                         <td className="px-3 py-2">{String(r.maternalGrandsireName ?? "—")}</td>
+                        <td className="px-3 py-2">{String(r.paternalGranddamName ?? "—")}</td>
+                        <td className="px-3 py-2">{String(r.paternalGrandsireName ?? "—")}</td>
                         <td className="px-3 py-2 font-mono">{String(r.rightEarTattoo ?? "—")}</td>
                         <td className="px-3 py-2 font-mono">{String(r.leftEarTattoo ?? "—")}</td>
                       </tr>
