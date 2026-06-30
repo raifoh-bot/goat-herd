@@ -26,6 +26,8 @@ import {
 import { CustomizeDashboard } from "@/components/customize-dashboard";
 import { BreedingCalendarWidget } from "@/components/dashboard/BreedingCalendarWidget";
 import { OnboardingBanner } from "@/components/onboarding-banner";
+import { useFarmSettings } from "@/lib/settings";
+import { getEffectiveDueDate } from "@/lib/breeding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -291,14 +293,14 @@ function UpcomingKiddingsCard({
   isLoading: boolean;
 }) {
   const now = Date.now();
+  const { gestationDays } = useFarmSettings();
+  // Use the shared resolver so this card and the Breeding Calendar widget always
+  // agree on the due day, including the breeding-date + gestation fallback when
+  // no expected kidding date was recorded.
   const upcoming = (breedings ?? [])
-    .filter(
-      (b) =>
-        (b.status === "bred" || b.status === "confirmed-pregnant") &&
-        b.expectedKiddingDate != null,
-    )
-    .map((b) => ({ ...b, due: new Date(b.expectedKiddingDate as string) }))
-    .filter((b) => !Number.isNaN(b.due.getTime()))
+    .filter((b) => b.status === "bred" || b.status === "confirmed-pregnant")
+    .map((b) => ({ ...b, due: getEffectiveDueDate(b, gestationDays) }))
+    .filter((b): b is BreedingWithDoe & { due: Date } => b.due != null)
     .sort((a, b) => a.due.getTime() - b.due.getTime())
     .slice(0, 5);
 

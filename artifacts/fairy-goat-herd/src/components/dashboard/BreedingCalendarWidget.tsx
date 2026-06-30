@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MiniCalendar, toDateKey } from "@/components/dashboard/MiniCalendar";
+import { useFarmSettings } from "@/lib/settings";
+import { getEffectiveDueDate } from "@/lib/breeding";
 import {
   downloadIcs,
   toGoogleCalendarUrl,
@@ -16,19 +18,6 @@ const STATUS_LABELS: Record<string, string> = {
   bred: "Bred",
   "confirmed-pregnant": "Confirmed pregnant",
 };
-
-/** Parses an `expectedKiddingDate` string into a local-midnight Date, or null. */
-function parseDueDate(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  // Date-only strings (YYYY-MM-DD) must be anchored to local time, not UTC, so
-  // the day doesn't shift across time zones.
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  const parsed = dateOnly
-    ? new Date(`${value}T00:00:00`)
-    : new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-}
 
 function buildEvent(b: BreedingWithDoe, due: Date): CalendarEvent {
   const doeName = b.doe?.name ?? "Unknown doe";
@@ -59,13 +48,14 @@ export function BreedingCalendarWidget({
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const { gestationDays } = useFarmSettings();
 
   // Group active breedings (bred + confirmed-pregnant) by their due-date key.
   const byDate = useMemo(() => {
     const map = new Map<string, DueBreeding[]>();
     for (const b of breedings ?? []) {
       if (b.status !== "bred" && b.status !== "confirmed-pregnant") continue;
-      const due = parseDueDate(b.expectedKiddingDate);
+      const due = getEffectiveDueDate(b, gestationDays);
       if (!due) continue;
       const key = toDateKey(due);
       const list = map.get(key) ?? [];
@@ -73,7 +63,7 @@ export function BreedingCalendarWidget({
       map.set(key, list);
     }
     return map;
-  }, [breedings]);
+  }, [breedings, gestationDays]);
 
   const markedDates = useMemo(() => {
     const counts = new Map<string, number>();
