@@ -7,7 +7,17 @@ const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const allGoats = await db.select().from(goatsTable).where(eq(goatsTable.farmId, farmId(req)));
-  const ownedGoats = allGoats.filter((g) => !g.leasedBuck && g.herdStatus !== "dead" && g.herdStatus !== "sold");
+  // Herd totals reflect animals actually on the farm: exclude dead, sold, and
+  // leased-out goats. A goat can be leased out via either the newer
+  // `herdStatus === "leased"` value or the older `leasedBuck` flag, so honor
+  // both — otherwise a leased buck missing the flag inflates the buck count.
+  const ownedGoats = allGoats.filter(
+    (g) =>
+      !g.leasedBuck &&
+      g.herdStatus !== "dead" &&
+      g.herdStatus !== "sold" &&
+      g.herdStatus !== "leased",
+  );
   const totalGoats = ownedGoats.length;
 
   const doeCount = ownedGoats.filter((g) => g.sex === "doe").length;
