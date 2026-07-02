@@ -14,6 +14,7 @@ let currentUser: unknown = undefined;
 
 vi.mock("wouter", () => ({
   useLocation: () => ["/", setLocationMock] as const,
+  useSearch: () => "",
   Link: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
@@ -158,6 +159,22 @@ describe("Login page — farm sign-in routing", () => {
     await submitLogin();
 
     expect(setLocationMock).toHaveBeenCalledWith("/goats/123");
+    expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the user to the ?next= path AND its query string after login", async () => {
+    setUrl(
+      "/smithfarm/login",
+      `?next=${encodeURIComponent("/goats?status=treatment")}`,
+    );
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(makeLoginResponse({ role: "owner", farmSlug: "smithfarm" })),
+    );
+
+    renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(setLocationMock).toHaveBeenCalledWith("/goats?status=treatment");
     expect(assignMock).not.toHaveBeenCalled();
   });
 

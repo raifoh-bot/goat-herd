@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCurrentUser,
@@ -31,6 +31,7 @@ export function useIsManager(): boolean {
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
+  const search = useSearch();
   const queryClient = useQueryClient();
   const { data: user, isLoading, error } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
@@ -52,18 +53,20 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       const slug = getUrlFarmSlug();
       const loginPath = slug ? farmUrl(slug, "/login") : rootUrl("/login");
       // Remember the page they were trying to reach (base-relative, e.g.
-      // `/goats/123`) so login can return them there. Skip the dashboard and
-      // the login page itself — there's nothing useful to come back to.
+      // `/goats/123?status=treatment`) so login can return them there — path AND
+      // query state, so filters/tabs survive the round trip. Skip the dashboard
+      // and the login page itself — there's nothing useful to come back to.
+      const query = search ? `?${search}` : "";
       const intended =
         location && location !== "/" && !location.startsWith("/login")
-          ? location
+          ? `${location}${query}`
           : null;
       const target = intended
         ? `${loginPath}?next=${encodeURIComponent(intended)}`
         : loginPath;
       setLocation(`~${target}`);
     }
-  }, [unauthenticated, setLocation, queryClient, location]);
+  }, [unauthenticated, setLocation, queryClient, location, search]);
 
   if (isLoading) {
     return (

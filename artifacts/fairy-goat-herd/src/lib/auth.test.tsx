@@ -9,11 +9,13 @@ let currentUser: unknown = undefined;
 let currentIsLoading = false;
 let currentError: unknown = undefined;
 let currentLocation = "/";
+let currentSearch = "";
 
 const AUTH_QUERY_KEY = ["/api/auth/me"] as const;
 
 vi.mock("wouter", () => ({
   useLocation: () => [currentLocation, setLocationMock] as const,
+  useSearch: () => currentSearch,
 }));
 
 /** Point the browser URL at a path so getUrlFarmSlug() derives its farm slug. */
@@ -55,6 +57,7 @@ beforeEach(() => {
   currentIsLoading = false;
   currentError = undefined;
   currentLocation = "/";
+  currentSearch = "";
   setPathname("/");
 });
 
@@ -104,6 +107,25 @@ describe("AuthGuard — signed-out redirect", () => {
     await waitFor(() =>
       expect(setLocationMock).toHaveBeenCalledWith(
         "~/smithfarm/login?next=%2Fgoats%2F123",
+      ),
+    );
+  });
+
+  it("captures the query string alongside the path in ?next=", async () => {
+    currentUser = undefined;
+    setPathname("/smithfarm/goats");
+    currentLocation = "/goats";
+    currentSearch = "status=treatment";
+
+    renderWithClient(
+      <AuthGuard>
+        <div>protected content</div>
+      </AuthGuard>,
+    );
+
+    await waitFor(() =>
+      expect(setLocationMock).toHaveBeenCalledWith(
+        `~/smithfarm/login?next=${encodeURIComponent("/goats?status=treatment")}`,
       ),
     );
   });
