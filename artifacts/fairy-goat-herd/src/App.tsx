@@ -54,7 +54,7 @@ function RootRedirect() {
   return null;
 }
 
-function RootLanding() {
+export function RootLanding() {
   return (
     <AuthGuard>
       <RootRedirect />
