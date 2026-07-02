@@ -80,7 +80,9 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
   under `/<slug>`, and sources the `X-Farm-Slug` header from it. Root paths
   (`/login`, `/register`, `/superadmin/*`) have no farm prefix. Reserved words
   (route/platform words like `login`, `goats`, `admin`, `api`) can't be farm slugs
-  — enforced in `createFarm.ts` `RESERVED_SLUGS` and mirrored in `farm.ts`.
+  — defined once in the shared `@workspace/reserved-slugs` lib and consumed by
+  both `createFarm.ts` (server) and `farm.ts` (client), so adding a new route
+  word updates both automatically.
 - **Tenant resolution** (`resolveTenant` middleware), in order:
   1. **Subdomain** — only when `FARM_BASE_DOMAIN` is set, e.g. `acme.example.com` → farm slug `acme`. Left in place but unused under path-based URLs.
   2. **`X-Farm-Slug` header** — sent by the frontend, sourced from the URL slug (and by tooling/tests).

@@ -179,6 +179,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/reserved-slugs':
+        specifier: workspace:*
+        version: link:../../lib/reserved-slugs
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -412,6 +415,9 @@ importers:
       '@workspace/object-storage-web':
         specifier: workspace:*
         version: link:../../lib/object-storage-web
+      '@workspace/reserved-slugs':
+        specifier: workspace:*
+        version: link:../../lib/reserved-slugs
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -738,6 +744,8 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
+
+  lib/reserved-slugs: {}
 
   scripts:
     dependencies:

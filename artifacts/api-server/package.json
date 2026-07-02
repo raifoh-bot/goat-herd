@@ -14,6 +14,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
+    "@workspace/reserved-slugs": "workspace:*",
     "bcrypt": "^6.0.0",
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",

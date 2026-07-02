@@ -1,36 +1,9 @@
 import { setFarmSlug as applyFarmSlug } from "@workspace/api-client-react";
+import { RESERVED_SLUGS, isReservedSlug } from "@workspace/reserved-slugs";
+
+export { RESERVED_SLUGS, isReservedSlug };
 
 const STORAGE_KEY = "mygoatherd.farmSlug";
-
-/**
- * Words that can never be a farm slug because they are top-level app routes or
- * platform paths. Mirrors the backend `RESERVED_SLUGS` (in
- * `artifacts/api-server/src/lib/createFarm.ts`) so the URL's first path segment
- * is only treated as a farm when it isn't one of these. Keep the two lists in sync.
- */
-export const RESERVED_SLUGS = new Set([
-  "www",
-  "api",
-  "app",
-  "admin",
-  "superadmin",
-  "register",
-  "login",
-  "default",
-  "static",
-  "assets",
-  "health",
-  "healthz",
-  "goats",
-  "breedings",
-  "inventory",
-  "lineage",
-]);
-
-/** True when a slug collides with a reserved app/platform path. */
-export function isReservedSlug(slug: string): boolean {
-  return RESERVED_SLUGS.has(slug.trim().toLowerCase());
-}
 
 /** The artifact base path (e.g. "/" in dev), without a trailing slash. */
 export function basePath(): string {
