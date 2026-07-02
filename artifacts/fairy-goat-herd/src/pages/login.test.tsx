@@ -45,14 +45,15 @@ import { RootLanding } from "@/App";
  * or at the root fallback (`/login`). `assign`/`replace` are stubbed so the
  * full-page redirects can be asserted without a real navigation.
  */
-function setUrl(pathname: string) {
+function setUrl(pathname: string, search = "") {
   Object.defineProperty(window, "location", {
     configurable: true,
     value: {
       pathname,
+      search,
       assign: assignMock,
       replace: replaceMock,
-      href: `http://localhost${pathname}`,
+      href: `http://localhost${pathname}${search}`,
     },
   });
 }
@@ -145,6 +146,57 @@ describe("Login page — farm sign-in routing", () => {
 
     expect(setLocationMock).toHaveBeenCalledWith("/");
     expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the user to the ?next= path within the farm router after login", async () => {
+    setUrl("/smithfarm/login", "?next=%2Fgoats%2F123");
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(makeLoginResponse({ role: "owner", farmSlug: "smithfarm" })),
+    );
+
+    renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(setLocationMock).toHaveBeenCalledWith("/goats/123");
+    expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("honors ?next= over the first-login Farm Settings landing", async () => {
+    setUrl("/smithfarm/login", "?next=%2Fbreedings%2F7");
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(
+        makeLoginResponse({ role: "owner", farmSlug: "smithfarm", firstLogin: true }),
+      ),
+    );
+
+    renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(setLocationMock).toHaveBeenCalledWith("/breedings/7");
+  });
+
+  it("ignores an unsafe ?next= (open-redirect attempt) and uses the dashboard", async () => {
+    setUrl("/smithfarm/login", "?next=https%3A%2F%2Fevil.example.com");
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(makeLoginResponse({ role: "owner", farmSlug: "smithfarm" })),
+    );
+
+    renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(setLocationMock).toHaveBeenCalledWith("/");
+  });
+
+  it("carries the ?next= path into the full-page redirect from the root login", async () => {
+    setUrl("/login", "?next=%2Fgoats%2F42");
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(makeLoginResponse({ role: "owner", farmSlug: "smithfarm" })),
+    );
+
+    renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(assignMock).toHaveBeenCalledWith("/smithfarm/goats/42");
   });
 
   it("routes a superadmin to the platform panel and clears any farm slug", async () => {

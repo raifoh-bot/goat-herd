@@ -8,11 +8,12 @@ const setLocationMock = vi.fn();
 let currentUser: unknown = undefined;
 let currentIsLoading = false;
 let currentError: unknown = undefined;
+let currentLocation = "/";
 
 const AUTH_QUERY_KEY = ["/api/auth/me"] as const;
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/", setLocationMock] as const,
+  useLocation: () => [currentLocation, setLocationMock] as const,
 }));
 
 /** Point the browser URL at a path so getUrlFarmSlug() derives its farm slug. */
@@ -53,6 +54,7 @@ beforeEach(() => {
   currentUser = undefined;
   currentIsLoading = false;
   currentError = undefined;
+  currentLocation = "/";
   setPathname("/");
 });
 
@@ -86,6 +88,40 @@ describe("AuthGuard — signed-out redirect", () => {
       expect(setLocationMock).toHaveBeenCalledWith("~/smithfarm/login"),
     );
     expect(screen.queryByText("protected content")).toBeNull();
+  });
+
+  it("captures the intended path as ?next= when redirecting from a farm page", async () => {
+    currentUser = undefined;
+    setPathname("/smithfarm/goats/123");
+    currentLocation = "/goats/123";
+
+    renderWithClient(
+      <AuthGuard>
+        <div>protected content</div>
+      </AuthGuard>,
+    );
+
+    await waitFor(() =>
+      expect(setLocationMock).toHaveBeenCalledWith(
+        "~/smithfarm/login?next=%2Fgoats%2F123",
+      ),
+    );
+  });
+
+  it("omits ?next= when the intended path is just the dashboard", async () => {
+    currentUser = undefined;
+    setPathname("/smithfarm");
+    currentLocation = "/";
+
+    renderWithClient(
+      <AuthGuard>
+        <div>protected content</div>
+      </AuthGuard>,
+    );
+
+    await waitFor(() =>
+      expect(setLocationMock).toHaveBeenCalledWith("~/smithfarm/login"),
+    );
   });
 
   it("redirects to /login when the auth query errors (e.g. 401)", async () => {

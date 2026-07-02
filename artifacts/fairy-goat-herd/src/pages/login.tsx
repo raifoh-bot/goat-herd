@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getUrlFarmSlug, farmUrl, rootUrl, loadStoredFarmSlug, storeFarmSlug } from "@/lib/farm";
+import {
+  getUrlFarmSlug,
+  farmUrl,
+  rootUrl,
+  loadStoredFarmSlug,
+  storeFarmSlug,
+  readNextPath,
+} from "@/lib/farm";
 import { storeAuthToken } from "@/lib/token";
 
 export default function Login() {
@@ -64,8 +71,13 @@ export default function Login() {
           queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
 
           const isManager = user.role === "admin" || user.role === "owner";
+          // Return the user to the page they were headed to before being bounced
+          // to login (captured as `?next=` by the AuthGuard). Fall back to the
+          // dashboard, or Farm Settings for a first-time manager onboarding.
+          const nextPath = readNextPath(window.location.search ?? "");
           const landing =
-            user.firstLogin && isManager ? "/admin/settings?tab=farm" : "/";
+            nextPath ??
+            (user.firstLogin && isManager ? "/admin/settings?tab=farm" : "/");
 
           if (user.role === "superadmin") {
             // Superadmins live at the root, not under a farm prefix.

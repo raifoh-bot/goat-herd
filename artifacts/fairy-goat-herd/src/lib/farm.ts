@@ -45,6 +45,25 @@ export function rootUrl(path = "/"): string {
   return `${basePath()}${suffix}`;
 }
 
+/**
+ * Read and sanitize the post-login `next` destination from a query string.
+ * Returns a safe, base-relative in-app path (the value the AuthGuard captured),
+ * or null when absent/unsafe. Only internal root-relative paths are allowed;
+ * protocol-relative (`//`), backslash, and absolute URLs are rejected so a
+ * crafted `?next=` cannot turn login into an open redirect.
+ */
+export function readNextPath(search: string): string | null {
+  let next: string | null = null;
+  try {
+    next = new URLSearchParams(search).get("next");
+  } catch {
+    return null;
+  }
+  if (!next || !next.startsWith("/")) return null;
+  if (next.startsWith("//") || next.startsWith("/\\")) return null;
+  return next;
+}
+
 export function loadStoredFarmSlug(): string | null {
   try {
     const value = window.localStorage.getItem(STORAGE_KEY);

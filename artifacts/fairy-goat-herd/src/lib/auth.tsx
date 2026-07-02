@@ -30,7 +30,7 @@ export function useIsManager(): boolean {
 }
 
 export function AuthGuard({ children }: { children: ReactNode }) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { data: user, isLoading, error } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
@@ -50,10 +50,20 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       // router base (which already includes the farm slug on farm pages) and
       // never double-prefixes it.
       const slug = getUrlFarmSlug();
-      const target = slug ? farmUrl(slug, "/login") : rootUrl("/login");
+      const loginPath = slug ? farmUrl(slug, "/login") : rootUrl("/login");
+      // Remember the page they were trying to reach (base-relative, e.g.
+      // `/goats/123`) so login can return them there. Skip the dashboard and
+      // the login page itself — there's nothing useful to come back to.
+      const intended =
+        location && location !== "/" && !location.startsWith("/login")
+          ? location
+          : null;
+      const target = intended
+        ? `${loginPath}?next=${encodeURIComponent(intended)}`
+        : loginPath;
       setLocation(`~${target}`);
     }
-  }, [unauthenticated, setLocation, queryClient]);
+  }, [unauthenticated, setLocation, queryClient, location]);
 
   if (isLoading) {
     return (
