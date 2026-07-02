@@ -7,6 +7,7 @@ import {
   type AuthUser,
 } from "@workspace/api-client-react";
 import { GoatIcon } from "@/components/goat-icon";
+import { getUrlFarmSlug, farmUrl, rootUrl } from "@/lib/farm";
 
 type AuthContextValue = {
   user: AuthUser;
@@ -43,7 +44,14 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       // Without this, a cached user on /login would redirect back to "/",
       // which redirects back here — an infinite loop that crashes the app.
       queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
-      setLocation("/login");
+      // Keep signed-out farm members on their own farm's login page
+      // (`/<slug>/login`); root pages fall back to the global `/login`. We use
+      // wouter's `~` absolute-path escape so the target is independent of the
+      // router base (which already includes the farm slug on farm pages) and
+      // never double-prefixes it.
+      const slug = getUrlFarmSlug();
+      const target = slug ? farmUrl(slug, "/login") : rootUrl("/login");
+      setLocation(`~${target}`);
     }
   }, [unauthenticated, setLocation, queryClient]);
 

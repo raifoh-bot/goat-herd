@@ -15,6 +15,11 @@ vi.mock("wouter", () => ({
   useLocation: () => ["/", setLocationMock] as const,
 }));
 
+/** Point the browser URL at a path so getUrlFarmSlug() derives its farm slug. */
+function setPathname(pathname: string) {
+  window.history.replaceState({}, "", pathname);
+}
+
 vi.mock("@workspace/api-client-react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workspace/api-client-react")>();
   return {
@@ -48,10 +53,11 @@ beforeEach(() => {
   currentUser = undefined;
   currentIsLoading = false;
   currentError = undefined;
+  setPathname("/");
 });
 
 describe("AuthGuard — signed-out redirect", () => {
-  it("redirects to /login when there is no current user", async () => {
+  it("redirects to the root /login when there is no farm context", async () => {
     currentUser = undefined;
 
     renderWithClient(
@@ -61,7 +67,23 @@ describe("AuthGuard — signed-out redirect", () => {
     );
 
     await waitFor(() =>
-      expect(setLocationMock).toHaveBeenCalledWith("/login"),
+      expect(setLocationMock).toHaveBeenCalledWith("~/login"),
+    );
+    expect(screen.queryByText("protected content")).toBeNull();
+  });
+
+  it("redirects to the farm's own /<slug>/login when on a farm page", async () => {
+    currentUser = undefined;
+    setPathname("/smithfarm/goats");
+
+    renderWithClient(
+      <AuthGuard>
+        <div>protected content</div>
+      </AuthGuard>,
+    );
+
+    await waitFor(() =>
+      expect(setLocationMock).toHaveBeenCalledWith("~/smithfarm/login"),
     );
     expect(screen.queryByText("protected content")).toBeNull();
   });
@@ -77,7 +99,7 @@ describe("AuthGuard — signed-out redirect", () => {
     );
 
     await waitFor(() =>
-      expect(setLocationMock).toHaveBeenCalledWith("/login"),
+      expect(setLocationMock).toHaveBeenCalledWith("~/login"),
     );
     expect(screen.queryByText("protected content")).toBeNull();
   });
@@ -118,7 +140,7 @@ describe("AuthGuard — signed-out redirect", () => {
     );
 
     await waitFor(() =>
-      expect(setLocationMock).toHaveBeenCalledWith("/login"),
+      expect(setLocationMock).toHaveBeenCalledWith("~/login"),
     );
     await waitFor(() =>
       expect(client.getQueryData(AUTH_QUERY_KEY)).toBeNull(),
