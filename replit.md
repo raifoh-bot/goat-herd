@@ -74,10 +74,17 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 ## Multi-Tenancy
 
 - Every tenant table has a `farmId`; all reads/writes are scoped to the request's farm via the `farmId()` helper. Cross-farm access returns 404 (the row simply isn't in the tenant's scope).
+- **Path-based farm URLs**: each farm lives at `mygoatherd.com/<slug>/...` on a
+  single domain (no per-farm subdomain/DNS). The frontend derives the farm slug
+  from the first URL path segment (`src/lib/farm.ts`), mounts the wouter router
+  under `/<slug>`, and sources the `X-Farm-Slug` header from it. Root paths
+  (`/login`, `/register`, `/superadmin/*`) have no farm prefix. Reserved words
+  (route/platform words like `login`, `goats`, `admin`, `api`) can't be farm slugs
+  — enforced in `createFarm.ts` `RESERVED_SLUGS` and mirrored in `farm.ts`.
 - **Tenant resolution** (`resolveTenant` middleware), in order:
-  1. **Subdomain** — only when `FARM_BASE_DOMAIN` is set (production), e.g. `acme.example.com` → farm slug `acme`. The apex domain (no subdomain) is the super-admin context.
-  2. **`X-Farm-Slug` header** — used by the dev frontend and tooling.
-  3. **`session.farmSlug`** — persisted on login.
+  1. **Subdomain** — only when `FARM_BASE_DOMAIN` is set, e.g. `acme.example.com` → farm slug `acme`. Left in place but unused under path-based URLs.
+  2. **`X-Farm-Slug` header** — sent by the frontend, sourced from the URL slug (and by tooling/tests).
+  3. **`session.farmSlug`** — persisted on login (used when no header is sent, e.g. the root landing redirect).
 - Login persists `farmSlug` on the session; `requireAuth` verifies the authenticated user belongs to the resolved farm.
 - Existing pre-multi-tenant data is migrated into a `default` farm by the idempotent boot DDL (`ensureMultiTenant`). `default` is a reserved slug and cannot be self-registered.
 - Username uniqueness is **per-farm** (partial unique index on `(farm_id, username)`), plus a separate partial unique index on `username WHERE farm_id IS NULL` for super-admins. The legacy global `users` username unique constraint is dropped at boot.
@@ -112,6 +119,12 @@ SUPERADMIN_USERNAME=youruser SUPERADMIN_PASSWORD=yourpassword pnpm --filter @wor
 - `pnpm --filter @workspace/scripts run seed-superadmin` — seed the global super-admin (reads SUPERADMIN_USERNAME/SUPERADMIN_PASSWORD)
 
 ## Frontend Pages
+
+Farm pages are served under the farm's path prefix (`/<slug>/...`); the paths
+below are relative to that prefix. Root pages (`/login`, `/register`,
+`/superadmin/farms`) have no prefix. A farm member signs in at `/<slug>/login`
+(no Farm field); the root `/login` keeps a Farm field as a fallback that
+redirects to `/<slug>/...`.
 
 - `/` — Dashboard (stats, top producer, breed breakdown)
 - `/goats` — Herd list with filtering by status/breed

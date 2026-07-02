@@ -22,6 +22,13 @@ export const RESERVED_SLUGS = new Set([
   "assets",
   "health",
   "healthz",
+  // Top-level app route words: a farm slug is the first URL path segment, so
+  // these would shadow the app's own pages if used as a slug. Mirrored on the
+  // client in artifacts/fairy-goat-herd/src/lib/farm.ts.
+  "goats",
+  "breedings",
+  "inventory",
+  "lineage",
 ]);
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/;

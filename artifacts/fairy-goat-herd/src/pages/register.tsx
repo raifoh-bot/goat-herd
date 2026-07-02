@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useRegisterFarm } from "@workspace/api-client-react";
 import { GoatIcon } from "@/components/goat-icon";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { storeFarmSlug } from "@/lib/farm";
+import { farmUrl, isReservedSlug, storeFarmSlug } from "@/lib/farm";
 
 /** Turn a farm name into a URL-friendly slug suggestion. */
 function slugify(value: string): string {
@@ -20,7 +20,6 @@ function slugify(value: string): string {
 }
 
 export default function Register() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [farmName, setFarmName] = useState("");
@@ -45,6 +44,17 @@ export default function Register() {
       return;
     }
 
+    // A farm slug becomes the first URL path segment, so it can't be a word the
+    // app already routes (login, goats, admin, …). Mirror of the server check.
+    if (isReservedSlug(trimmedSlug)) {
+      toast({
+        title: "Farm address unavailable",
+        description: "That address is reserved. Please choose another.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     register.mutate(
       {
         data: {
@@ -56,13 +66,10 @@ export default function Register() {
       },
       {
         onSuccess: (farm) => {
-          // Pre-fill the farm for the login screen (dev preview uses X-Farm-Slug).
+          // Apply the new farm slug, then send the owner to their farm's own
+          // sign-in URL. A full-page navigation mounts the app under /<slug>.
           storeFarmSlug(farm.slug);
-          toast({
-            title: "Farm created",
-            description: `Welcome to MyGoatHerd! Sign in to ${farm.name}.`,
-          });
-          setLocation("/login");
+          window.location.assign(farmUrl(farm.slug, "/login"));
         },
         onError: (err) => {
           const conflict = (err as { status?: number })?.status === 409;

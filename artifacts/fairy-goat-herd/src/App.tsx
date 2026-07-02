@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthGuard, useAuth } from "@/lib/auth";
+import { basePath, getUrlFarmSlug, farmUrl } from "@/lib/farm";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -30,11 +32,41 @@ function SuperadminRoute() {
   return <SuperadminFarms />;
 }
 
+/**
+ * Root landing in the global (no-farm) context. Sends the authenticated user to
+ * their real home: superadmins to the platform panel, farm members to their
+ * farm's path-prefixed app (a full-page redirect so the router re-mounts under
+ * `/<slug>`). Unauthenticated visitors are bounced to login by the AuthGuard.
+ */
+function RootRedirect() {
+  const { user } = useAuth();
+  const farmSlug = user.role !== "superadmin" ? user.farmSlug : null;
+
+  useEffect(() => {
+    if (farmSlug) {
+      window.location.replace(farmUrl(farmSlug, "/"));
+    }
+  }, [farmSlug]);
+
+  if (user.role === "superadmin") {
+    return <Redirect to="/superadmin/farms" replace />;
+  }
+  return null;
+}
+
+function RootLanding() {
+  return (
+    <AuthGuard>
+      <RootRedirect />
+    </AuthGuard>
+  );
+}
+
+/** Authenticated farm pages, mounted under the active farm's `/<slug>` base. */
 function AuthenticatedRoutes() {
   return (
     <AuthGuard>
       <Switch>
-        <Route path="/superadmin/farms" component={SuperadminRoute} />
         <Route path="/" component={Dashboard} />
         <Route path="/goats" component={GoatsList} />
         <Route path="/goats/new" component={GoatNew} />
@@ -56,23 +88,49 @@ function AuthenticatedRoutes() {
   );
 }
 
-function Router() {
+/** Routes served under a farm's `/<slug>` prefix. */
+function FarmRouter() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
       <Route component={AuthenticatedRoutes} />
     </Switch>
   );
 }
 
+/** Routes served at the domain root (no farm): login fallback, register, superadmin. */
+function GlobalRouter() {
+  return (
+    <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/superadmin/farms">
+        <AuthGuard>
+          <SuperadminRoute />
+        </AuthGuard>
+      </Route>
+      <Route path="/" component={RootLanding} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function App() {
+  const base = basePath();
+  const farmSlug = getUrlFarmSlug();
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        {farmSlug ? (
+          <WouterRouter base={`${base}/${farmSlug}`}>
+            <FarmRouter />
+          </WouterRouter>
+        ) : (
+          <WouterRouter base={base}>
+            <GlobalRouter />
+          </WouterRouter>
+        )}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

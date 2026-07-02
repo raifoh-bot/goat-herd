@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { loadStoredFarmSlug, storeFarmSlug } from "@/lib/farm";
+import { getUrlFarmSlug, farmUrl, rootUrl, loadStoredFarmSlug, storeFarmSlug } from "@/lib/farm";
 import { storeAuthToken } from "@/lib/token";
 
 export default function Login() {
@@ -21,11 +21,20 @@ export default function Login() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // When the page is served under a farm's path (`/<slug>/login`), the URL
+  // already identifies the tenant — no Farm field is shown, and the slug set at
+  // app boot scopes the request. At the root `/login` there is no farm in the
+  // URL, so the Farm field is the fallback way to choose one.
+  const urlFarmSlug = getUrlFarmSlug();
+  const isFarmContext = urlFarmSlug !== null;
   const [farmSlug, setFarmSlugField] = useState(() => loadStoredFarmSlug() ?? "");
 
   const login = useLogin();
 
-  // If a valid session already exists, skip the login screen.
+  // If a valid session already exists, skip the login screen. Redirecting to "/"
+  // lands on the farm dashboard (farm context) or the root landing (global
+  // context), which forwards superadmins and farm members to their real home.
   const { data: currentUser } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey(), retry: false, staleTime: 30_000 },
   });
@@ -39,25 +48,42 @@ export default function Login() {
     e.preventDefault();
     if (!username.trim() || !password) return;
 
-    // Apply the chosen farm slug before logging in so the request is scoped to
-    // the right tenant in the dev preview (where there is no real subdomain).
-    storeFarmSlug(farmSlug.trim() || null);
+    // At the root fallback, apply the chosen farm slug before logging in so the
+    // request is scoped to the right tenant. In farm context the slug is already
+    // applied from the URL at boot.
+    if (!isFarmContext) {
+      storeFarmSlug(farmSlug.trim() || null);
+    }
 
     login.mutate(
       { data: { username: username.trim(), password } },
       {
         onSuccess: (user) => {
-          // Persist the server-confirmed farm slug (null for superadmins) and
-          // the bearer token used when the session cookie is blocked (iframe).
-          storeFarmSlug(user.farmSlug ?? null);
+          // Persist the bearer token used when the session cookie is blocked (iframe).
           storeAuthToken(user.token ?? null);
           queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
+
           const isManager = user.role === "admin" || user.role === "owner";
+          const landing =
+            user.firstLogin && isManager ? "/admin/settings?tab=farm" : "/";
+
           if (user.role === "superadmin") {
+            // Superadmins live at the root, not under a farm prefix.
+            storeFarmSlug(null);
             setLocation("/superadmin/farms");
-          } else if (user.firstLogin && isManager) {
-            // First-time farm admins land on Farm Settings to finish setup.
-            setLocation("/admin/settings?tab=farm");
+            return;
+          }
+
+          // Farm member: persist the server-confirmed slug.
+          storeFarmSlug(user.farmSlug ?? null);
+
+          if (isFarmContext) {
+            // Already under /<slug>; navigate within the farm router.
+            setLocation(landing);
+          } else if (user.farmSlug) {
+            // Logged in via the root fallback: switch into the farm's URL context
+            // with a full-page navigation so the router re-mounts under /<slug>.
+            window.location.assign(farmUrl(user.farmSlug, landing));
           } else {
             setLocation("/");
           }
@@ -83,25 +109,29 @@ export default function Login() {
             <GoatIcon className="h-8 w-8" />
           </div>
           <CardTitle className="font-serif text-2xl">MyGoatHerd</CardTitle>
-          <CardDescription>Sign in to manage your herd.</CardDescription>
+          <CardDescription>
+            {isFarmContext ? `Sign in to ${urlFarmSlug}.` : "Sign in to manage your herd."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="pb-10">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="farmSlug">Farm</Label>
-              <Input
-                id="farmSlug"
-                value={farmSlug}
-                onChange={(e) => setFarmSlugField(e.target.value)}
-                placeholder="your-farm"
-                autoComplete="off"
-                autoCapitalize="none"
-                spellCheck={false}
-              />
-              <p className="text-xs text-muted-foreground">
-                Your farm's address. Leave blank if you're a platform admin.
-              </p>
-            </div>
+            {!isFarmContext && (
+              <div className="space-y-2">
+                <Label htmlFor="farmSlug">Farm</Label>
+                <Input
+                  id="farmSlug"
+                  value={farmSlug}
+                  onChange={(e) => setFarmSlugField(e.target.value)}
+                  placeholder="your-farm"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your farm's address. Leave blank if you're a platform admin.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -130,9 +160,15 @@ export default function Login() {
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             New here?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
-              Register your farm
-            </Link>
+            {isFarmContext ? (
+              <a href={rootUrl("/register")} className="font-medium text-primary hover:underline">
+                Register your farm
+              </a>
+            ) : (
+              <Link href="/register" className="font-medium text-primary hover:underline">
+                Register your farm
+              </Link>
+            )}
           </p>
         </CardContent>
       </Card>
