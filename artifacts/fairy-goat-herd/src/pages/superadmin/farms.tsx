@@ -49,7 +49,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { storeFarmSlug } from "@/lib/farm";
+import { storeFarmSlug, farmUrl } from "@/lib/farm";
 import { storeAuthToken } from "@/lib/token";
 
 function slugify(value: string): string {
@@ -66,7 +66,11 @@ function formatDate(value?: string | null): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? "—"
-    : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    : date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
 }
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -100,7 +104,10 @@ function daysSince(value: string | null): number | null {
  * bands: green within `activeWithinDays`, yellow within `idleWithinDays`, red
  * beyond that (or never active).
  */
-function lastActiveColor(value: string | null, thresholds: PlatformThresholds | undefined): string {
+function lastActiveColor(
+  value: string | null,
+  thresholds: PlatformThresholds | undefined,
+): string {
   const days = daysSince(value);
   if (days === null) return "text-destructive";
   const active = thresholds?.activeWithinDays ?? 7;
@@ -117,7 +124,10 @@ function lastActiveColor(value: string | null, thresholds: PlatformThresholds | 
  * a brand-new farm from instantly appearing abandoned only because it has no
  * activity yet).
  */
-function isAbandoned(farm: SuperadminFarm, thresholds: PlatformThresholds | undefined): boolean {
+function isAbandoned(
+  farm: SuperadminFarm,
+  thresholds: PlatformThresholds | undefined,
+): boolean {
   if (!thresholds) return false;
   const reference = farm.lastActiveAt ?? farm.createdAt;
   const days = daysSince(reference ?? null);
@@ -145,7 +155,11 @@ const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
   { key: "createdAt", label: "Created" },
 ];
 
-function compareFarms(a: SuperadminFarm, b: SuperadminFarm, key: SortKey): number {
+function compareFarms(
+  a: SuperadminFarm,
+  b: SuperadminFarm,
+  key: SortKey,
+): number {
   switch (key) {
     case "name":
       return a.name.localeCompare(b.name);
@@ -177,6 +191,8 @@ function CreateFarmDialog() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const reset = () => {
     setName("");
@@ -184,12 +200,19 @@ function CreateFarmDialog() {
     setSlugEdited(false);
     setAdminUsername("");
     setAdminPassword("");
+    setCreatedSlug(null);
+    setCopied(false);
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmedSlug = slug.trim();
-    if (!name.trim() || !trimmedSlug || !adminUsername.trim() || adminPassword.length < 8) {
+    if (
+      !name.trim() ||
+      !trimmedSlug ||
+      !adminUsername.trim() ||
+      adminPassword.length < 8
+    ) {
       return;
     }
 
@@ -205,10 +228,14 @@ function CreateFarmDialog() {
       {
         onSuccess: (farm) => {
           queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
-          toast({ title: "Farm created", description: `${farm.name} is ready.` });
-          setOpen(false);
-          reset();
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
+          toast({
+            title: "Farm created",
+            description: `${farm.name} is ready.`,
+          });
+          setCreatedSlug(farm.slug);
         },
         onError: (err) => {
           const conflict = (err as { status?: number })?.status === 409;
@@ -236,76 +263,129 @@ function CreateFarmDialog() {
         <Button>New farm</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Create a farm</DialogTitle>
-            <DialogDescription>
-              Sets up a new farm and its first admin user.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Farm name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (!slugEdited) setSlug(slugify(e.target.value));
+        {createdSlug ? (
+          <div>
+            <DialogHeader>
+              <DialogTitle>Farm created</DialogTitle>
+              <DialogDescription>
+                Share this link with the farm's admin to let them sign in.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-4">
+              <Label htmlFor="farmLink">Farm link</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="farmLink"
+                  readOnly
+                  value={`${window.location.origin}${farmUrl(createdSlug)}`}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(
+                        `${window.location.origin}${farmUrl(createdSlug)}`,
+                      )
+                      .then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      });
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy link"}
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  reset();
                 }}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Farm address</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => {
-                  setSlugEdited(true);
-                  setSlug(slugify(e.target.value));
-                }}
-                minLength={3}
-                maxLength={32}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="adminUsername">Admin username</Label>
-              <Input
-                id="adminUsername"
-                value={adminUsername}
-                onChange={(e) => setAdminUsername(e.target.value)}
-                autoComplete="off"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="adminPassword">Admin password</Label>
-              <Input
-                id="adminPassword"
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </div>
+              >
+                Done
+              </Button>
+            </DialogFooter>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={createFarm.isPending}>
-              {createFarm.isPending ? "Creating…" : "Create farm"}
-            </Button>
-          </DialogFooter>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>Create a farm</DialogTitle>
+              <DialogDescription>
+                Sets up a new farm and its first admin user.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Farm name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (!slugEdited) setSlug(slugify(e.target.value));
+                  }}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">Farm address</Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlugEdited(true);
+                    setSlug(slugify(e.target.value));
+                  }}
+                  minLength={3}
+                  maxLength={32}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminUsername">Admin username</Label>
+                <Input
+                  id="adminUsername"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminPassword">Admin password</Label>
+                <Input
+                  id="adminPassword"
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={createFarm.isPending}>
+                {createFarm.isPending ? "Creating…" : "Create farm"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | undefined }) {
+function ThresholdsDialog({
+  thresholds,
+}: {
+  thresholds: PlatformThresholds | undefined;
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateSettings = useUpdatePlatformSettings();
@@ -337,11 +417,22 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
     e.preventDefault();
     if (!bandsValid) return;
     updateSettings.mutate(
-      { data: { abandonedAfterDays: abandoned, activeWithinDays: active, idleWithinDays: idle } },
+      {
+        data: {
+          abandonedAfterDays: abandoned,
+          activeWithinDays: active,
+          idleWithinDays: idle,
+        },
+      },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPlatformSettingsQueryKey() });
-          toast({ title: "Thresholds updated", description: "Status definitions saved." });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSettingsQueryKey(),
+          });
+          toast({
+            title: "Thresholds updated",
+            description: "Status definitions saved.",
+          });
           setOpen(false);
         },
         onError: () => {
@@ -374,12 +465,15 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
           <DialogHeader>
             <DialogTitle>Status thresholds</DialogTitle>
             <DialogDescription>
-              Define when a farm is flagged abandoned and how the last-active color bands are set.
+              Define when a farm is flagged abandoned and how the last-active
+              color bands are set.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="abandonedAfterDays">Abandoned after (days of inactivity)</Label>
+              <Label htmlFor="abandonedAfterDays">
+                Abandoned after (days of inactivity)
+              </Label>
               <Input
                 id="abandonedAfterDays"
                 type="number"
@@ -391,11 +485,14 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Farms with no activity for at least this many days are flagged “Abandoned”.
+                Farms with no activity for at least this many days are flagged
+                “Abandoned”.
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="activeWithinDays">Active within (days) — green</Label>
+              <Label htmlFor="activeWithinDays">
+                Active within (days) — green
+              </Label>
               <Input
                 id="activeWithinDays"
                 type="number"
@@ -407,7 +504,9 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="idleWithinDays">Idle within (days) — yellow</Label>
+              <Label htmlFor="idleWithinDays">
+                Idle within (days) — yellow
+              </Label>
               <Input
                 id="idleWithinDays"
                 type="number"
@@ -418,8 +517,8 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Within “active” shows green, within “idle” shows yellow, beyond shows red. Idle must
-                be greater than active.
+                Within “active” shows green, within “idle” shows yellow, beyond
+                shows red. Idle must be greater than active.
               </p>
             </div>
             {!bandsValid && (
@@ -429,7 +528,10 @@ function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | und
             )}
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={updateSettings.isPending || !bandsValid}>
+            <Button
+              type="submit"
+              disabled={updateSettings.isPending || !bandsValid}
+            >
               {updateSettings.isPending ? "Saving…" : "Save thresholds"}
             </Button>
           </DialogFooter>
@@ -453,7 +555,8 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
     setConfirmSlug("");
   };
 
-  const canDelete = reason.trim().length > 0 && confirmSlug.trim() === farm.slug;
+  const canDelete =
+    reason.trim().length > 0 && confirmSlug.trim() === farm.slug;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -463,8 +566,13 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
-          toast({ title: "Farm deleted", description: `${farm.name} has been removed.` });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
+          toast({
+            title: "Farm deleted",
+            description: `${farm.name} has been removed.`,
+          });
           setOpen(false);
           reset();
         },
@@ -488,7 +596,11 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+        >
           Delete
         </Button>
       </DialogTrigger>
@@ -497,8 +609,9 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
           <DialogHeader>
             <DialogTitle>Delete {farm.name}?</DialogTitle>
             <DialogDescription>
-              This removes the farm and blocks its users from signing in. The farm and its data are
-              retained in the deleted-farms record for auditing.
+              This removes the farm and blocks its users from signing in. The
+              farm and its data are retained in the deleted-farms record for
+              auditing.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -516,7 +629,9 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmSlug">
-                Type <span className="font-mono font-semibold">{farm.slug}</span> to confirm
+                Type{" "}
+                <span className="font-mono font-semibold">{farm.slug}</span> to
+                confirm
               </Label>
               <Input
                 id="confirmSlug"
@@ -561,7 +676,9 @@ function FarmRow({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
           toast({
             title: suspended ? "Farm reactivated" : "Farm suspended",
             description: farm.name,
@@ -584,7 +701,10 @@ function FarmRow({
         <div className="flex items-center gap-2">
           <div className="font-medium">{farm.name}</div>
           {abandoned && (
-            <Badge variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-500">
+            <Badge
+              variant="outline"
+              className="border-amber-500/50 text-amber-600 dark:text-amber-500"
+            >
               Abandoned
             </Badge>
           )}
@@ -592,12 +712,16 @@ function FarmRow({
         <div className="text-xs text-muted-foreground">{farm.slug}</div>
       </TableCell>
       <TableCell>
-        <Badge variant={suspended ? "destructive" : "secondary"}>{farm.status}</Badge>
+        <Badge variant={suspended ? "destructive" : "secondary"}>
+          {farm.status}
+        </Badge>
       </TableCell>
       <TableCell className="tabular-nums">{farm.userCount}</TableCell>
       <TableCell className="tabular-nums">{farm.goatCount}</TableCell>
       <TableCell className="tabular-nums">{farm.breedingCount}</TableCell>
-      <TableCell className={`text-sm font-medium ${lastActiveColor(farm.lastActiveAt, thresholds)}`}>
+      <TableCell
+        className={`text-sm font-medium ${lastActiveColor(farm.lastActiveAt, thresholds)}`}
+      >
         {formatRelative(farm.lastActiveAt)}
       </TableCell>
       <TableCell>{formatDate(farm.createdAt)}</TableCell>
@@ -625,7 +749,8 @@ function DeletedFarmsSection({ farms }: { farms: SuperadminFarm[] }) {
       <CardHeader>
         <CardTitle>Deleted farms</CardTitle>
         <CardDescription>
-          Removed farms are kept here for auditing. Their users can no longer sign in.
+          Removed farms are kept here for auditing. Their users can no longer
+          sign in.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -643,12 +768,16 @@ function DeletedFarmsSection({ farms }: { farms: SuperadminFarm[] }) {
               <TableRow key={farm.id}>
                 <TableCell>
                   <div className="font-medium">{farm.name}</div>
-                  <div className="text-xs text-muted-foreground">{farm.slug}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {farm.slug}
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
                   {formatDate(farm.deletedAt)}
                 </TableCell>
-                <TableCell className="text-sm">{farm.deletedByUsername ?? "—"}</TableCell>
+                <TableCell className="text-sm">
+                  {farm.deletedByUsername ?? "—"}
+                </TableCell>
                 <TableCell className="max-w-xs text-sm text-muted-foreground">
                   {farm.deletedReason ?? "—"}
                 </TableCell>
@@ -665,7 +794,11 @@ export default function SuperadminFarms() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const logout = useLogout();
-  const { data: farms, isLoading, error } = useListFarms({
+  const {
+    data: farms,
+    isLoading,
+    error,
+  } = useListFarms({
     query: { queryKey: getListFarmsQueryKey(), retry: false },
   });
   const { data: summary } = useGetPlatformSummary({
@@ -687,12 +820,18 @@ export default function SuperadminFarms() {
     }
   };
 
-  const activeFarms = useMemo(() => (farms ?? []).filter((f) => !f.deletedAt), [farms]);
+  const activeFarms = useMemo(
+    () => (farms ?? []).filter((f) => !f.deletedAt),
+    [farms],
+  );
   const deletedFarms = useMemo(
     () =>
       (farms ?? [])
         .filter((f) => f.deletedAt)
-        .sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()),
+        .sort(
+          (a, b) =>
+            new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime(),
+        ),
     [farms],
   );
 
@@ -721,11 +860,19 @@ export default function SuperadminFarms() {
               <GoatIcon className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-serif text-lg font-semibold">Platform admin</h1>
-              <p className="text-xs text-muted-foreground">Manage every farm on MyGoatHerd</p>
+              <h1 className="font-serif text-lg font-semibold">
+                Platform admin
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Manage every farm on MyGoatHerd
+              </p>
             </div>
           </div>
-          <Button variant="ghost" onClick={handleLogout} disabled={logout.isPending}>
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            disabled={logout.isPending}
+          >
             Sign out
           </Button>
         </div>
@@ -736,7 +883,9 @@ export default function SuperadminFarms() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total farms</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">{summary?.totalFarms ?? "—"}</CardTitle>
+              <CardTitle className="text-3xl tabular-nums">
+                {summary?.totalFarms ?? "—"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">
               {summary
@@ -747,30 +896,44 @@ export default function SuperadminFarms() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total users</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">{summary?.totalUsers ?? "—"}</CardTitle>
+              <CardTitle className="text-3xl tabular-nums">
+                {summary?.totalUsers ?? "—"}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">across all farms</CardContent>
+            <CardContent className="text-xs text-muted-foreground">
+              across all farms
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total goats</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">{summary?.totalGoats ?? "—"}</CardTitle>
+              <CardTitle className="text-3xl tabular-nums">
+                {summary?.totalGoats ?? "—"}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">across all farms</CardContent>
+            <CardContent className="text-xs text-muted-foreground">
+              across all farms
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>New this month</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">{summary?.farmsThisMonth ?? "—"}</CardTitle>
+              <CardTitle className="text-3xl tabular-nums">
+                {summary?.farmsThisMonth ?? "—"}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">farms registered</CardContent>
+            <CardContent className="text-xs text-muted-foreground">
+              farms registered
+            </CardContent>
           </Card>
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <div>
               <CardTitle>Farms</CardTitle>
-              <CardDescription>All registered farms and their activity.</CardDescription>
+              <CardDescription>
+                All registered farms and their activity.
+              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <ThresholdsDialog thresholds={thresholds} />
@@ -779,7 +942,9 @@ export default function SuperadminFarms() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Loading farms…</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Loading farms…
+              </p>
             ) : error ? (
               <p className="py-8 text-center text-sm text-destructive">
                 Could not load farms. You may not have access.
@@ -795,7 +960,10 @@ export default function SuperadminFarms() {
                     {COLUMNS.map((col) => {
                       const activeSort = sortKey === col.key;
                       return (
-                        <TableHead key={col.key} className={col.numeric ? "tabular-nums" : undefined}>
+                        <TableHead
+                          key={col.key}
+                          className={col.numeric ? "tabular-nums" : undefined}
+                        >
                           <button
                             type="button"
                             onClick={() => toggleSort(col.key)}
@@ -820,7 +988,11 @@ export default function SuperadminFarms() {
                 </TableHeader>
                 <TableBody>
                   {sortedFarms.map((farm) => (
-                    <FarmRow key={farm.id} farm={farm} thresholds={thresholds} />
+                    <FarmRow
+                      key={farm.id}
+                      farm={farm}
+                      thresholds={thresholds}
+                    />
                   ))}
                 </TableBody>
               </Table>
