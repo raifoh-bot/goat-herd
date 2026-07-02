@@ -32,6 +32,7 @@ import type {
   CreateSemenStrawBody,
   CreateUserBody,
   DashboardSummary,
+  DeleteFarmBody,
   ErrorEnvelope,
   Farm,
   FarmSettings,
@@ -50,6 +51,7 @@ import type {
   LoginBody,
   LoginResponse,
   PlatformSummary,
+  PlatformThresholds,
   RegisterFarmBody,
   SemenStraw,
   SetUserPasswordBody,
@@ -61,6 +63,7 @@ import type {
   UpdateFarmSettingsBody,
   UpdateGoatBody,
   UpdateKidBody,
+  UpdatePlatformThresholdsBody,
   UpdateSemenStrawBody,
   UpdateUserBody,
   UploadUrlRequest,
@@ -3310,6 +3313,168 @@ export function useGetPlatformSummary<
 }
 
 /**
+ * @summary Get platform status thresholds (superadmin only)
+ */
+export const getGetPlatformSettingsUrl = () => {
+  return `/api/superadmin/settings`;
+};
+
+export const getPlatformSettings = async (
+  options?: RequestInit,
+): Promise<PlatformThresholds> => {
+  return customFetch<PlatformThresholds>(getGetPlatformSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPlatformSettingsQueryKey = () => {
+  return [`/api/superadmin/settings`] as const;
+};
+
+export const getGetPlatformSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlatformSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPlatformSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPlatformSettings>>
+  > = ({ signal }) => getPlatformSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPlatformSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlatformSettings>>
+>;
+export type GetPlatformSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get platform status thresholds (superadmin only)
+ */
+
+export function useGetPlatformSettings<
+  TData = Awaited<ReturnType<typeof getPlatformSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPlatformSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPlatformSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update platform status thresholds (superadmin only)
+ */
+export const getUpdatePlatformSettingsUrl = () => {
+  return `/api/superadmin/settings`;
+};
+
+export const updatePlatformSettings = async (
+  updatePlatformThresholdsBody: UpdatePlatformThresholdsBody,
+  options?: RequestInit,
+): Promise<PlatformThresholds> => {
+  return customFetch<PlatformThresholds>(getUpdatePlatformSettingsUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePlatformThresholdsBody),
+  });
+};
+
+export const getUpdatePlatformSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePlatformSettings>>,
+    TError,
+    { data: BodyType<UpdatePlatformThresholdsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePlatformSettings>>,
+  TError,
+  { data: BodyType<UpdatePlatformThresholdsBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePlatformSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePlatformSettings>>,
+    { data: BodyType<UpdatePlatformThresholdsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updatePlatformSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePlatformSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePlatformSettings>>
+>;
+export type UpdatePlatformSettingsMutationBody =
+  BodyType<UpdatePlatformThresholdsBody>;
+export type UpdatePlatformSettingsMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Update platform status thresholds (superadmin only)
+ */
+export const useUpdatePlatformSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePlatformSettings>>,
+    TError,
+    { data: BodyType<UpdatePlatformThresholdsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePlatformSettings>>,
+  TError,
+  { data: BodyType<UpdatePlatformThresholdsBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePlatformSettingsMutationOptions(options));
+};
+
+/**
  * @summary List all farms (superadmin only)
  */
 export const getListFarmsUrl = () => {
@@ -3547,6 +3712,93 @@ export const useUpdateFarm = <
   TContext
 > => {
   return useMutation(getUpdateFarmMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a farm with a recorded reason (superadmin only)
+ */
+export const getDeleteFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/delete`;
+};
+
+export const deleteFarm = async (
+  id: number,
+  deleteFarmBody: DeleteFarmBody,
+  options?: RequestInit,
+): Promise<SuperadminFarm> => {
+  return customFetch<SuperadminFarm>(getDeleteFarmUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(deleteFarmBody),
+  });
+};
+
+export const getDeleteFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFarm>>,
+    TError,
+    { id: number; data: BodyType<DeleteFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFarm>>,
+  TError,
+  { id: number; data: BodyType<DeleteFarmBody> },
+  TContext
+> => {
+  const mutationKey = ["deleteFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFarm>>,
+    { id: number; data: BodyType<DeleteFarmBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return deleteFarm(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFarm>>
+>;
+export type DeleteFarmMutationBody = BodyType<DeleteFarmBody>;
+export type DeleteFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Soft-delete a farm with a recorded reason (superadmin only)
+ */
+export const useDeleteFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFarm>>,
+    TError,
+    { id: number; data: BodyType<DeleteFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFarm>>,
+  TError,
+  { id: number; data: BodyType<DeleteFarmBody> },
+  TContext
+> => {
+  return useMutation(getDeleteFarmMutationOptions(options));
 };
 
 /**

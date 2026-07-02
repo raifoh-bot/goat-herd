@@ -12,4 +12,5 @@
 - [Drizzle unique constraint naming](drizzle-unique-constraint-naming.md) — .unique() makes `<table>_<col>_key` not `_unique`; dropping wrong name leaves it live → runtime 500 on per-tenant dupes.
 - [api-server dev has no watch](api-server-dev-no-watch.md) — dev workflow is a one-shot esbuild bundle; server edits need a workflow restart or you see stale shapes / phantom 404s.
 - [Personal vs farm dashboard layout](personal-vs-farm-layout.md) — per-user override must preserve null (=use farm default); only the farm normalizer expands null to all-visible.
+- [Singleton config tables](singleton-config-table.md) — pin to fixed PK + atomic upsert (not read-then-insert); enforce cross-field invariants server-side, not only in UI.
 - [Dashboard widget dual catalog](dashboard-widget-dual-catalog.md) — frontend+server widget lists must stay in sync; opt-in widgets append hidden in both normalizers; settings.test asserts exact layout.

@@ -1828,6 +1828,97 @@ export const GetPlatformSummaryResponse = zod.object({
 });
 
 /**
+ * @summary Get platform status thresholds (superadmin only)
+ */
+export const getPlatformSettingsResponseAbandonedAfterDaysMax = 3650;
+
+export const getPlatformSettingsResponseActiveWithinDaysMax = 3650;
+
+export const getPlatformSettingsResponseIdleWithinDaysMax = 3650;
+
+export const GetPlatformSettingsResponse = zod
+  .object({
+    abandonedAfterDays: zod
+      .number()
+      .min(1)
+      .max(getPlatformSettingsResponseAbandonedAfterDaysMax)
+      .describe(
+        'A farm inactive for at least this many days is flagged \"Abandoned\".',
+      ),
+    activeWithinDays: zod
+      .number()
+      .min(1)
+      .max(getPlatformSettingsResponseActiveWithinDaysMax)
+      .describe("Last-active within this many days shows green."),
+    idleWithinDays: zod
+      .number()
+      .min(1)
+      .max(getPlatformSettingsResponseIdleWithinDaysMax)
+      .describe(
+        "Last-active within this many days shows yellow; beyond it shows red.",
+      ),
+  })
+  .describe(
+    "Super-admin-configurable thresholds that define farm health statuses.",
+  );
+
+/**
+ * @summary Update platform status thresholds (superadmin only)
+ */
+export const updatePlatformSettingsBodyAbandonedAfterDaysMax = 3650;
+
+export const updatePlatformSettingsBodyActiveWithinDaysMax = 3650;
+
+export const updatePlatformSettingsBodyIdleWithinDaysMax = 3650;
+
+export const UpdatePlatformSettingsBody = zod.object({
+  abandonedAfterDays: zod
+    .number()
+    .min(1)
+    .max(updatePlatformSettingsBodyAbandonedAfterDaysMax),
+  activeWithinDays: zod
+    .number()
+    .min(1)
+    .max(updatePlatformSettingsBodyActiveWithinDaysMax),
+  idleWithinDays: zod
+    .number()
+    .min(1)
+    .max(updatePlatformSettingsBodyIdleWithinDaysMax),
+});
+
+export const updatePlatformSettingsResponseAbandonedAfterDaysMax = 3650;
+
+export const updatePlatformSettingsResponseActiveWithinDaysMax = 3650;
+
+export const updatePlatformSettingsResponseIdleWithinDaysMax = 3650;
+
+export const UpdatePlatformSettingsResponse = zod
+  .object({
+    abandonedAfterDays: zod
+      .number()
+      .min(1)
+      .max(updatePlatformSettingsResponseAbandonedAfterDaysMax)
+      .describe(
+        'A farm inactive for at least this many days is flagged \"Abandoned\".',
+      ),
+    activeWithinDays: zod
+      .number()
+      .min(1)
+      .max(updatePlatformSettingsResponseActiveWithinDaysMax)
+      .describe("Last-active within this many days shows green."),
+    idleWithinDays: zod
+      .number()
+      .min(1)
+      .max(updatePlatformSettingsResponseIdleWithinDaysMax)
+      .describe(
+        "Last-active within this many days shows yellow; beyond it shows red.",
+      ),
+  })
+  .describe(
+    "Super-admin-configurable thresholds that define farm health statuses.",
+  );
+
+/**
  * @summary List all farms (superadmin only)
  */
 export const ListFarmsResponseItem = zod.object({
@@ -1846,6 +1937,18 @@ export const ListFarmsResponseItem = zod.object({
     .describe(
       "Most recent session activity for any user in this farm. Null when the farm has never had a session.",
     ),
+  deletedAt: zod.coerce
+    .date()
+    .nullable()
+    .describe("When the farm was soft-deleted, or null if it is still active."),
+  deletedReason: zod
+    .string()
+    .nullable()
+    .describe("The reason recorded when the farm was deleted."),
+  deletedByUsername: zod
+    .string()
+    .nullable()
+    .describe("Username of the super-admin who deleted the farm."),
 });
 export const ListFarmsResponse = zod.array(ListFarmsResponseItem);
 
@@ -1882,6 +1985,53 @@ export const UpdateFarmResponse = zod.object({
   slug: zod.string(),
   name: zod.string(),
   status: zod.enum(["active", "suspended"]),
+});
+
+/**
+ * @summary Soft-delete a farm with a recorded reason (superadmin only)
+ */
+export const DeleteFarmParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const deleteFarmBodyReasonMax = 500;
+
+export const DeleteFarmBody = zod.object({
+  reason: zod
+    .string()
+    .min(1)
+    .max(deleteFarmBodyReasonMax)
+    .describe("Why the farm is being deleted. Recorded for the audit trail."),
+});
+
+export const DeleteFarmResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  status: zod.enum(["active", "suspended"]),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+  userCount: zod.number(),
+  goatCount: zod.number(),
+  breedingCount: zod.number(),
+  lastActiveAt: zod.coerce
+    .date()
+    .nullable()
+    .describe(
+      "Most recent session activity for any user in this farm. Null when the farm has never had a session.",
+    ),
+  deletedAt: zod.coerce
+    .date()
+    .nullable()
+    .describe("When the farm was soft-deleted, or null if it is still active."),
+  deletedReason: zod
+    .string()
+    .nullable()
+    .describe("The reason recorded when the farm was deleted."),
+  deletedByUsername: zod
+    .string()
+    .nullable()
+    .describe("Username of the super-admin who deleted the farm."),
 });
 
 /**

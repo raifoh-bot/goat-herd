@@ -12,6 +12,12 @@ export const farmsTable = pgTable("farms", {
   status: text("status", { enum: farmStatuses }).notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  // Soft-delete audit trail. A non-null `deletedAt` hides the farm from the
+  // active roster and blocks its users from signing in, while preserving the
+  // record (and reason) of the deletion for the super-admin.
+  deletedAt: timestamp("deleted_at"),
+  deletedReason: text("deleted_reason"),
+  deletedByUsername: text("deleted_by_username"),
 });
 
 export const insertFarmSchema = createInsertSchema(farmsTable).omit({

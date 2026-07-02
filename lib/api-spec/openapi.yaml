@@ -818,6 +818,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlatformSummary"
 
+  /superadmin/settings:
+    get:
+      operationId: getPlatformSettings
+      tags: [superadmin]
+      summary: Get platform status thresholds (superadmin only)
+      responses:
+        "200":
+          description: The current platform thresholds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformThresholds"
+    put:
+      operationId: updatePlatformSettings
+      tags: [superadmin]
+      summary: Update platform status thresholds (superadmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlatformThresholdsBody"
+      responses:
+        "200":
+          description: The updated platform thresholds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformThresholds"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /superadmin/farms:
     get:
       operationId: listFarms
@@ -886,6 +922,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Farm"
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms/{id}/delete:
+    post:
+      operationId: deleteFarm
+      tags: [superadmin]
+      summary: Soft-delete a farm with a recorded reason (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteFarmBody"
+      responses:
+        "200":
+          description: The deleted farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperadminFarm"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: Farm not found
           content:
@@ -2343,6 +2416,19 @@ components:
           format: date-time
           nullable: true
           description: Most recent session activity for any user in this farm. Null when the farm has never had a session.
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the farm was soft-deleted, or null if it is still active.
+        deletedReason:
+          type: string
+          nullable: true
+          description: The reason recorded when the farm was deleted.
+        deletedByUsername:
+          type: string
+          nullable: true
+          description: Username of the super-admin who deleted the farm.
       required:
         - id
         - slug
@@ -2352,6 +2438,9 @@ components:
         - goatCount
         - breedingCount
         - lastActiveAt
+        - deletedAt
+        - deletedReason
+        - deletedByUsername
 
     PlatformSummary:
       type: object
@@ -2376,6 +2465,61 @@ components:
         - totalUsers
         - totalGoats
         - farmsThisMonth
+
+    PlatformThresholds:
+      type: object
+      description: Super-admin-configurable thresholds that define farm health statuses.
+      properties:
+        abandonedAfterDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: A farm inactive for at least this many days is flagged "Abandoned".
+        activeWithinDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: Last-active within this many days shows green.
+        idleWithinDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: Last-active within this many days shows yellow; beyond it shows red.
+      required:
+        - abandonedAfterDays
+        - activeWithinDays
+        - idleWithinDays
+
+    UpdatePlatformThresholdsBody:
+      type: object
+      properties:
+        abandonedAfterDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        activeWithinDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        idleWithinDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+      required:
+        - abandonedAfterDays
+        - activeWithinDays
+        - idleWithinDays
+
+    DeleteFarmBody:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Why the farm is being deleted. Recorded for the audit trail.
+      required:
+        - reason
 
     RegisterFarmBody:
       type: object

@@ -1,22 +1,29 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListFarms,
   useGetPlatformSummary,
+  useGetPlatformSettings,
+  useUpdatePlatformSettings,
   useCreateFarm,
   useUpdateFarm,
+  useDeleteFarm,
   useLogout,
   getListFarmsQueryKey,
   getGetPlatformSummaryQueryKey,
+  getGetPlatformSettingsQueryKey,
   getGetCurrentUserQueryKey,
   type SuperadminFarm,
+  type PlatformThresholds,
 } from "@workspace/api-client-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Settings2 } from "lucide-react";
 import { GoatIcon } from "@/components/goat-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -54,7 +61,7 @@ function slugify(value: string): string {
     .slice(0, 32);
 }
 
-function formatDate(value?: string): string {
+function formatDate(value?: string | null): string {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -78,15 +85,85 @@ function formatRelative(value: string | null): string {
   return years === 1 ? "1 year ago" : `${years} years ago`;
 }
 
-/** Tailwind text color for last-active age: green <7d, yellow <30d, red older/never. */
-function lastActiveColor(value: string | null): string {
-  if (!value) return "text-destructive";
+/**
+ * Whole-day gap between `value` and now, or null when there is no timestamp.
+ */
+function daysSince(value: string | null): number | null {
+  if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "text-destructive";
-  const days = (Date.now() - date.getTime()) / DAY_MS;
-  if (days < 7) return "text-green-600 dark:text-green-500";
-  if (days < 30) return "text-yellow-600 dark:text-yellow-500";
+  if (Number.isNaN(date.getTime())) return null;
+  return (Date.now() - date.getTime()) / DAY_MS;
+}
+
+/**
+ * Tailwind text color for last-active age, using the super-admin's configured
+ * bands: green within `activeWithinDays`, yellow within `idleWithinDays`, red
+ * beyond that (or never active).
+ */
+function lastActiveColor(value: string | null, thresholds: PlatformThresholds | undefined): string {
+  const days = daysSince(value);
+  if (days === null) return "text-destructive";
+  const active = thresholds?.activeWithinDays ?? 7;
+  const idle = thresholds?.idleWithinDays ?? 30;
+  if (days < active) return "text-green-600 dark:text-green-500";
+  if (days < idle) return "text-yellow-600 dark:text-yellow-500";
   return "text-destructive";
+}
+
+/**
+ * A farm is "Abandoned" when it has been inactive for at least
+ * `abandonedAfterDays`. Inactivity is measured from the farm's last activity, or
+ * from its creation date when it has never been active (the creation floor stops
+ * a brand-new farm from instantly appearing abandoned only because it has no
+ * activity yet).
+ */
+function isAbandoned(farm: SuperadminFarm, thresholds: PlatformThresholds | undefined): boolean {
+  if (!thresholds) return false;
+  const reference = farm.lastActiveAt ?? farm.createdAt;
+  const days = daysSince(reference ?? null);
+  if (days === null) return false;
+  return days >= thresholds.abandonedAfterDays;
+}
+
+type SortKey =
+  | "name"
+  | "status"
+  | "userCount"
+  | "goatCount"
+  | "breedingCount"
+  | "lastActiveAt"
+  | "createdAt";
+type SortDir = "asc" | "desc";
+
+const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
+  { key: "name", label: "Farm" },
+  { key: "status", label: "Status" },
+  { key: "userCount", label: "Users", numeric: true },
+  { key: "goatCount", label: "Goats", numeric: true },
+  { key: "breedingCount", label: "Breedings", numeric: true },
+  { key: "lastActiveAt", label: "Last active" },
+  { key: "createdAt", label: "Created" },
+];
+
+function compareFarms(a: SuperadminFarm, b: SuperadminFarm, key: SortKey): number {
+  switch (key) {
+    case "name":
+      return a.name.localeCompare(b.name);
+    case "status":
+      return a.status.localeCompare(b.status);
+    case "userCount":
+    case "goatCount":
+    case "breedingCount":
+      return a[key] - b[key];
+    case "lastActiveAt":
+    case "createdAt": {
+      const av = a[key] ? new Date(a[key] as string).getTime() : 0;
+      const bv = b[key] ? new Date(b[key] as string).getTime() : 0;
+      return av - bv;
+    }
+    default:
+      return 0;
+  }
 }
 
 function CreateFarmDialog() {
@@ -228,13 +305,255 @@ function CreateFarmDialog() {
   );
 }
 
-function FarmRow({ farm }: { farm: SuperadminFarm }) {
+function ThresholdsDialog({ thresholds }: { thresholds: PlatformThresholds | undefined }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateSettings = useUpdatePlatformSettings();
+
+  const [open, setOpen] = useState(false);
+  const [abandonedAfterDays, setAbandonedAfterDays] = useState("90");
+  const [activeWithinDays, setActiveWithinDays] = useState("7");
+  const [idleWithinDays, setIdleWithinDays] = useState("30");
+
+  // Load the current values whenever the dialog opens.
+  const syncFromThresholds = () => {
+    setAbandonedAfterDays(String(thresholds?.abandonedAfterDays ?? 90));
+    setActiveWithinDays(String(thresholds?.activeWithinDays ?? 7));
+    setIdleWithinDays(String(thresholds?.idleWithinDays ?? 30));
+  };
+
+  const active = Number(activeWithinDays);
+  const idle = Number(idleWithinDays);
+  const abandoned = Number(abandonedAfterDays);
+  const bandsValid =
+    Number.isInteger(active) &&
+    Number.isInteger(idle) &&
+    Number.isInteger(abandoned) &&
+    active >= 1 &&
+    idle > active &&
+    abandoned >= 1;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!bandsValid) return;
+    updateSettings.mutate(
+      { data: { abandonedAfterDays: abandoned, activeWithinDays: active, idleWithinDays: idle } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPlatformSettingsQueryKey() });
+          toast({ title: "Thresholds updated", description: "Status definitions saved." });
+          setOpen(false);
+        },
+        onError: () => {
+          toast({
+            title: "Could not save",
+            description: "Please check the values and try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) syncFromThresholds();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Settings2 className="mr-2 h-4 w-4" />
+          Status thresholds
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Status thresholds</DialogTitle>
+            <DialogDescription>
+              Define when a farm is flagged abandoned and how the last-active color bands are set.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="abandonedAfterDays">Abandoned after (days of inactivity)</Label>
+              <Input
+                id="abandonedAfterDays"
+                type="number"
+                min={1}
+                max={3650}
+                value={abandonedAfterDays}
+                onChange={(e) => setAbandonedAfterDays(e.target.value)}
+                required
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Farms with no activity for at least this many days are flagged “Abandoned”.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="activeWithinDays">Active within (days) — green</Label>
+              <Input
+                id="activeWithinDays"
+                type="number"
+                min={1}
+                max={3650}
+                value={activeWithinDays}
+                onChange={(e) => setActiveWithinDays(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="idleWithinDays">Idle within (days) — yellow</Label>
+              <Input
+                id="idleWithinDays"
+                type="number"
+                min={1}
+                max={3650}
+                value={idleWithinDays}
+                onChange={(e) => setIdleWithinDays(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Within “active” shows green, within “idle” shows yellow, beyond shows red. Idle must
+                be greater than active.
+              </p>
+            </div>
+            {!bandsValid && (
+              <p className="text-xs text-destructive">
+                Enter whole numbers ≥ 1, with idle greater than active.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={updateSettings.isPending || !bandsValid}>
+              {updateSettings.isPending ? "Saving…" : "Save thresholds"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const deleteFarm = useDeleteFarm();
+
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [confirmSlug, setConfirmSlug] = useState("");
+
+  const reset = () => {
+    setReason("");
+    setConfirmSlug("");
+  };
+
+  const canDelete = reason.trim().length > 0 && confirmSlug.trim() === farm.slug;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!canDelete) return;
+    deleteFarm.mutate(
+      { id: farm.id, data: { reason: reason.trim() } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPlatformSummaryQueryKey() });
+          toast({ title: "Farm deleted", description: `${farm.name} has been removed.` });
+          setOpen(false);
+          reset();
+        },
+        onError: () => {
+          toast({
+            title: "Could not delete farm",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+          Delete
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Delete {farm.name}?</DialogTitle>
+            <DialogDescription>
+              This removes the farm and blocks its users from signing in. The farm and its data are
+              retained in the deleted-farms record for auditing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deleteReason">Reason for deletion</Label>
+              <Textarea
+                id="deleteReason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                maxLength={500}
+                placeholder="e.g. Duplicate account, requested by owner…"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmSlug">
+                Type <span className="font-mono font-semibold">{farm.slug}</span> to confirm
+              </Label>
+              <Input
+                id="confirmSlug"
+                value={confirmSlug}
+                onChange={(e) => setConfirmSlug(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={deleteFarm.isPending || !canDelete}
+            >
+              {deleteFarm.isPending ? "Deleting…" : "Delete farm"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FarmRow({
+  farm,
+  thresholds,
+}: {
+  farm: SuperadminFarm;
+  thresholds: PlatformThresholds | undefined;
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateFarm = useUpdateFarm();
 
   const suspended = farm.status === "suspended";
-  const abandoned = farm.goatCount === 0 || farm.userCount === 0;
+  const abandoned = isAbandoned(farm, thresholds);
 
   const toggleStatus = () => {
     updateFarm.mutate(
@@ -278,21 +597,67 @@ function FarmRow({ farm }: { farm: SuperadminFarm }) {
       <TableCell className="tabular-nums">{farm.userCount}</TableCell>
       <TableCell className="tabular-nums">{farm.goatCount}</TableCell>
       <TableCell className="tabular-nums">{farm.breedingCount}</TableCell>
-      <TableCell className={`text-sm font-medium ${lastActiveColor(farm.lastActiveAt)}`}>
+      <TableCell className={`text-sm font-medium ${lastActiveColor(farm.lastActiveAt, thresholds)}`}>
         {formatRelative(farm.lastActiveAt)}
       </TableCell>
       <TableCell>{formatDate(farm.createdAt)}</TableCell>
       <TableCell className="text-right">
-        <Button
-          variant={suspended ? "default" : "outline"}
-          size="sm"
-          onClick={toggleStatus}
-          disabled={updateFarm.isPending}
-        >
-          {suspended ? "Reactivate" : "Suspend"}
-        </Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant={suspended ? "default" : "outline"}
+            size="sm"
+            onClick={toggleStatus}
+            disabled={updateFarm.isPending}
+          >
+            {suspended ? "Reactivate" : "Suspend"}
+          </Button>
+          <DeleteFarmDialog farm={farm} />
+        </div>
       </TableCell>
     </TableRow>
+  );
+}
+
+function DeletedFarmsSection({ farms }: { farms: SuperadminFarm[] }) {
+  if (farms.length === 0) return null;
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>Deleted farms</CardTitle>
+        <CardDescription>
+          Removed farms are kept here for auditing. Their users can no longer sign in.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Farm</TableHead>
+              <TableHead>Deleted</TableHead>
+              <TableHead>By</TableHead>
+              <TableHead>Reason</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {farms.map((farm) => (
+              <TableRow key={farm.id}>
+                <TableCell>
+                  <div className="font-medium">{farm.name}</div>
+                  <div className="text-xs text-muted-foreground">{farm.slug}</div>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {formatDate(farm.deletedAt)}
+                </TableCell>
+                <TableCell className="text-sm">{farm.deletedByUsername ?? "—"}</TableCell>
+                <TableCell className="max-w-xs text-sm text-muted-foreground">
+                  {farm.deletedReason ?? "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -306,6 +671,35 @@ export default function SuperadminFarms() {
   const { data: summary } = useGetPlatformSummary({
     query: { queryKey: getGetPlatformSummaryQueryKey(), retry: false },
   });
+  const { data: thresholds } = useGetPlatformSettings({
+    query: { queryKey: getGetPlatformSettingsQueryKey(), retry: false },
+  });
+
+  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "name" || key === "status" ? "asc" : "desc");
+    }
+  };
+
+  const activeFarms = useMemo(() => (farms ?? []).filter((f) => !f.deletedAt), [farms]);
+  const deletedFarms = useMemo(
+    () =>
+      (farms ?? [])
+        .filter((f) => f.deletedAt)
+        .sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime()),
+    [farms],
+  );
+
+  const sortedFarms = useMemo(() => {
+    const list = [...activeFarms].sort((a, b) => compareFarms(a, b, sortKey));
+    return sortDir === "asc" ? list : list.reverse();
+  }, [activeFarms, sortKey, sortDir]);
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -378,7 +772,10 @@ export default function SuperadminFarms() {
               <CardTitle>Farms</CardTitle>
               <CardDescription>All registered farms and their activity.</CardDescription>
             </div>
-            <CreateFarmDialog />
+            <div className="flex items-center gap-2">
+              <ThresholdsDialog thresholds={thresholds} />
+              <CreateFarmDialog />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -387,7 +784,7 @@ export default function SuperadminFarms() {
               <p className="py-8 text-center text-sm text-destructive">
                 Could not load farms. You may not have access.
               </p>
-            ) : !farms || farms.length === 0 ? (
+            ) : sortedFarms.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 No farms yet. Create the first one.
               </p>
@@ -395,25 +792,43 @@ export default function SuperadminFarms() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Farm</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Users</TableHead>
-                    <TableHead>Goats</TableHead>
-                    <TableHead>Breedings</TableHead>
-                    <TableHead>Last active</TableHead>
-                    <TableHead>Created</TableHead>
+                    {COLUMNS.map((col) => {
+                      const activeSort = sortKey === col.key;
+                      return (
+                        <TableHead key={col.key} className={col.numeric ? "tabular-nums" : undefined}>
+                          <button
+                            type="button"
+                            onClick={() => toggleSort(col.key)}
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                          >
+                            {col.label}
+                            {activeSort ? (
+                              sortDir === "asc" ? (
+                                <ArrowUp className="h-3.5 w-3.5" />
+                              ) : (
+                                <ArrowDown className="h-3.5 w-3.5" />
+                              )
+                            ) : (
+                              <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
+                            )}
+                          </button>
+                        </TableHead>
+                      );
+                    })}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {farms.map((farm) => (
-                    <FarmRow key={farm.id} farm={farm} />
+                  {sortedFarms.map((farm) => (
+                    <FarmRow key={farm.id} farm={farm} thresholds={thresholds} />
                   ))}
                 </TableBody>
               </Table>
             )}
           </CardContent>
         </Card>
+
+        <DeletedFarmsSection farms={deletedFarms} />
       </main>
     </div>
   );

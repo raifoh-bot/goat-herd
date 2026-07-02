@@ -51,7 +51,9 @@ export const resolveTenant: RequestHandler = async (req, res, next) => {
     }
 
     const [farm] = await db.select().from(farmsTable).where(eq(farmsTable.slug, slug));
-    if (!farm) {
+    if (!farm || farm.deletedAt) {
+      // A deleted farm is indistinguishable from a non-existent one to tenants,
+      // so its users can no longer resolve the tenant or sign in.
       res.status(404).json({ error: "Farm not found" });
       return;
     }

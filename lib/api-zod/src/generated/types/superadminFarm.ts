@@ -19,4 +19,10 @@ export interface SuperadminFarm {
   breedingCount: number;
   /** Most recent session activity for any user in this farm. Null when the farm has never had a session. */
   lastActiveAt: Date | null;
+  /** When the farm was soft-deleted, or null if it is still active. */
+  deletedAt: Date | null;
+  /** The reason recorded when the farm was deleted. */
+  deletedReason: string | null;
+  /** Username of the super-admin who deleted the farm. */
+  deletedByUsername: string | null;
 }

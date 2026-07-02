@@ -1093,6 +1093,12 @@ export interface SuperadminFarm {
   breedingCount: number;
   /** Most recent session activity for any user in this farm. Null when the farm has never had a session. */
   lastActiveAt: string | null;
+  /** When the farm was soft-deleted, or null if it is still active. */
+  deletedAt: string | null;
+  /** The reason recorded when the farm was deleted. */
+  deletedReason: string | null;
+  /** Username of the super-admin who deleted the farm. */
+  deletedByUsername: string | null;
 }
 
 export interface PlatformSummary {
@@ -1103,6 +1109,57 @@ export interface PlatformSummary {
   totalGoats: number;
   /** Number of farms created in the current calendar month. */
   farmsThisMonth: number;
+}
+
+/**
+ * Super-admin-configurable thresholds that define farm health statuses.
+ */
+export interface PlatformThresholds {
+  /**
+   * A farm inactive for at least this many days is flagged "Abandoned".
+   * @minimum 1
+   * @maximum 3650
+   */
+  abandonedAfterDays: number;
+  /**
+   * Last-active within this many days shows green.
+   * @minimum 1
+   * @maximum 3650
+   */
+  activeWithinDays: number;
+  /**
+   * Last-active within this many days shows yellow; beyond it shows red.
+   * @minimum 1
+   * @maximum 3650
+   */
+  idleWithinDays: number;
+}
+
+export interface UpdatePlatformThresholdsBody {
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  abandonedAfterDays: number;
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  activeWithinDays: number;
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  idleWithinDays: number;
+}
+
+export interface DeleteFarmBody {
+  /**
+   * Why the farm is being deleted. Recorded for the audit trail.
+   * @minLength 1
+   * @maxLength 500
+   */
+  reason: string;
 }
 
 export interface RegisterFarmBody {
