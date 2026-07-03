@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint } from "lucide-react";
 import {
   getGetBreedBreakdownQueryKey,
@@ -117,6 +117,7 @@ export default function Dashboard() {
             icon={ShieldPlus}
             isLoading={isLoadingSummary}
             description="No current concerns"
+            href="/goats?healthStatus=healthy"
           />
         );
       case "milking-status":
@@ -127,6 +128,7 @@ export default function Dashboard() {
             icon={Milk}
             isLoading={isLoadingSummary}
             description="Currently in milk"
+            href="/goats?lactationStatus=milking"
           />
         );
       case "avg-milk":
@@ -137,6 +139,7 @@ export default function Dashboard() {
             icon={Milk}
             isLoading={isLoadingSummary}
             description="Across the whole herd"
+            href="/goats"
           />
         );
       case "does-breakdown":
@@ -223,15 +226,26 @@ function DoesBreakdownCard({
   isLoading: boolean;
   chartData: { name: string; value: number }[];
 }) {
+  const [, navigate] = useLocation();
+  const doeLactationUrl = (name: string) => `/goats?sex=doe&lactationStatus=${name.toLowerCase()}`;
   return (
     <Card className="h-full shadow-md border-primary/10">
       <CardHeader>
         <div className="flex items-baseline justify-between gap-2">
-          <CardTitle className="font-serif text-lg">Does</CardTitle>
-          {isLoading
-            ? <Skeleton className="h-7 w-10" />
-            : <span className="text-3xl font-serif font-bold text-primary">{doeCount ?? 0}</span>
-          }
+          <div className="flex items-baseline gap-2">
+            <CardTitle className="font-serif text-lg">Does</CardTitle>
+            {isLoading
+              ? <Skeleton className="h-7 w-10" />
+              : (
+                <Link href="/goats?sex=doe" className="text-3xl font-serif font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer">
+                  {doeCount ?? 0}
+                </Link>
+              )
+            }
+          </div>
+          <Link href="/goats?sex=doe" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+            View does →
+          </Link>
         </div>
         <p className="text-sm text-muted-foreground">Lactation status breakdown</p>
       </CardHeader>
@@ -254,9 +268,12 @@ function DoesBreakdownCard({
                     paddingAngle={3}
                     dataKey="value"
                     isAnimationActive={false}
+                    onClick={(entry: { name?: string }) => {
+                      if (entry?.name) navigate(doeLactationUrl(entry.name));
+                    }}
                   >
                     {chartData.map((entry) => (
-                      <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} />
+                      <Cell key={entry.name} fill={LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))"} className="cursor-pointer focus:outline-none" />
                     ))}
                   </Pie>
                   <RechartsTooltip
@@ -267,10 +284,14 @@ function DoesBreakdownCard({
             </div>
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
               {chartData.map((entry) => (
-                <div key={entry.name} className="flex items-center gap-1.5">
+                <Link
+                  key={entry.name}
+                  href={doeLactationUrl(entry.name)}
+                  className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 hover:bg-muted/60 transition-colors cursor-pointer"
+                >
                   <span className="h-2 w-2 rounded-full shrink-0" style={{ background: LACTATION_COLORS[entry.name] ?? "hsl(var(--chart-1))" }} />
                   <span className="text-xs text-muted-foreground">{entry.name} <span className="font-medium text-foreground">{entry.value}</span></span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -393,11 +414,15 @@ function BreedBreakdownCard({
             ))}
           </div>
         ) : sorted.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {sorted.map((b, i) => (
-              <div key={b.breed} className="space-y-1">
+              <Link
+                key={b.breed}
+                href={`/goats?breed=${encodeURIComponent(b.breed)}`}
+                className="block space-y-1 rounded-lg -mx-2 px-2 py-1.5 hover:bg-muted/50 transition-colors cursor-pointer group"
+              >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground">{breedLabels[b.breed] ?? b.breed}</span>
+                  <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{breedLabels[b.breed] ?? b.breed}</span>
                   <span className="text-sm text-muted-foreground">{b.count}</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -409,7 +434,7 @@ function BreedBreakdownCard({
                     }}
                   />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
@@ -494,16 +519,22 @@ function RecentActivityCard({
 function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number; doeCount: number; buckCount: number; wetherCount: number } | null; isLoading: boolean }) {
   return (
     <Card className="h-full shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Goats</CardTitle>
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-          <Activity className="h-4 w-4 text-primary" />
-        </div>
-      </CardHeader>
+      <Link href="/goats" className="block cursor-pointer">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Goats</CardTitle>
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <Activity className="h-4 w-4 text-primary" />
+          </div>
+        </CardHeader>
+      </Link>
       <CardContent>
         {isLoading
           ? <Skeleton className="h-8 w-16 mb-3" />
-          : <div className="text-2xl font-serif font-bold text-foreground mb-3">{summary?.totalGoats ?? 0}</div>
+          : (
+            <Link href="/goats" className="inline-block cursor-pointer">
+              <div className="text-2xl font-serif font-bold text-foreground mb-3 hover:text-primary transition-colors">{summary?.totalGoats ?? 0}</div>
+            </Link>
+          )
         }
         {isLoading ? (
           <div className="flex gap-2">
@@ -513,16 +544,16 @@ function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number
           </div>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-sm sm:text-xs font-medium text-secondary-foreground">
+            <Link href="/goats?sex=doe" className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-sm sm:text-xs font-medium text-secondary-foreground hover:bg-secondary transition-colors cursor-pointer">
               <span className="text-xs sm:text-[10px]">♀</span> {summary?.doeCount ?? 0} Does
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground">
+            </Link>
+            <Link href="/goats?sex=buck" className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer">
               <span className="text-xs sm:text-[10px]">♂</span> {summary?.buckCount ?? 0} Bucks
-            </span>
+            </Link>
             {(summary?.wetherCount ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground">
+              <Link href="/goats?sex=wether" className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-sm sm:text-xs font-medium text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer">
                 ⚬ {summary?.wetherCount ?? 0} Wethers
-              </span>
+              </Link>
             )}
           </div>
         )}
@@ -531,8 +562,8 @@ function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number
   );
 }
 
-function StatCard({ title, value, icon: Icon, isLoading, description }: { title: string; value?: number | string; icon: any; isLoading: boolean; description?: string }) {
-  return (
+function StatCard({ title, value, icon: Icon, isLoading, description, href }: { title: string; value?: number | string; icon: any; isLoading: boolean; description?: string; href?: string }) {
+  const card = (
     <Card className="h-full shadow-sm border-primary/10 transition-all duration-300 hover:shadow-md hover:border-primary/30 group">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
@@ -545,5 +576,12 @@ function StatCard({ title, value, icon: Icon, isLoading, description }: { title:
         {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </CardContent>
     </Card>
+  );
+
+  if (!href) return card;
+  return (
+    <Link href={href} className="block h-full cursor-pointer">
+      {card}
+    </Link>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
-import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Link, useSearch } from "wouter";
+import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, X } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -23,6 +23,13 @@ const lactationLabels: Record<string, string> = {
   pregnant: "Pregnant",
   kid: "Kid",
   retired: "Retired",
+};
+
+const healthStatusLabels: Record<string, string> = {
+  healthy: "Healthy",
+  watch: "Watch",
+  treatment: "Treatment",
+  dry: "Dry",
 };
 
 const herdStatusLabels: Record<string, string> = {
@@ -106,9 +113,24 @@ function CompactCard({ goat }: { goat: Goat }) {
   );
 }
 
+const VALID_SEX: ListGoatsSex[] = ["doe", "buck", "wether"];
+
 export default function GoatsList() {
+  const search = useSearch();
   const [statusFilter, setStatusFilter] = useState<ListGoatsStatus | undefined>("on-farm");
-  const [sexFilter, setSexFilter] = useState<ListGoatsSex | undefined>();
+  const [sexFilter, setSexFilter] = useState<ListGoatsSex | undefined>(() => {
+    const val = new URLSearchParams(search).get("sex");
+    return val && (VALID_SEX as string[]).includes(val) ? (val as ListGoatsSex) : undefined;
+  });
+  const [lactationFilter, setLactationFilter] = useState<string | undefined>(
+    () => new URLSearchParams(search).get("lactationStatus") ?? undefined,
+  );
+  const [healthFilter, setHealthFilter] = useState<string | undefined>(
+    () => new URLSearchParams(search).get("healthStatus") ?? undefined,
+  );
+  const [breedFilter, setBreedFilter] = useState<string | undefined>(
+    () => new URLSearchParams(search).get("breed") ?? undefined,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try { return (localStorage.getItem("herd-view") as ViewMode) || "grid"; } catch { return "grid"; }
@@ -144,7 +166,13 @@ export default function GoatsList() {
   };
 
   const filteredGoats = useMemo(() => {
-    const base = goats?.filter((goat) => searchQuery === "" || goat.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? [];
+    const base = goats?.filter((goat) => {
+      if (searchQuery !== "" && !goat.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (lactationFilter && goat.lactationStatus !== lactationFilter) return false;
+      if (healthFilter && goat.status !== healthFilter) return false;
+      if (breedFilter && goat.breed !== breedFilter) return false;
+      return true;
+    }) ?? [];
     if (!sortKey) return base;
     return [...base].sort((a, b) => {
       let cmp = 0;
@@ -165,7 +193,13 @@ export default function GoatsList() {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [goats, searchQuery, sortKey, sortDir]);
+  }, [goats, searchQuery, sortKey, sortDir, lactationFilter, healthFilter, breedFilter]);
+
+  const activeClientFilters = [
+    healthFilter && { key: "health", label: `Health: ${healthStatusLabels[healthFilter] ?? healthFilter}`, clear: () => setHealthFilter(undefined) },
+    lactationFilter && { key: "lactation", label: `Lactation: ${lactationLabels[lactationFilter] ?? lactationFilter}`, clear: () => setLactationFilter(undefined) },
+    breedFilter && { key: "breed", label: `Breed: ${breedLabels[breedFilter] ?? breedFilter}`, clear: () => setBreedFilter(undefined) },
+  ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   const setView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -259,6 +293,24 @@ export default function GoatsList() {
           </div>
         </div>
 
+        {activeClientFilters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filtered by:</span>
+            {activeClientFilters.map((f) => (
+              <Badge key={f.key} variant="secondary" className="gap-1 pl-2.5 pr-1 py-0.5">
+                {f.label}
+                <button
+                  onClick={f.clear}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-background/60 transition-colors"
+                  aria-label={`Remove ${f.label} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {isLoading ? (
           viewMode === "list" ? (
             <div className="rounded-xl border border-border overflow-hidden bg-card">
@@ -338,7 +390,7 @@ export default function GoatsList() {
             </div>
             <h3 className="text-xl font-serif font-medium text-foreground mb-2">No goats found</h3>
             <p className="text-muted-foreground max-w-md">We couldn't find any goats matching your current filters. Try adjusting them or add a new goat to the herd.</p>
-            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter("on-farm"); setSortKey(null); }}>
+            <Button variant="outline" className="mt-6" onClick={() => { setSearchQuery(""); setSexFilter(undefined); setStatusFilter("on-farm"); setSortKey(null); setLactationFilter(undefined); setHealthFilter(undefined); setBreedFilter(undefined); }}>
               Clear Filters
             </Button>
           </div>
