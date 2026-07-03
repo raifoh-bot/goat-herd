@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader2, Plus, Upload, X } from "lucide-react";
+import { Camera, Loader2, Plus, X } from "lucide-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
 import { BREED_SLUGS, getBreedOptions } from "@/lib/breeds";
@@ -36,7 +36,7 @@ const formSchema = z.object({
   breed: z.enum(BREED_SLUGS),
   lactationStatus: z.enum(["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"]).nullable().optional(),
   description: z.string().optional(),
-  imageUrl: z.string().optional().or(z.literal("")),
+  imageUrls: z.array(z.string()).max(4, "Up to 4 photos allowed").default([]),
   herdStatus: z.enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"]).nullable().optional(),
   leasedBuck: z.boolean().optional(),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
@@ -65,21 +65,113 @@ interface GoatFormProps {
   isSubmitting?: boolean;
 }
 
-export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
+function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const { uploadFile, isUploading, progress } = useUpload({
+  const { uploadFile, isUploading, progress, error } = useUpload({
     onSuccess: (response) => {
-      form.setValue("imageUrl", `/api/storage${response.objectPath}`);
+      onChange([...value, `/api/storage${response.objectPath}`].slice(0, 4));
     },
   });
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) await uploadFile(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (ref.current) ref.current.value = "";
   };
 
+  const removeAt = (index: number) => {
+    onChange(value.filter((_, i) => i !== index));
+  };
+
+  const canAddMore = value.length < 4;
+
+  return (
+    <div className="space-y-3">
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {value.map((url, index) => (
+            <div key={`${url}-${index}`} className="relative group">
+              <img
+                src={url}
+                alt={`Photo ${index + 1}`}
+                className="h-24 w-24 rounded-lg object-cover border border-border"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                onClick={() => removeAt(index)}
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFileSelect(e, fileInputRef)}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFileSelect(e, cameraInputRef)}
+      />
+
+      {canAddMore && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="gap-2"
+          >
+            {isUploading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Uploading {progress}%</>
+            ) : (
+              <><Plus className="h-4 w-4" /> Add Photo</>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={isUploading}
+            className="gap-2"
+          >
+            <Camera className="h-4 w-4" /> Take Photo
+          </Button>
+          <span className="text-xs text-muted-foreground">{value.length}/4</span>
+        </div>
+      )}
+
+      {!canAddMore && (
+        <p className="text-xs text-muted-foreground">Maximum of 4 photos reached. Remove one to add another.</p>
+      )}
+
+      {error && (
+        <p className="text-sm font-medium text-destructive">{error.message}</p>
+      )}
+    </div>
+  );
+}
+
+export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: GoatFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -105,7 +197,11 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         ? ((defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | null | undefined) || null)
         : (defaultValues?.lactationStatus as "milking" | "dry" | "exposed" | "serviced" | "pregnant" | "kid" | "retired" | undefined) || "milking",
       description: defaultValues?.description || "",
-      imageUrl: defaultValues?.imageUrl || "",
+      imageUrls: defaultValues?.imageUrls && defaultValues.imageUrls.length > 0
+        ? defaultValues.imageUrls
+        : defaultValues?.imageUrl
+          ? [defaultValues.imageUrl]
+          : [],
       herdStatus: (defaultValues?.herdStatus as "dead" | "first-freshener" | "leased" | "on-farm" | "retired" | "sold" | null | undefined) ?? "on-farm",
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
@@ -386,80 +482,18 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Photo (Optional)</FormLabel>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <FormControl>
-                      <Input placeholder="https://... or upload a file below" {...field} className="bg-background/50 flex-1" />
-                    </FormControl>
-                    {field.value && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => field.onChange("")}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="gap-2"
-                    >
-                      {isUploading ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> Uploading {progress}%</>
-                      ) : (
-                        <><Upload className="h-4 w-4" /> Upload Image</>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => cameraInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="gap-2"
-                    >
-                      <Camera className="h-4 w-4" /> Take Photo
-                    </Button>
-                    {field.value?.startsWith("/api/storage") && (
-                      <img src={field.value} alt="Preview" className="h-10 w-10 rounded-md object-cover border border-border" />
-                    )}
-                  </div>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="imageUrls"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Photos (Optional)</FormLabel>
+              <FormDescription>Add up to 4 photos. Each image must be 5 MB or smaller.</FormDescription>
+              <ImageSlots value={field.value ?? []} onChange={field.onChange} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="rounded-xl border border-border bg-card/50 p-4">
           <div className="flex items-center justify-between gap-4">

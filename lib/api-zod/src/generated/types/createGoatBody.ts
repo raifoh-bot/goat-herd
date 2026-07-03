@@ -40,7 +40,11 @@ export interface CreateGoatBody {
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;
-  imageUrl?: string;
+  /**
+   * Ordered list of up to 4 photo URLs for this goat
+   * @maxItems 4
+   */
+  imageUrls?: string[];
   leasedBuck?: boolean;
   herdStatus?: CreateGoatBodyHerdStatus;
   /** @maxLength 4 */

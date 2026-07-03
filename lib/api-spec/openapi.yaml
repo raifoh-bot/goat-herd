@@ -1226,8 +1226,19 @@ components:
           description: Calculated age in years from dateOfBirth
         description:
           type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Ordered list of up to 4 photo URLs for this goat
         imageUrl:
           type: string
+          readOnly: true
+          deprecated: true
+          description: >-
+            Deprecated. First entry of imageUrls, kept for backward
+            compatibility with older clients.
         leasedBuck:
           type: boolean
           description: Buck is on a breeding lease and excluded from herd totals
@@ -1328,8 +1339,12 @@ components:
           description: Legacy field, calculated from dateOfBirth
         description:
           type: string
-        imageUrl:
-          type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Ordered list of up to 4 photo URLs for this goat
         leasedBuck:
           type: boolean
         herdStatus:
@@ -1422,8 +1437,12 @@ components:
           description: Calculated age in years from dateOfBirth
         description:
           type: string
-        imageUrl:
-          type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Ordered list of up to 4 photo URLs for this goat
         leasedBuck:
           type: boolean
         herdStatus:

@@ -64,6 +64,8 @@ export const ListGoatsQueryParams = zod.object({
 export const listGoatsResponseMilkPerDayMin = 0;
 export const listGoatsResponseMilkPerDayMax = 10;
 
+export const listGoatsResponseImageUrlsMax = 4;
+
 export const listGoatsResponseRightEarTattooMax = 4;
 
 export const listGoatsResponseLeftEarTattooMax = 4;
@@ -134,7 +136,17 @@ export const ListGoatsResponseItem = zod.object({
     .nullish(),
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(listGoatsResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+    ),
   leasedBuck: zod
     .boolean()
     .optional()
@@ -171,6 +183,8 @@ export const ListGoatsResponse = zod.array(ListGoatsResponseItem);
  */
 export const createGoatBodyMilkPerDayMin = 0;
 export const createGoatBodyMilkPerDayMax = 10;
+
+export const createGoatBodyImageUrlsMax = 4;
 
 export const createGoatBodyRightEarTattooMax = 4;
 
@@ -245,7 +259,11 @@ export const CreateGoatBody = zod.object({
     .optional()
     .describe("Legacy field, calculated from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(createGoatBodyImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
   leasedBuck: zod.boolean().optional(),
   herdStatus: zod
     .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
@@ -270,6 +288,8 @@ export const GetGoatParams = zod.object({
 
 export const getGoatResponseMilkPerDayMin = 0;
 export const getGoatResponseMilkPerDayMax = 10;
+
+export const getGoatResponseImageUrlsMax = 4;
 
 export const getGoatResponseRightEarTattooMax = 4;
 
@@ -341,7 +361,17 @@ export const GetGoatResponse = zod.object({
     .nullish(),
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(getGoatResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+    ),
   leasedBuck: zod
     .boolean()
     .optional()
@@ -375,6 +405,8 @@ export const UpdateGoatParams = zod.object({
 
 export const updateGoatBodyMilkPerDayMin = 0;
 export const updateGoatBodyMilkPerDayMax = 10;
+
+export const updateGoatBodyImageUrlsMax = 4;
 
 export const updateGoatBodyRightEarTattooMax = 4;
 
@@ -451,7 +483,11 @@ export const UpdateGoatBody = zod.object({
     .optional()
     .describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(updateGoatBodyImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
   leasedBuck: zod.boolean().optional(),
   herdStatus: zod
     .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
@@ -469,6 +505,8 @@ export const UpdateGoatBody = zod.object({
 
 export const updateGoatResponseMilkPerDayMin = 0;
 export const updateGoatResponseMilkPerDayMax = 10;
+
+export const updateGoatResponseImageUrlsMax = 4;
 
 export const updateGoatResponseRightEarTattooMax = 4;
 
@@ -540,7 +578,17 @@ export const UpdateGoatResponse = zod.object({
     .nullish(),
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(updateGoatResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+    ),
   leasedBuck: zod
     .boolean()
     .optional()
@@ -676,6 +724,8 @@ export const ImportGoatsBody = zod.object({
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;
 export const listBreedingsResponseTwoDoeMilkPerDayMax = 10;
 
+export const listBreedingsResponseTwoDoeImageUrlsMax = 4;
+
 export const listBreedingsResponseTwoDoeRightEarTattooMax = 4;
 
 export const listBreedingsResponseTwoDoeLeftEarTattooMax = 4;
@@ -780,7 +830,17 @@ export const ListBreedingsResponseItem = zod
             .number()
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
-          imageUrl: zod.string().optional(),
+          imageUrls: zod
+            .array(zod.string())
+            .max(listBreedingsResponseTwoDoeImageUrlsMax)
+            .optional()
+            .describe("Ordered list of up to 4 photo URLs for this goat"),
+          imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+              "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+            ),
           leasedBuck: zod
             .boolean()
             .optional()
@@ -963,6 +1023,8 @@ export const GetBreedingParams = zod.object({
 export const getBreedingResponseTwoDoeMilkPerDayMin = 0;
 export const getBreedingResponseTwoDoeMilkPerDayMax = 10;
 
+export const getBreedingResponseTwoDoeImageUrlsMax = 4;
+
 export const getBreedingResponseTwoDoeRightEarTattooMax = 4;
 
 export const getBreedingResponseTwoDoeLeftEarTattooMax = 4;
@@ -1067,7 +1129,17 @@ export const GetBreedingResponse = zod
             .number()
             .describe("Calculated age in years from dateOfBirth"),
           description: zod.string().optional(),
-          imageUrl: zod.string().optional(),
+          imageUrls: zod
+            .array(zod.string())
+            .max(getBreedingResponseTwoDoeImageUrlsMax)
+            .optional()
+            .describe("Ordered list of up to 4 photo URLs for this goat"),
+          imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+              "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+            ),
           leasedBuck: zod
             .boolean()
             .optional()
@@ -1451,6 +1523,8 @@ export const ImportSemenStrawsBody = zod.object({
 export const getDashboardSummaryResponseTopProducerMilkPerDayMin = 0;
 export const getDashboardSummaryResponseTopProducerMilkPerDayMax = 10;
 
+export const getDashboardSummaryResponseTopProducerImageUrlsMax = 4;
+
 export const getDashboardSummaryResponseTopProducerRightEarTattooMax = 4;
 
 export const getDashboardSummaryResponseTopProducerLeftEarTattooMax = 4;
@@ -1541,7 +1615,17 @@ export const GetDashboardSummaryResponse = zod.object({
         .nullish(),
       age: zod.number().describe("Calculated age in years from dateOfBirth"),
       description: zod.string().optional(),
-      imageUrl: zod.string().optional(),
+      imageUrls: zod
+        .array(zod.string())
+        .max(getDashboardSummaryResponseTopProducerImageUrlsMax)
+        .optional()
+        .describe("Ordered list of up to 4 photo URLs for this goat"),
+      imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+          "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+        ),
       leasedBuck: zod
         .boolean()
         .optional()
@@ -1624,6 +1708,8 @@ export const GetBreedBreakdownResponse = zod.array(
 export const getRecentActivityResponseMilkPerDayMin = 0;
 export const getRecentActivityResponseMilkPerDayMax = 10;
 
+export const getRecentActivityResponseImageUrlsMax = 4;
+
 export const getRecentActivityResponseRightEarTattooMax = 4;
 
 export const getRecentActivityResponseLeftEarTattooMax = 4;
@@ -1694,7 +1780,17 @@ export const GetRecentActivityResponseItem = zod.object({
     .nullish(),
   age: zod.number().describe("Calculated age in years from dateOfBirth"),
   description: zod.string().optional(),
-  imageUrl: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(getRecentActivityResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+    ),
   leasedBuck: zod
     .boolean()
     .optional()

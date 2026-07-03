@@ -41,7 +41,16 @@ export interface Goat {
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
-  imageUrl?: string;
+  /**
+   * Ordered list of up to 4 photo URLs for this goat
+   * @maxItems 4
+   */
+  imageUrls?: string[];
+  /**
+   * Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.
+   * @deprecated
+   */
+  readonly imageUrl?: string;
   /** Buck is on a breeding lease and excluded from herd totals */
   leasedBuck?: boolean;
   /** Current standing of the goat in the herd */

@@ -42,6 +42,7 @@ export default function GoatDetails() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
 
   const { data: goat, isLoading, isError } = useGetGoat(id, {
     query: {
@@ -210,16 +211,50 @@ export default function GoatDetails() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
               <Card className="overflow-hidden border-primary/10 shadow-md">
-                <div className="aspect-square bg-muted/30 relative">
-                  {goat.imageUrl ? (
-                    <img src={goat.imageUrl} alt={goat.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
-                      <Milk className="h-16 w-16 text-primary/40 mb-4" />
-                      <span className="text-sm font-medium text-primary/50 uppercase tracking-widest">No Photo</span>
+                {(() => {
+                  const images = goat.imageUrls && goat.imageUrls.length > 0
+                    ? goat.imageUrls
+                    : goat.imageUrl
+                      ? [goat.imageUrl]
+                      : [];
+                  const activeImage = images[Math.min(activePhoto, images.length - 1)] ?? null;
+                  if (images.length === 0) {
+                    return (
+                      <div className="aspect-square bg-muted/30 relative">
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+                          <Milk className="h-16 w-16 text-primary/40 mb-4" />
+                          <span className="text-sm font-medium text-primary/50 uppercase tracking-widest">No Photo</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div>
+                      <div className="aspect-square bg-muted/30 relative">
+                        <img src={activeImage!} alt={goat.name} className="w-full h-full object-cover" />
+                      </div>
+                      {images.length > 1 && (
+                        <div className="flex gap-2 p-3 overflow-x-auto no-print">
+                          {images.map((url, index) => {
+                            const isActive = index === Math.min(activePhoto, images.length - 1);
+                            return (
+                              <button
+                                key={`${url}-${index}`}
+                                type="button"
+                                onClick={() => setActivePhoto(index)}
+                                className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
+                                  isActive ? "border-primary" : "border-transparent hover:border-border"
+                                }`}
+                              >
+                                <img src={url} alt={`${goat.name} ${index + 1}`} className="h-full w-full object-cover" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
                 <CardContent className="p-6">
                   <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-1">{goat.name}</h1>
                   {goat.registeredName && (

@@ -19,6 +19,12 @@ const router: IRouter = Router();
 // Goats are read-only for Farm Hands; only Admin/Owner may create, edit, or delete.
 const requireManager = requireRole("admin", "owner");
 
+// Populate the deprecated `imageUrl` alias from the first entry of `imageUrls`
+// so older clients and the herd-list cards keep working without changes.
+function withImageAlias<T extends { imageUrls?: string[] | null }>(goat: T): T & { imageUrl: string | null } {
+  return { ...goat, imageUrl: goat.imageUrls?.[0] ?? null };
+}
+
 router.get("/goats", async (req, res): Promise<void> => {
   const params = ListGoatsQueryParams.safeParse(req.query);
   if (!params.success) {
@@ -40,7 +46,7 @@ router.get("/goats", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(desc(goatsTable.createdAt));
 
-  res.json(goats);
+  res.json(goats.map(withImageAlias));
 });
 
 router.post("/goats", requireManager, async (req, res): Promise<void> => {
@@ -54,7 +60,7 @@ router.post("/goats", requireManager, async (req, res): Promise<void> => {
     .insert(goatsTable)
     .values({ ...parsed.data, farmId: farmId(req) })
     .returning();
-  res.status(201).json(goat);
+  res.status(201).json(withImageAlias(goat));
 });
 
 router.post("/goats/import", requireManager, async (req, res): Promise<void> => {
@@ -152,7 +158,7 @@ router.get("/goats/export", async (req, res): Promise<void> => {
     g.paternalGrandsireName,
     g.milkPerDay,
     g.description,
-    g.imageUrl,
+    g.imageUrls?.[0] ?? g.imageUrl,
     g.createdAt,
   ]);
 
@@ -176,7 +182,7 @@ router.get("/goats/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(goat);
+  res.json(withImageAlias(goat));
 });
 
 router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
@@ -203,7 +209,7 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(goat);
+  res.json(withImageAlias(goat));
 });
 
 router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {

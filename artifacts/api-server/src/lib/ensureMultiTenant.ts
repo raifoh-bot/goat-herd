@@ -169,5 +169,17 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 8. Goats can carry up to 4 photos. Add the image_urls array column and
+  //    migrate any existing single image_url into it exactly once. The legacy
+  //    image_url column is left in place (nullable) but no longer written to.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(
+      `ALTER TABLE "goats" ADD COLUMN IF NOT EXISTS "image_urls" text[] DEFAULT '{}'::text[] NOT NULL;`,
+    );
+    await pool.query(
+      `UPDATE "goats" SET "image_urls" = ARRAY["image_url"] WHERE "image_url" IS NOT NULL AND "image_url" <> '' AND "image_urls" = '{}';`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }
