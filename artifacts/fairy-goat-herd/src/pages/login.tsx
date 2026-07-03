@@ -182,6 +182,14 @@ export default function Login() {
               </Link>
             )}
           </p>
+          {isFarmContext && (
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Not your farm?{" "}
+              <a href={rootUrl("/login")} className="font-medium text-primary hover:underline">
+                Sign in to a different farm
+              </a>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
