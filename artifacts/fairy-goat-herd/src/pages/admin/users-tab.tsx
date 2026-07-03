@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { KeyRound, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -47,12 +47,56 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useSessionState } from "@/hooks/use-session-state";
+import { SortSelect, type SortOption } from "@/components/sort-select";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
   owner: "Owner",
   farmhand: "Farm Hand",
 };
+
+type UserSort =
+  | "username-asc"
+  | "username-desc"
+  | "role"
+  | "active-first"
+  | "inactive-first";
+
+const USER_SORT_OPTIONS: SortOption<UserSort>[] = [
+  { value: "username-asc", label: "Username (A–Z)" },
+  { value: "username-desc", label: "Username (Z–A)" },
+  { value: "role", label: "Role" },
+  { value: "active-first", label: "Active First" },
+  { value: "inactive-first", label: "Inactive First" },
+];
+
+function sortUsers(list: User[], sort: UserSort): User[] {
+  return [...list].sort((a, b) => {
+    switch (sort) {
+      case "username-asc":
+        return a.username.localeCompare(b.username);
+      case "username-desc":
+        return b.username.localeCompare(a.username);
+      case "role":
+        return (
+          a.role.localeCompare(b.role) || a.username.localeCompare(b.username)
+        );
+      case "active-first":
+        return (
+          Number(b.active) - Number(a.active) ||
+          a.username.localeCompare(b.username)
+        );
+      case "inactive-first":
+        return (
+          Number(a.active) - Number(b.active) ||
+          a.username.localeCompare(b.username)
+        );
+      default:
+        return 0;
+    }
+  });
+}
 
 const ROLE_OPTIONS = [
   { value: UserRole.admin, label: "Admin" },
@@ -71,10 +115,13 @@ export function UsersTab() {
 
   const [resetTarget, setResetTarget] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+  const [sort, setSort] = useSessionState<UserSort>("users-sort", "username-asc");
 
   const { data: users, isLoading } = useListUsers({
     query: { queryKey: getListUsersQueryKey() },
   });
+
+  const sortedUsers = useMemo(() => sortUsers(users ?? [], sort), [users, sort]);
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const setUserPassword = useSetUserPassword();
@@ -237,9 +284,14 @@ export function UsersTab() {
       </Card>
 
       <Card className="border-primary/10 shadow-lg">
-        <CardHeader>
-          <CardTitle className="font-serif">Team</CardTitle>
-          <CardDescription>Roles take effect the next time a user loads a page.</CardDescription>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle className="font-serif">Team</CardTitle>
+            <CardDescription>Roles take effect the next time a user loads a page.</CardDescription>
+          </div>
+          {!isLoading && (users ?? []).length > 0 && (
+            <SortSelect value={sort} onChange={setSort} options={USER_SORT_OPTIONS} />
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -255,7 +307,7 @@ export function UsersTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(users ?? []).map((u) => {
+                {sortedUsers.map((u) => {
                   const isSelf = u.id === currentUser.id;
                   return (
                     <TableRow key={u.id}>

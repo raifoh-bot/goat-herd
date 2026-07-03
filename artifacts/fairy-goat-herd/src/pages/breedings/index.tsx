@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download, Upload } from "lucide-react";
 import {
@@ -26,8 +26,61 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useFarmSettings } from "@/lib/settings";
+import { useSessionState } from "@/hooks/use-session-state";
+import { SortSelect, type SortOption } from "@/components/sort-select";
 import { downloadCsv, buildCsvFileName } from "@/lib/csvDownload";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
+
+type BreedingSort =
+  | "date-desc"
+  | "date-asc"
+  | "expected-asc"
+  | "expected-desc"
+  | "doe-asc"
+  | "doe-desc"
+  | "status";
+
+const BREEDING_SORT_OPTIONS: SortOption<BreedingSort>[] = [
+  { value: "date-desc", label: "Breeding Date (Newest)" },
+  { value: "date-asc", label: "Breeding Date (Oldest)" },
+  { value: "expected-asc", label: "Expected Kidding (Soonest)" },
+  { value: "expected-desc", label: "Expected Kidding (Latest)" },
+  { value: "doe-asc", label: "Doe Name (A–Z)" },
+  { value: "doe-desc", label: "Doe Name (Z–A)" },
+  { value: "status", label: "Status" },
+];
+
+function breedingDoeName(b: BreedingWithDoe): string {
+  return b.doe?.name ?? `Doe #${b.doeId}`;
+}
+
+function expectedKiddingMs(b: BreedingWithDoe): number {
+  if (b.expectedKiddingDate) return new Date(b.expectedKiddingDate).getTime();
+  return new Date(b.breedingDate).getTime() + 145 * 24 * 60 * 60 * 1000;
+}
+
+function sortBreedings(list: BreedingWithDoe[], sort: BreedingSort): BreedingWithDoe[] {
+  return [...list].sort((a, b) => {
+    switch (sort) {
+      case "date-desc":
+        return new Date(b.breedingDate).getTime() - new Date(a.breedingDate).getTime();
+      case "date-asc":
+        return new Date(a.breedingDate).getTime() - new Date(b.breedingDate).getTime();
+      case "expected-asc":
+        return expectedKiddingMs(a) - expectedKiddingMs(b);
+      case "expected-desc":
+        return expectedKiddingMs(b) - expectedKiddingMs(a);
+      case "doe-asc":
+        return breedingDoeName(a).localeCompare(breedingDoeName(b));
+      case "doe-desc":
+        return breedingDoeName(b).localeCompare(breedingDoeName(a));
+      case "status":
+        return a.status.localeCompare(b.status);
+      default:
+        return 0;
+    }
+  });
+}
 
 const statusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -268,6 +321,7 @@ export default function BreedingsList() {
   const [dialogDate, setDialogDate] = useState("");
   const [dialogNotes, setDialogNotes] = useState("");
   const [exporting, setExporting] = useState<"breedings" | "kids" | null>(null);
+  const [sort, setSort] = useSessionState<BreedingSort>("breedings-sort", "date-desc");
 
   const handleExport = async (kind: "breedings" | "kids") => {
     setExporting(kind);
@@ -281,8 +335,14 @@ export default function BreedingsList() {
     }
   };
 
-  const active = breedings?.filter((b) => b.status === "bred" || b.status === "confirmed-pregnant") ?? [];
-  const past = breedings?.filter((b) => b.status === "kidded" || b.status === "open") ?? [];
+  const active = useMemo(
+    () => sortBreedings(breedings?.filter((b) => b.status === "bred" || b.status === "confirmed-pregnant") ?? [], sort),
+    [breedings, sort],
+  );
+  const past = useMemo(
+    () => sortBreedings(breedings?.filter((b) => b.status === "kidded" || b.status === "open") ?? [], sort),
+    [breedings, sort],
+  );
 
   const openDialog = (state: ExposureDialogState) => {
     setDialogState(state);
@@ -382,7 +442,11 @@ export default function BreedingsList() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-6">
+            <div className="flex justify-end">
+              <SortSelect value={sort} onChange={setSort} options={BREEDING_SORT_OPTIONS} />
+            </div>
+            <div className="space-y-10">
             {active.length > 0 && (
               <section>
                 <h3 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -406,6 +470,7 @@ export default function BreedingsList() {
                 </div>
               </section>
             )}
+            </div>
           </div>
         )}
       </div>

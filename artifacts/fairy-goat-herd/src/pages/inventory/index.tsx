@@ -32,7 +32,55 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useFarmSettings } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
+import { useSessionState } from "@/hooks/use-session-state";
+import { SortSelect, type SortOption } from "@/components/sort-select";
 import { ImportStrawsDialog } from "./import-dialog";
+
+type StrawSort =
+  | "sire-asc"
+  | "sire-desc"
+  | "count-desc"
+  | "count-asc"
+  | "location-asc"
+  | "location-desc"
+  | "supplier-asc"
+  | "supplier-desc";
+
+const STRAW_SORT_OPTIONS: SortOption<StrawSort>[] = [
+  { value: "sire-asc", label: "Sire Name (A–Z)" },
+  { value: "sire-desc", label: "Sire Name (Z–A)" },
+  { value: "count-desc", label: "Straws (High–Low)" },
+  { value: "count-asc", label: "Straws (Low–High)" },
+  { value: "location-asc", label: "Tank Location (A–Z)" },
+  { value: "location-desc", label: "Tank Location (Z–A)" },
+  { value: "supplier-asc", label: "Supplier (A–Z)" },
+  { value: "supplier-desc", label: "Supplier (Z–A)" },
+];
+
+function sortStraws(list: SemenStraw[], sort: StrawSort): SemenStraw[] {
+  return [...list].sort((a, b) => {
+    switch (sort) {
+      case "sire-asc":
+        return a.sireName.localeCompare(b.sireName);
+      case "sire-desc":
+        return b.sireName.localeCompare(a.sireName);
+      case "count-desc":
+        return b.count - a.count;
+      case "count-asc":
+        return a.count - b.count;
+      case "location-asc":
+        return (a.tankLocation ?? "").localeCompare(b.tankLocation ?? "");
+      case "location-desc":
+        return (b.tankLocation ?? "").localeCompare(a.tankLocation ?? "");
+      case "supplier-asc":
+        return (a.supplier ?? "").localeCompare(b.supplier ?? "");
+      case "supplier-desc":
+        return (b.supplier ?? "").localeCompare(a.supplier ?? "");
+      default:
+        return 0;
+    }
+  });
+}
 
 const strawSchema = z.object({
   sireName: z.string().min(1, "Sire / straw name is required"),
@@ -59,6 +107,7 @@ export default function InventoryList() {
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<SemenStraw | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SemenStraw | null>(null);
+  const [sort, setSort] = useSessionState<StrawSort>("inventory-sort", "sire-asc");
 
   const { data: straws, isLoading } = useListSemenStraws({
     query: { queryKey: getListSemenStrawsQueryKey() },
@@ -106,6 +155,11 @@ export default function InventoryList() {
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [straws]);
+
+  const sortedStraws = useMemo(
+    () => sortStraws(straws ?? [], sort),
+    [straws, sort],
+  );
 
   const openAdd = () => {
     setEditing(null);
@@ -275,8 +329,12 @@ export default function InventoryList() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {straws.map((straw) => (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <SortSelect value={sort} onChange={setSort} options={STRAW_SORT_OPTIONS} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedStraws.map((straw) => (
               <Card key={straw.id} className="group border-primary/10 hover:shadow-lg transition-all duration-300">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -319,6 +377,7 @@ export default function InventoryList() {
                 </CardContent>
               </Card>
             ))}
+            </div>
           </div>
         )}
       </div>
