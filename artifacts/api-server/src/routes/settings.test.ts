@@ -227,8 +227,7 @@ describe("dashboard layout customization", () => {
       { id: "upcoming-kiddings", visible: true },
       { id: "breed-breakdown", visible: true },
       { id: "recent-activity", visible: true },
-      // Opt-in widget: present in the catalog but hidden by default.
-      { id: "breeding-calendar", visible: false },
+      { id: "breeding-calendar", visible: true },
     ]);
   });
 
@@ -271,8 +270,8 @@ describe("dashboard layout customization", () => {
       { id: "upcoming-kiddings", visible: true },
       { id: "breed-breakdown", visible: true },
       { id: "recent-activity", visible: true },
-      // Opt-in widget stays hidden when appended to an existing layout.
-      { id: "breeding-calendar", visible: false },
+      // A newly-shipped widget is appended visible to a layout that predates it.
+      { id: "breeding-calendar", visible: true },
     ]);
   });
 

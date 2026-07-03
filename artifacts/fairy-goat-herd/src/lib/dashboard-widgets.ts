@@ -46,7 +46,6 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
     id: "breeding-calendar",
     label: "Breeding Calendar",
     description: "Month-grid calendar of expected kidding dates with Google, Outlook, and .ics export.",
-    defaultVisible: false,
   },
 ];
 

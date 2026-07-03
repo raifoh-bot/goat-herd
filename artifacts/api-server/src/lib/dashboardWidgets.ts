@@ -21,9 +21,10 @@ export const DEFAULT_DASHBOARD_WIDGET_IDS = [
 /**
  * Widgets that are opt-in: they belong to the catalog (so they aren't stripped)
  * but stay hidden when appended to a layout that predates them. Mirrors the
- * frontend's `defaultVisible: false` flag.
+ * frontend's `defaultVisible: false` flag. Currently empty — every catalog
+ * widget is visible by default.
  */
-const DEFAULT_HIDDEN_WIDGET_IDS = new Set<string>(["breeding-calendar"]);
+const DEFAULT_HIDDEN_WIDGET_IDS = new Set<string>([]);
 
 /**
  * Reconciles a (possibly stale or partial) persisted layout against the current
