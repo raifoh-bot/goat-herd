@@ -14,3 +14,4 @@
 - [Personal vs farm dashboard layout](personal-vs-farm-layout.md) — per-user override must preserve null (=use farm default); only the farm normalizer expands null to all-visible.
 - [Singleton config tables](singleton-config-table.md) — pin to fixed PK + atomic upsert (not read-then-insert); enforce cross-field invariants server-side, not only in UI.
 - [Dashboard widget dual catalog](dashboard-widget-dual-catalog.md) — frontend+server widget lists must stay in sync; opt-in widgets append hidden in both normalizers; settings.test asserts exact layout.
+- [PWA basic offline setup](pwa-offline-setup.md) — vite-plugin-pwa app-shell-only; must denylist /api (separate service), respect dynamic BASE_PATH, no runtime data caching; SW only in built app not dev preview.
