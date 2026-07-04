@@ -94,12 +94,17 @@ function FarmTab() {
         },
       );
     },
-    onError: () =>
+    onError: (error) => {
+      const message = error.message.toLowerCase();
+      const isTooLarge = message.includes("5 mb") || message.includes("exceeds");
       toast({
         title: "Upload failed",
-        description: "The logo image could not be uploaded.",
+        description: isTooLarge
+          ? "That image is too large — please choose a file under 5 MB."
+          : "Upload storage is unavailable right now — please try again in a moment.",
         variant: "destructive",
-      }),
+      });
+    },
   });
 
   const busy = isLoading || updateSettings.isPending;
