@@ -9,7 +9,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader2, Plus, X } from "lucide-react";
+import { Camera, GripVertical, Loader2, Plus, Star, X } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
 import { BREED_SLUGS, getBreedOptions } from "@/lib/breeds";
@@ -65,6 +82,86 @@ interface GoatFormProps {
   isSubmitting?: boolean;
 }
 
+function SortablePhoto({
+  url,
+  index,
+  isCover,
+  onRemove,
+  onMakeCover,
+}: {
+  url: string;
+  index: number;
+  isCover: boolean;
+  onRemove: () => void;
+  onMakeCover: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: url,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative h-24 w-24 shrink-0 rounded-lg border ${
+        isCover ? "border-primary ring-2 ring-primary/40" : "border-border"
+      } ${isDragging ? "z-10 shadow-lg" : ""}`}
+    >
+      <img
+        src={url}
+        alt={isCover ? "Cover photo" : `Photo ${index + 1}`}
+        className="h-full w-full rounded-lg object-cover"
+      />
+
+      {isCover && (
+        <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow-sm">
+          <Star className="h-2.5 w-2.5 fill-current" /> Cover
+        </span>
+      )}
+
+      <button
+        type="button"
+        aria-label={`Reorder photo ${index + 1}`}
+        className="absolute bottom-1 left-1 cursor-grab touch-none rounded-md bg-background/80 p-0.5 text-muted-foreground shadow-sm hover:text-foreground active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+
+      {!isCover && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          onClick={onMakeCover}
+          aria-label={`Make photo ${index + 1} the cover`}
+          title="Make cover"
+          className="absolute bottom-1 right-1 h-6 w-6 rounded-full shadow-sm"
+        >
+          <Star className="h-3.5 w-3.5" />
+        </Button>
+      )}
+
+      <Button
+        type="button"
+        variant="destructive"
+        size="icon"
+        onClick={onRemove}
+        aria-label={`Remove photo ${index + 1}`}
+        className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md"
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +170,11 @@ function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: str
       onChange([...value, `/api/storage${response.objectPath}`].slice(0, 4));
     },
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const handleFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -87,31 +189,51 @@ function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: str
     onChange(value.filter((_, i) => i !== index));
   };
 
+  const makeCover = (index: number) => {
+    if (index <= 0) return;
+    const next = value.slice();
+    const [moved] = next.splice(index, 1);
+    next.unshift(moved);
+    onChange(next);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = value.indexOf(active.id as string);
+    const newIndex = value.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onChange(arrayMove(value, oldIndex, newIndex));
+  };
+
   const canAddMore = value.length < 4;
 
   return (
     <div className="space-y-3">
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {value.map((url, index) => (
-            <div key={`${url}-${index}`} className="relative group">
-              <img
-                src={url}
-                alt={`Photo ${index + 1}`}
-                className="h-24 w-24 rounded-lg object-cover border border-border"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                onClick={() => removeAt(index)}
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
-        </div>
+        <>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={value} strategy={rectSortingStrategy}>
+              <div className="flex flex-wrap gap-3">
+                {value.map((url, index) => (
+                  <SortablePhoto
+                    key={url}
+                    url={url}
+                    index={index}
+                    isCover={index === 0}
+                    onRemove={() => removeAt(index)}
+                    onMakeCover={() => makeCover(index)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+          {value.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              Drag to reorder. The first photo is the cover shown on the herd list and dashboard.
+            </p>
+          )}
+        </>
       )}
 
       <input
