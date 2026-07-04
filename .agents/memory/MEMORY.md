@@ -15,3 +15,4 @@
 - [Singleton config tables](singleton-config-table.md) — pin to fixed PK + atomic upsert (not read-then-insert); enforce cross-field invariants server-side, not only in UI.
 - [Dashboard widget dual catalog](dashboard-widget-dual-catalog.md) — frontend+server widget lists must stay in sync; opt-in widgets append hidden in both normalizers; settings.test asserts exact layout.
 - [PWA basic offline setup](pwa-offline-setup.md) — vite-plugin-pwa app-shell-only; must denylist /api (separate service), respect dynamic BASE_PATH, no runtime data caching; SW only in built app not dev preview.
+- [Object storage lost grant](object-storage-lost-grant.md) — upload 500 + sidecar 401 in dev+prod = "no allowed resources"; stale config secrets block setupObjectStorage self-heal; user must delete the 3 secrets, then re-provision.
