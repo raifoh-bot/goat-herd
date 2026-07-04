@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Baby, Calendar, CheckCircle2, Edit3, Heart, Milk, Printer, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, ImagePlus, Loader2, Milk, Printer, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { ReportHeader } from "@/components/report-header";
 import { GoatForm } from "@/components/goat-form";
@@ -17,15 +17,19 @@ import {
   getGetGoatQueryKey,
   getListBreedingsQueryKey,
   getListGoatsQueryKey,
+  useAddGoatPhoto,
   useDeleteGoat,
   useGetGoat,
   useListBreedings,
   useUpdateGoat,
 } from "@workspace/api-client-react";
+import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
+import { useUpload } from "@workspace/object-storage-web";
 import { breedLabels } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings } from "@/lib/settings";
+import { useIsManager } from "@/lib/auth";
 
 const breedingStatusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -33,6 +37,129 @@ const breedingStatusConfig = {
   kidded: { label: "Kidded", icon: Baby, className: "bg-primary text-primary-foreground" },
   open: { label: "Open", icon: XCircle, className: "bg-destructive text-destructive-foreground" },
 };
+
+const MAX_FILE_SIZE = 5_242_880; // 5 MB
+const MAX_PHOTOS = 4;
+
+function goatPhotoCount(goat: Goat): number {
+  if (goat.imageUrls && goat.imageUrls.length > 0) return goat.imageUrls.length;
+  return goat.imageUrl ? 1 : 0;
+}
+
+/**
+ * Inline "add photo" control for the goat detail page. Uses the photo-append
+ * endpoint (`POST /api/goats/:id/photos`), which any farm member — including
+ * Farm Hands — may call. Full photo management (reorder, set cover, remove)
+ * still lives in the manager-only edit form.
+ */
+function AddGoatPhotoInline({ goat }: { goat: Goat }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const { uploadFile, isUploading, progress } = useUpload();
+  const addGoatPhoto = useAddGoatPhoto();
+  const isSaving = isUploading || addGoatPhoto.isPending;
+
+  const isFull = goatPhotoCount(goat) >= MAX_PHOTOS;
+
+  const handleFileSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (ref.current) ref.current.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setError("That photo is larger than the 5 MB limit. Try a smaller one.");
+      return;
+    }
+
+    setError(null);
+    try {
+      const uploaded = await uploadFile(file);
+      if (!uploaded) {
+        setError("The photo could not be uploaded. Please try again.");
+        return;
+      }
+
+      const imageUrl = `/api/storage${uploaded.objectPath}`;
+      const updated = await addGoatPhoto.mutateAsync({ id: goat.id, data: { imageUrl } });
+
+      queryClient.setQueryData(getGetGoatQueryKey(goat.id), updated);
+      queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetBreedBreakdownQueryKey() });
+
+      toast({ title: "Photo added", description: `Added a new photo to ${updated.name}.` });
+    } catch {
+      setError("Something went wrong saving the photo. Please try again.");
+    }
+  };
+
+  if (isFull) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        This goat has the maximum of {MAX_PHOTOS} photos. Ask a manager to remove one to add another.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFileSelect(e, fileInputRef)}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFileSelect(e, cameraInputRef)}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          disabled={isSaving}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isSaving ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Uploading {progress}%</>
+          ) : (
+            <><ImagePlus className="h-4 w-4" /> Add Photo</>
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          disabled={isSaving}
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          <Camera className="h-4 w-4" /> Take Photo
+        </Button>
+        <span className="text-xs text-muted-foreground">{goatPhotoCount(goat)}/{MAX_PHOTOS}</span>
+      </div>
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+    </div>
+  );
+}
 
 export default function GoatDetails() {
   const params = useParams();
@@ -57,6 +184,7 @@ export default function GoatDetails() {
   const doeBreedings = (allBreedings ?? []).filter((b) => b.doeId === id);
 
   const { usesAi } = useFarmSettings();
+  const isManager = useIsManager();
 
   const updateGoat = useUpdateGoat();
   const deleteGoat = useDeleteGoat();
@@ -168,30 +296,34 @@ export default function GoatDetails() {
                 <Button variant="outline" onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" /> Print / Export
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
-                  <Edit3 className="mr-2 h-4 w-4" /> Edit Record
-                </Button>
-                <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" size="icon" className="shadow-sm">
-                      <Trash2 className="h-4 w-4" />
+                {isManager && (
+                  <>
+                    <Button variant="outline" onClick={() => setIsEditing(true)}>
+                      <Edit3 className="mr-2 h-4 w-4" /> Edit Record
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="font-serif">Confirm Removal</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to remove {goat.name} from the herd records? This action cannot be undone.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="mt-6">
-                      <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                      <Button variant="destructive" onClick={handleDelete} disabled={deleteGoat.isPending}>
-                        {deleteGoat.isPending ? "Removing..." : "Remove Goat"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="icon" className="shadow-sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle className="font-serif">Confirm Removal</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to remove {goat.name} from the herd records? This action cannot be undone.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-6">
+                          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                          <Button variant="destructive" onClick={handleDelete} disabled={deleteGoat.isPending}>
+                            {deleteGoat.isPending ? "Removing..." : "Remove Goat"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
               </>
             )}
             {isEditing && <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel Editing</Button>}
@@ -264,6 +396,13 @@ export default function GoatDetails() {
                     <p className="text-xs font-mono text-muted-foreground/70 mb-4">ADGA #{goat.adgaId}</p>
                   )}
                   {!goat.registeredName && !goat.adgaId && <div className="mb-4" />}
+
+                  {!isManager && (
+                    <div className="mb-4 rounded-lg border border-border bg-muted/20 p-3 no-print">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Photos</p>
+                      <AddGoatPhotoInline goat={goat} />
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div className="flex justify-between items-center pb-3 border-b border-border">
@@ -374,7 +513,9 @@ export default function GoatDetails() {
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                       <Milk className="h-8 w-8 text-muted-foreground/30 mb-3" />
                       <p className="italic">No breeding information has been added yet.</p>
-                      <Button variant="link" onClick={() => setIsEditing(true)} className="mt-2 text-primary">Add pedigree</Button>
+                      {isManager && (
+                        <Button variant="link" onClick={() => setIsEditing(true)} className="mt-2 text-primary">Add pedigree</Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -474,7 +615,9 @@ export default function GoatDetails() {
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                       <Edit3 className="h-8 w-8 text-muted-foreground/30 mb-3" />
                       <p className="italic">No notes have been added for this goat yet.</p>
-                      <Button variant="link" onClick={() => setIsEditing(true)} className="mt-2 text-primary">Add notes</Button>
+                      {isManager && (
+                        <Button variant="link" onClick={() => setIsEditing(true)} className="mt-2 text-primary">Add notes</Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
