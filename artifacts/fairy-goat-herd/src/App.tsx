@@ -19,7 +19,8 @@ import BreedingNew from "@/pages/breedings/new";
 import BreedingImport from "@/pages/breedings/import";
 import BreedingDetail from "@/pages/breedings/[id]";
 import InventoryList from "@/pages/inventory/index";
-import LineageReports from "@/pages/lineage";
+import Reports from "@/pages/reports/index";
+import LineageReports from "@/pages/reports/lineage";
 import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
@@ -77,7 +78,11 @@ function AuthenticatedRoutes() {
         <Route path="/breedings/import" component={BreedingImport} />
         <Route path="/breedings/:id" component={BreedingDetail} />
         <Route path="/inventory" component={InventoryList} />
-        <Route path="/lineage" component={LineageReports} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/reports/lineage" component={LineageReports} />
+        <Route path="/lineage">
+          <Redirect to="/reports/lineage" replace />
+        </Route>
         <Route path="/admin/users">
           <Redirect to="/admin/settings?tab=users" replace />
         </Route>

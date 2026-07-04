@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, GitBranch, Heart, List, LogOut, Milk, Settings, Snowflake } from "lucide-react";
+import { ClipboardList, FileText, Heart, List, LogOut, Milk, Settings, Snowflake } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLogout, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/breedings", label: "Kiddings", icon: Heart, exact: false },
     ...(usesAi ? [{ href: "/inventory", label: "AI Inventory", icon: Snowflake, exact: false }] : []),
     ...(isManager ? [{ href: "/goats/new", label: "Add Goat", icon: Milk, exact: true }] : []),
-    { href: "/lineage", label: "Lineage Reports", icon: GitBranch, exact: false },
+    { href: "/reports", label: "Reports", icon: FileText, exact: false },
     { href: "/admin/settings", label: "Farm Settings", icon: Settings, exact: false },
   ];
 
