@@ -1,6 +1,12 @@
 import { useState, useMemo } from "react";
-import { Link, useSearch } from "wouter";
-import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, X } from "lucide-react";
+import { Link, useSearch, useLocation } from "wouter";
+import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, X, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -138,6 +144,7 @@ export default function GoatsList() {
   const [sortKey, setSortKey] = useState<"name" | "breed" | "sex" | "age" | "lactation" | "status" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [isExporting, setIsExporting] = useState(false);
+  const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const handleExport = async () => {
@@ -215,16 +222,24 @@ export default function GoatsList() {
             <p className="text-muted-foreground">Manage your goats, production records, and health status.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="shadow-sm" onClick={handleExport} disabled={isExporting}>
-              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Export CSV
-            </Button>
-            <Link href="/goats/import">
-              <Button variant="outline" className="shadow-sm">
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="shadow-sm">
+                  {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MoreHorizontal className="mr-2 h-4 w-4" />}
+                  More
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onSelect={() => navigate("/goats/import")}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleExport} disabled={isExporting}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link href="/goats/new">
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />

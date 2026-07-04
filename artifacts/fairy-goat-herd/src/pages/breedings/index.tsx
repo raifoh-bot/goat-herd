@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download, Upload } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Plus, Heart, Calendar, Baby, CheckCircle2, XCircle, Clock, Zap, LogIn, LogOut, Loader2, Flame, Download, Upload, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import {
   getListBreedingsQueryKey,
   useListBreedings,
@@ -321,6 +327,7 @@ export default function BreedingsList() {
   const [dialogDate, setDialogDate] = useState("");
   const [dialogNotes, setDialogNotes] = useState("");
   const [exporting, setExporting] = useState<"breedings" | "kids" | null>(null);
+  const [, navigate] = useLocation();
   const [sort, setSort] = useSessionState<BreedingSort>("breedings-sort", "date-desc");
 
   const handleExport = async (kind: "breedings" | "kids") => {
@@ -395,20 +402,28 @@ export default function BreedingsList() {
             <p className="text-muted-foreground">Track breedings, confirm pregnancies, and record kidding outcomes.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/breedings/import">
-              <Button variant="outline" className="shadow-sm">
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-            </Link>
-            <Button variant="outline" className="shadow-sm" onClick={() => handleExport("breedings")} disabled={exporting !== null}>
-              {exporting === "breedings" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Export Breedings CSV
-            </Button>
-            <Button variant="outline" className="shadow-sm" onClick={() => handleExport("kids")} disabled={exporting !== null}>
-              {exporting === "kids" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Export Kids CSV
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="shadow-sm">
+                  {exporting !== null ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MoreHorizontal className="mr-2 h-4 w-4" />}
+                  More
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={() => navigate("/breedings/import")}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleExport("breedings")} disabled={exporting !== null}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Breedings CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleExport("kids")} disabled={exporting !== null}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Kids CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link href="/breedings/new">
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />
