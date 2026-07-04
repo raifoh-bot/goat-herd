@@ -630,6 +630,142 @@ export const DeleteGoatParams = zod.object({
 });
 
 /**
+ * Appends a single photo URL to the goat's imageUrls (max 4). Available to any authenticated farm member, including Farm Hands, so photos can be captured in the field without full goat-edit permissions.
+ * @summary Append a photo to a goat's photo set
+ */
+export const AddGoatPhotoParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddGoatPhotoBody = zod.object({
+  imageUrl: zod
+    .string()
+    .min(1)
+    .describe(
+      "Storage path of the uploaded photo (e.g. \/api\/storage\/objects\/...), appended to the goat's imageUrls.",
+    ),
+});
+
+export const addGoatPhotoResponseMilkPerDayMin = 0;
+export const addGoatPhotoResponseMilkPerDayMax = 10;
+
+export const addGoatPhotoResponseImageUrlsMax = 4;
+
+export const addGoatPhotoResponseRightEarTattooMax = 4;
+
+export const addGoatPhotoResponseLeftEarTattooMax = 4;
+
+export const addGoatPhotoResponseRightTailTattooMax = 4;
+
+export const addGoatPhotoResponseLeftTailTattooMax = 4;
+
+export const addGoatPhotoResponseCenterTailTattooMax = 8;
+
+export const addGoatPhotoResponseEidNumberMax = 50;
+
+export const AddGoatPhotoResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
+  damName: zod.string().optional(),
+  sireName: zod.string().optional(),
+  maternalGranddamName: zod.string().optional(),
+  maternalGrandsireName: zod.string().optional(),
+  paternalGranddamName: zod.string().optional(),
+  paternalGrandsireName: zod.string().optional(),
+  damRegNo: zod.string().optional(),
+  sireRegNo: zod.string().optional(),
+  maternalGranddamRegNo: zod.string().optional(),
+  maternalGrandsireRegNo: zod.string().optional(),
+  paternalGranddamRegNo: zod.string().optional(),
+  paternalGrandsireRegNo: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck", "wether"]).optional(),
+  breed: zod.enum([
+    "alpine",
+    "angora",
+    "boer",
+    "guernsey",
+    "kiko",
+    "lamancha",
+    "mixed",
+    "myotonic",
+    "nigerian-dwarf",
+    "nubian",
+    "oberhasli",
+    "pygmy",
+    "recorded-grade",
+    "saanen",
+    "sable",
+    "savanna",
+    "spanish",
+    "texmaster",
+    "toggenburg",
+  ]),
+  status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+  milkPerDay: zod
+    .number()
+    .min(addGoatPhotoResponseMilkPerDayMin)
+    .max(addGoatPhotoResponseMilkPerDayMax),
+  lactationStatus: zod
+    .enum([
+      "milking",
+      "dry",
+      "exposed",
+      "serviced",
+      "pregnant",
+      "kid",
+      "retired",
+    ])
+    .nullish(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
+  description: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(addGoatPhotoResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+    ),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
+  rightEarTattoo: zod
+    .string()
+    .max(addGoatPhotoResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod
+    .string()
+    .max(addGoatPhotoResponseLeftEarTattooMax)
+    .optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(addGoatPhotoResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(addGoatPhotoResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(addGoatPhotoResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod.string().max(addGoatPhotoResponseEidNumberMax).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Bulk import goats into the herd
  */
 export const importGoatsBodyGoatsItemRightEarTattooMax = 4;

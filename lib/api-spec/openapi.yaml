@@ -226,6 +226,39 @@ paths:
         "404":
           description: Goat not found
 
+  /goats/{id}/photos:
+    post:
+      operationId: addGoatPhoto
+      tags: [goats]
+      summary: Append a photo to a goat's photo set
+      description: >-
+        Appends a single photo URL to the goat's imageUrls (max 4). Available to
+        any authenticated farm member, including Farm Hands, so photos can be
+        captured in the field without full goat-edit permissions.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGoatPhotoBody"
+      responses:
+        "200":
+          description: Updated goat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goat"
+        "400":
+          description: Invalid photo URL or the goat already has 4 photos
+        "404":
+          description: Goat not found
+
   /goats/export:
     get:
       operationId: exportGoats
@@ -1378,6 +1411,17 @@ components:
       required:
         - name
         - breed
+
+    AddGoatPhotoBody:
+      type: object
+      required: [imageUrl]
+      properties:
+        imageUrl:
+          type: string
+          minLength: 1
+          description: >-
+            Storage path of the uploaded photo (e.g.
+            /api/storage/objects/...), appended to the goat's imageUrls.
 
     UpdateGoatBody:
       type: object

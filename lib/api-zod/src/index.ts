@@ -7,6 +7,7 @@ export * from "./generated/types";
 // (`.safeParse`), so explicitly re-export them from ./generated/api to resolve the
 // ambiguity in favor of the runtime schemas.
 export {
+  AddGoatPhotoBody,
   AddKidsBody,
   ChangeOwnPasswordBody,
   CreateBreedingBody,

@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { db, goatsTable } from "@workspace/db";
 import {
+  AddGoatPhotoBody,
+  AddGoatPhotoParams,
   CreateGoatBody,
   DeleteGoatParams,
   GetGoatParams,
@@ -208,6 +210,47 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Goat not found" });
     return;
   }
+
+  res.json(withImageAlias(goat));
+});
+
+// Append a single photo to a goat's photo set. Unlike full goat edits (which
+// are Admin/Owner only), this is available to any authenticated farm member —
+// including Farm Hands — so photos can be captured in the field.
+router.post("/goats/:id/photos", async (req, res): Promise<void> => {
+  const params = AddGoatPhotoParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = AddGoatPhotoBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(goatsTable)
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))));
+
+  if (!existing) {
+    res.status(404).json({ error: "Goat not found" });
+    return;
+  }
+
+  const currentUrls = existing.imageUrls ?? [];
+  if (currentUrls.length >= 4) {
+    res.status(400).json({ error: "This goat already has the maximum of 4 photos" });
+    return;
+  }
+
+  const [goat] = await db
+    .update(goatsTable)
+    .set({ imageUrls: [...currentUrls, parsed.data.imageUrl], updatedAt: new Date() })
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
+    .returning();
 
   res.json(withImageAlias(goat));
 });

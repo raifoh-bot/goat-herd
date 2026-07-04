@@ -261,6 +261,14 @@ export interface CreateGoatBody {
   eidNumber?: string | null;
 }
 
+export interface AddGoatPhotoBody {
+  /**
+   * Storage path of the uploaded photo (e.g. /api/storage/objects/...), appended to the goat's imageUrls.
+   * @minLength 1
+   */
+  imageUrl: string;
+}
+
 export type UpdateGoatBodySex =
   (typeof UpdateGoatBodySex)[keyof typeof UpdateGoatBodySex];
 

@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddGoatPhotoBody,
   AddKidsBody,
   AuthUser,
   BreedCount,
@@ -845,6 +846,94 @@ export const useDeleteGoat = <
   TContext
 > => {
   return useMutation(getDeleteGoatMutationOptions(options));
+};
+
+/**
+ * Appends a single photo URL to the goat's imageUrls (max 4). Available to any authenticated farm member, including Farm Hands, so photos can be captured in the field without full goat-edit permissions.
+ * @summary Append a photo to a goat's photo set
+ */
+export const getAddGoatPhotoUrl = (id: number) => {
+  return `/api/goats/${id}/photos`;
+};
+
+export const addGoatPhoto = async (
+  id: number,
+  addGoatPhotoBody: AddGoatPhotoBody,
+  options?: RequestInit,
+): Promise<Goat> => {
+  return customFetch<Goat>(getAddGoatPhotoUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addGoatPhotoBody),
+  });
+};
+
+export const getAddGoatPhotoMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addGoatPhoto>>,
+    TError,
+    { id: number; data: BodyType<AddGoatPhotoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addGoatPhoto>>,
+  TError,
+  { id: number; data: BodyType<AddGoatPhotoBody> },
+  TContext
+> => {
+  const mutationKey = ["addGoatPhoto"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addGoatPhoto>>,
+    { id: number; data: BodyType<AddGoatPhotoBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addGoatPhoto(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddGoatPhotoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addGoatPhoto>>
+>;
+export type AddGoatPhotoMutationBody = BodyType<AddGoatPhotoBody>;
+export type AddGoatPhotoMutationError = ErrorType<void>;
+
+/**
+ * @summary Append a photo to a goat's photo set
+ */
+export const useAddGoatPhoto = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addGoatPhoto>>,
+    TError,
+    { id: number; data: BodyType<AddGoatPhotoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addGoatPhoto>>,
+  TError,
+  { id: number; data: BodyType<AddGoatPhotoBody> },
+  TContext
+> => {
+  return useMutation(getAddGoatPhotoMutationOptions(options));
 };
 
 /**

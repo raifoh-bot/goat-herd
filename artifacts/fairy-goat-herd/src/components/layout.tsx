@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { storeAuthToken } from "@/lib/token";
 import { useFarmSettings } from "@/lib/settings";
+import { QuickPhotoCapture } from "@/components/quick-photo-capture";
 
 interface LayoutProps {
   children: ReactNode;
@@ -95,6 +96,8 @@ export function Layout({ children }: LayoutProps) {
               );
             })}
           </nav>
+
+          <QuickPhotoCapture />
         </div>
 
         <div className="mt-auto p-6 space-y-3">
