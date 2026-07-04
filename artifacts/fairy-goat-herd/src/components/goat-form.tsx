@@ -162,7 +162,7 @@ function SortablePhoto({
   );
 }
 
-function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
+export function ImageSlots({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading, progress, error } = useUpload({
