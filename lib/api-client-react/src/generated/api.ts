@@ -30,6 +30,7 @@ import type {
   CreateBreedingEventBody,
   CreateFarmBody,
   CreateGoatBody,
+  CreatePregnancyTestBody,
   CreateSemenStrawBody,
   CreateUserBody,
   DashboardSummary,
@@ -1922,6 +1923,94 @@ export const useAddKids = <
   TContext
 > => {
   return useMutation(getAddKidsMutationOptions(options));
+};
+
+/**
+ * Logs a pregnancy test against a breeding. Optionally, in the same call, confirms the pregnancy (positive result), marks the doe open (negative result), and/or records a final cover event before closing out.
+ * @summary Record a pregnancy test result for a breeding
+ */
+export const getCreatePregnancyTestUrl = (id: number) => {
+  return `/api/breedings/${id}/pregnancy-tests`;
+};
+
+export const createPregnancyTest = async (
+  id: number,
+  createPregnancyTestBody: CreatePregnancyTestBody,
+  options?: RequestInit,
+): Promise<BreedingDetail> => {
+  return customFetch<BreedingDetail>(getCreatePregnancyTestUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPregnancyTestBody),
+  });
+};
+
+export const getCreatePregnancyTestMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPregnancyTest>>,
+    TError,
+    { id: number; data: BodyType<CreatePregnancyTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPregnancyTest>>,
+  TError,
+  { id: number; data: BodyType<CreatePregnancyTestBody> },
+  TContext
+> => {
+  const mutationKey = ["createPregnancyTest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPregnancyTest>>,
+    { id: number; data: BodyType<CreatePregnancyTestBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createPregnancyTest(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePregnancyTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPregnancyTest>>
+>;
+export type CreatePregnancyTestMutationBody = BodyType<CreatePregnancyTestBody>;
+export type CreatePregnancyTestMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a pregnancy test result for a breeding
+ */
+export const useCreatePregnancyTest = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPregnancyTest>>,
+    TError,
+    { id: number; data: BodyType<CreatePregnancyTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPregnancyTest>>,
+  TError,
+  { id: number; data: BodyType<CreatePregnancyTestBody> },
+  TContext
+> => {
+  return useMutation(getCreatePregnancyTestMutationOptions(options));
 };
 
 /**

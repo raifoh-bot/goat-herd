@@ -169,6 +169,32 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 8a. Pregnancy tests table. Created directly with farm_id NOT NULL (there is
+  //     no legacy single-farm data to backfill), plus FKs to farms + breedings
+  //     and a farm_id lookup index.
+  if (presentTenantTables.includes("breedings")) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "pregnancy_tests" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "breeding_id" integer NOT NULL REFERENCES "breedings"("id"),
+        "test_date" timestamp NOT NULL,
+        "method" text NOT NULL,
+        "result" text NOT NULL,
+        "tested_by" text,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "pregnancy_tests_farm_id_idx" ON "pregnancy_tests" ("farm_id");`,
+    );
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "pregnancy_tests_breeding_id_idx" ON "pregnancy_tests" ("breeding_id");`,
+    );
+  }
+
   // 8. Goats can carry up to 4 photos. Add the image_urls array column and
   //    migrate any existing single image_url into it exactly once. The legacy
   //    image_url column is left in place (nullable) but no longer written to.

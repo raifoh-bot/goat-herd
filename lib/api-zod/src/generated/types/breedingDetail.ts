@@ -9,9 +9,11 @@ import type { Breeding } from "./breeding";
 import type { BreedingEvent } from "./breedingEvent";
 import type { Goat } from "./goat";
 import type { Kid } from "./kid";
+import type { PregnancyTest } from "./pregnancyTest";
 
 export type BreedingDetail = Breeding & {
   doe?: Goat;
   kids?: Kid[];
   events?: BreedingEvent[];
+  pregnancyTests?: PregnancyTest[];
 };

@@ -487,6 +487,37 @@ paths:
         "404":
           description: Breeding not found
 
+  /breedings/{id}/pregnancy-tests:
+    post:
+      operationId: createPregnancyTest
+      tags: [breedings]
+      summary: Record a pregnancy test result for a breeding
+      description: >-
+        Logs a pregnancy test against a breeding. Optionally, in the same call,
+        confirms the pregnancy (positive result), marks the doe open (negative
+        result), and/or records a final cover event before closing out.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePregnancyTestBody"
+      responses:
+        "201":
+          description: Pregnancy test recorded; the updated breeding with all tests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreedingDetail"
+        "404":
+          description: Breeding not found
+
   /breedings/{id}/events:
     post:
       operationId: createBreedingEvent
@@ -1616,6 +1647,85 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BreedingEvent"
+            pregnancyTests:
+              type: array
+              items:
+                $ref: "#/components/schemas/PregnancyTest"
+
+    PregnancyTest:
+      type: object
+      properties:
+        id:
+          type: integer
+        breedingId:
+          type: integer
+        testDate:
+          type: string
+          format: date-time
+        method:
+          type: string
+          enum: [ultrasound, blood, palpation, other]
+        result:
+          type: string
+          enum: [positive, negative, inconclusive]
+        testedBy:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - breedingId
+        - testDate
+        - method
+        - result
+        - createdAt
+        - updatedAt
+
+    CreatePregnancyTestBody:
+      type: object
+      properties:
+        testDate:
+          type: string
+          format: date-time
+        method:
+          type: string
+          enum: [ultrasound, blood, palpation, other]
+        result:
+          type: string
+          enum: [positive, negative, inconclusive]
+        testedBy:
+          type: string
+        notes:
+          type: string
+        confirmPregnancy:
+          type: boolean
+          description: When true (positive result), set the breeding to confirmed-pregnant and the doe to pregnant
+        markOpen:
+          type: boolean
+          description: When true (negative result), set the breeding to open and the doe to dry
+        addCoverEvent:
+          type: object
+          description: Optional final cover event to log before closing out a negative cycle
+          properties:
+            eventDate:
+              type: string
+              format: date-time
+            notes:
+              type: string
+          required:
+            - eventDate
+      required:
+        - testDate
+        - method
+        - result
 
     BreedingEvent:
       type: object

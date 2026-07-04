@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, max } from "drizzle-orm";
-import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable, semenStrawsTable } from "@workspace/db";
+import { db, breedingsTable, kidsTable, goatsTable, breedingEventsTable, semenStrawsTable, pregnancyTestsTable } from "@workspace/db";
 import { farmId } from "../middlewares/tenant";
 import {
   CreateBreedingBody,
@@ -20,6 +20,8 @@ import {
   DeleteBreedingEventParams,
   ImportBreedingsBody,
   ImportKidsBody,
+  CreatePregnancyTestBody,
+  CreatePregnancyTestParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { sendCsv } from "../lib/csv";
@@ -447,11 +449,18 @@ router.get("/breedings/:id", async (req, res): Promise<void> => {
     .where(eq(breedingEventsTable.breedingId, id))
     .orderBy(asc(breedingEventsTable.eventDate));
 
+  const pregnancyTests = await db
+    .select()
+    .from(pregnancyTestsTable)
+    .where(and(eq(pregnancyTestsTable.breedingId, id), eq(pregnancyTestsTable.farmId, farmId(req))))
+    .orderBy(asc(pregnancyTestsTable.testDate));
+
   res.json({
     ...rows[0].breedings,
     doe: rows[0].goats,
     kids,
     events,
+    pregnancyTests,
   });
 });
 
@@ -716,6 +725,120 @@ router.delete("/breedings/:id/kids/:kidId", requireManager, async (req, res): Pr
     .where(and(eq(kidsTable.id, paramsParsed.data.kidId), eq(kidsTable.farmId, farmId(req))));
 
   res.status(204).send();
+});
+
+// Record a pregnancy test against a breeding. Farm Hands may log tests (like
+// breedings/kiddings/events). In a single transaction the test is inserted and,
+// depending on the flags, the breeding + doe are transitioned:
+//  - confirmPregnancy: breeding -> confirmed-pregnant, doe -> pregnant
+//  - markOpen: breeding -> open, doe -> dry
+//  - addCoverEvent: a final "cover" breeding event is logged before closing out
+// Returns the updated breeding detail (with doe, kids, events, and all tests).
+router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> => {
+  const idParsed = CreatePregnancyTestParams.safeParse({ id: Number(req.params.id) });
+  if (!idParsed.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const breedingId = idParsed.data.id;
+
+  const parsed = CreatePregnancyTestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [breeding] = await db
+    .select()
+    .from(breedingsTable)
+    .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
+  if (!breeding) {
+    res.status(404).json({ error: "Breeding not found" });
+    return;
+  }
+
+  const data = parsed.data;
+
+  await db.transaction(async (tx) => {
+    await tx.insert(pregnancyTestsTable).values({
+      farmId: farmId(req),
+      breedingId,
+      testDate: new Date(data.testDate),
+      method: data.method,
+      result: data.result,
+      testedBy: data.testedBy ?? null,
+      notes: data.notes ?? null,
+    });
+
+    // Optional final cover before closing out a negative cycle.
+    if (data.addCoverEvent) {
+      await tx.insert(breedingEventsTable).values({
+        farmId: farmId(req),
+        breedingId,
+        eventType: "cover",
+        eventDate: new Date(data.addCoverEvent.eventDate),
+        notes: data.addCoverEvent.notes ?? null,
+      });
+    }
+
+    // Positive result shortcut: confirm the pregnancy.
+    if (data.confirmPregnancy) {
+      await tx
+        .update(breedingsTable)
+        .set({ status: "confirmed-pregnant", updatedAt: new Date() })
+        .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
+      await tx
+        .update(goatsTable)
+        .set({ lactationStatus: "pregnant", updatedAt: new Date() })
+        .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
+    }
+
+    // Negative result: mark the doe open and dry (removes her from active list).
+    if (data.markOpen) {
+      await tx
+        .update(breedingsTable)
+        .set({ status: "open", updatedAt: new Date() })
+        .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
+      await tx
+        .update(goatsTable)
+        .set({ lactationStatus: "dry", updatedAt: new Date() })
+        .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
+    }
+  });
+
+  // Return the fresh breeding detail (mirrors GET /breedings/:id).
+  const rows = await db
+    .select()
+    .from(breedingsTable)
+    .leftJoin(goatsTable, eq(breedingsTable.doeId, goatsTable.id))
+    .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
+
+  const kids = await db
+    .select()
+    .from(kidsTable)
+    .where(eq(kidsTable.breedingId, breedingId))
+    .orderBy(kidsTable.createdAt);
+
+  const events = await db
+    .select()
+    .from(breedingEventsTable)
+    .where(eq(breedingEventsTable.breedingId, breedingId))
+    .orderBy(asc(breedingEventsTable.eventDate));
+
+  const pregnancyTests = await db
+    .select()
+    .from(pregnancyTestsTable)
+    .where(and(eq(pregnancyTestsTable.breedingId, breedingId), eq(pregnancyTestsTable.farmId, farmId(req))))
+    .orderBy(asc(pregnancyTestsTable.testDate));
+
+  res.status(201).json({
+    ...rows[0].breedings,
+    doe: rows[0].goats,
+    kids,
+    events,
+    pregnancyTests,
+  });
 });
 
 router.post("/breedings/:id/events", async (req, res): Promise<void> => {

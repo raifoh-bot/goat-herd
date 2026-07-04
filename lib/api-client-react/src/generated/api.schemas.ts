@@ -495,11 +495,84 @@ export interface BreedingEvent {
   updatedAt: string;
 }
 
+export type PregnancyTestMethod =
+  (typeof PregnancyTestMethod)[keyof typeof PregnancyTestMethod];
+
+export const PregnancyTestMethod = {
+  ultrasound: "ultrasound",
+  blood: "blood",
+  palpation: "palpation",
+  other: "other",
+} as const;
+
+export type PregnancyTestResult =
+  (typeof PregnancyTestResult)[keyof typeof PregnancyTestResult];
+
+export const PregnancyTestResult = {
+  positive: "positive",
+  negative: "negative",
+  inconclusive: "inconclusive",
+} as const;
+
+export interface PregnancyTest {
+  id: number;
+  breedingId: number;
+  testDate: string;
+  method: PregnancyTestMethod;
+  result: PregnancyTestResult;
+  testedBy?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type BreedingDetail = Breeding & {
   doe?: Goat;
   kids?: Kid[];
   events?: BreedingEvent[];
+  pregnancyTests?: PregnancyTest[];
 };
+
+export type CreatePregnancyTestBodyMethod =
+  (typeof CreatePregnancyTestBodyMethod)[keyof typeof CreatePregnancyTestBodyMethod];
+
+export const CreatePregnancyTestBodyMethod = {
+  ultrasound: "ultrasound",
+  blood: "blood",
+  palpation: "palpation",
+  other: "other",
+} as const;
+
+export type CreatePregnancyTestBodyResult =
+  (typeof CreatePregnancyTestBodyResult)[keyof typeof CreatePregnancyTestBodyResult];
+
+export const CreatePregnancyTestBodyResult = {
+  positive: "positive",
+  negative: "negative",
+  inconclusive: "inconclusive",
+} as const;
+
+/**
+ * Optional final cover event to log before closing out a negative cycle
+ */
+export type CreatePregnancyTestBodyAddCoverEvent = {
+  eventDate: string;
+  notes?: string;
+};
+
+export interface CreatePregnancyTestBody {
+  testDate: string;
+  method: CreatePregnancyTestBodyMethod;
+  result: CreatePregnancyTestBodyResult;
+  testedBy?: string;
+  notes?: string;
+  /** When true (positive result), set the breeding to confirmed-pregnant and the doe to pregnant */
+  confirmPregnancy?: boolean;
+  /** When true (negative result), set the breeding to open and the doe to dry */
+  markOpen?: boolean;
+  /** Optional final cover event to log before closing out a negative cycle */
+  addCoverEvent?: CreatePregnancyTestBodyAddCoverEvent;
+}
 
 export type CreateBreedingEventBodyEventType =
   (typeof CreateBreedingEventBodyEventType)[keyof typeof CreateBreedingEventBodyEventType];

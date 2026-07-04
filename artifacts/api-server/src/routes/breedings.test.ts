@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, goatsTable, breedingsTable, kidsTable, usersTable, semenStrawsTable, farmsTable } from "@workspace/db";
+import { db, goatsTable, breedingsTable, kidsTable, usersTable, semenStrawsTable, farmsTable, pregnancyTestsTable, breedingEventsTable } from "@workspace/db";
 import app from "../app";
 
 // These integration tests exercise the doe lactation-status side effects driven by
@@ -103,6 +103,10 @@ afterEach(async () => {
     for (const kid of kids) {
       if (kid.goatId != null) await db.delete(goatsTable).where(eq(goatsTable.id, kid.goatId));
     }
+    // Pregnancy tests and breeding events FK-reference the breeding; clear both
+    // before removing the breeding itself.
+    await db.delete(pregnancyTestsTable).where(eq(pregnancyTestsTable.breedingId, breedingId));
+    await db.delete(breedingEventsTable).where(eq(breedingEventsTable.breedingId, breedingId));
     await db.delete(breedingsTable).where(eq(breedingsTable.id, breedingId));
   }
   createdBreedingIds.length = 0;
@@ -526,5 +530,93 @@ describe("POST /api/kids/import", () => {
       .from(kidsTable)
       .where(eq(kidsTable.breedingId, newer.id));
     expect(newerKids).toHaveLength(1);
+  });
+});
+
+describe("POST /api/breedings/:id/pregnancy-tests", () => {
+  it("records a test without side effects when no flags are set", async () => {
+    const doe = await createDoe("serviced");
+    const breeding = await createBreeding(doe.id, "bred");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({
+        testDate: new Date().toISOString(),
+        method: "ultrasound",
+        result: "inconclusive",
+        testedBy: "Dr. Vet",
+        notes: "Too early to tell",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.pregnancyTests).toHaveLength(1);
+    expect(res.body.pregnancyTests[0].result).toBe("inconclusive");
+    expect(res.body.pregnancyTests[0].method).toBe("ultrasound");
+    expect(res.body.pregnancyTests[0].testedBy).toBe("Dr. Vet");
+    // Breeding + doe unchanged.
+    expect(res.body.status).toBe("bred");
+    const stored = await getDoe(doe.id);
+    expect(stored.lactationStatus).toBe("serviced");
+  });
+
+  it("confirms the pregnancy on a positive result when confirmPregnancy is set", async () => {
+    const doe = await createDoe("serviced");
+    const breeding = await createBreeding(doe.id, "bred");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({
+        testDate: new Date().toISOString(),
+        method: "blood",
+        result: "positive",
+        confirmPregnancy: true,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("confirmed-pregnant");
+    const stored = await getDoe(doe.id);
+    expect(stored.lactationStatus).toBe("pregnant");
+  });
+
+  it("marks the doe open and logs a final cover on a negative result", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createBreeding(doe.id, "confirmed-pregnant");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({
+        testDate: new Date().toISOString(),
+        method: "palpation",
+        result: "negative",
+        markOpen: true,
+        addCoverEvent: { eventDate: new Date().toISOString(), notes: "Final cover attempt" },
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("open");
+    expect(res.body.pregnancyTests).toHaveLength(1);
+    const coverEvents = (res.body.events ?? []).filter((e: { eventType: string }) => e.eventType === "cover");
+    expect(coverEvents).toHaveLength(1);
+    const stored = await getDoe(doe.id);
+    expect(stored.lactationStatus).toBe("dry");
+  });
+
+  it("returns 404 for a breeding in another farm's scope", async () => {
+    const res = await agent
+      .post(`/api/breedings/99999999/pregnancy-tests`)
+      .send({ testDate: new Date().toISOString(), method: "ultrasound", result: "positive" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an invalid method", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({ testDate: new Date().toISOString(), method: "xray", result: "positive" });
+
+    expect(res.status).toBe(400);
   });
 });

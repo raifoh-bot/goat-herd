@@ -1351,6 +1351,21 @@ export const GetBreedingResponse = zod
           }),
         )
         .optional(),
+      pregnancyTests: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            breedingId: zod.number(),
+            testDate: zod.coerce.date(),
+            method: zod.enum(["ultrasound", "blood", "palpation", "other"]),
+            result: zod.enum(["positive", "negative", "inconclusive"]),
+            testedBy: zod.string().nullish(),
+            notes: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
     }),
   );
 
@@ -1430,6 +1445,43 @@ export const AddKidsBody = zod.object({
       notes: zod.string().optional(),
     }),
   ),
+});
+
+/**
+ * Logs a pregnancy test against a breeding. Optionally, in the same call, confirms the pregnancy (positive result), marks the doe open (negative result), and/or records a final cover event before closing out.
+ * @summary Record a pregnancy test result for a breeding
+ */
+export const CreatePregnancyTestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreatePregnancyTestBody = zod.object({
+  testDate: zod.coerce.date(),
+  method: zod.enum(["ultrasound", "blood", "palpation", "other"]),
+  result: zod.enum(["positive", "negative", "inconclusive"]),
+  testedBy: zod.string().optional(),
+  notes: zod.string().optional(),
+  confirmPregnancy: zod
+    .boolean()
+    .optional()
+    .describe(
+      "When true (positive result), set the breeding to confirmed-pregnant and the doe to pregnant",
+    ),
+  markOpen: zod
+    .boolean()
+    .optional()
+    .describe(
+      "When true (negative result), set the breeding to open and the doe to dry",
+    ),
+  addCoverEvent: zod
+    .object({
+      eventDate: zod.coerce.date(),
+      notes: zod.string().optional(),
+    })
+    .optional()
+    .describe(
+      "Optional final cover event to log before closing out a negative cycle",
+    ),
 });
 
 /**

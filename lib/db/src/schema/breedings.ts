@@ -47,9 +47,23 @@ export const kidsTable = pgTable("kids", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const pregnancyTestsTable = pgTable("pregnancy_tests", {
+  id: serial("id").primaryKey(),
+  farmId: integer("farm_id").notNull().references(() => farmsTable.id),
+  breedingId: integer("breeding_id").notNull().references(() => breedingsTable.id),
+  testDate: timestamp("test_date").notNull(),
+  method: text("method", { enum: ["ultrasound", "blood", "palpation", "other"] }).notNull(),
+  result: text("result", { enum: ["positive", "negative", "inconclusive"] }).notNull(),
+  testedBy: text("tested_by"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertBreedingSchema = createInsertSchema(breedingsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertKidSchema = createInsertSchema(kidsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertBreedingEventSchema = createInsertSchema(breedingEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPregnancyTestSchema = createInsertSchema(pregnancyTestsTable).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertBreeding = z.infer<typeof insertBreedingSchema>;
 export type Breeding = typeof breedingsTable.$inferSelect;
@@ -57,3 +71,5 @@ export type InsertKid = z.infer<typeof insertKidSchema>;
 export type Kid = typeof kidsTable.$inferSelect;
 export type BreedingEvent = typeof breedingEventsTable.$inferSelect;
 export type InsertBreedingEvent = z.infer<typeof insertBreedingEventSchema>;
+export type PregnancyTest = typeof pregnancyTestsTable.$inferSelect;
+export type InsertPregnancyTest = z.infer<typeof insertPregnancyTestSchema>;

@@ -24,6 +24,7 @@ import {
   getListGoatsQueryKey,
   useAddKids,
   useCreateBreedingEvent,
+  useCreatePregnancyTest,
   useUpdateBreedingEvent,
   useDeleteBreeding,
   useDeleteBreedingEvent,
@@ -32,7 +33,7 @@ import {
   useUpdateBreeding,
   useUpdateKid,
 } from "@workspace/api-client-react";
-import type { BreedingEvent, Kid } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { BreedingEvent, Kid, PregnancyTest } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const statusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -664,6 +665,257 @@ function ExposureTimeline({ events, breedingId, isAi = false }: { events: Breedi
   );
 }
 
+const testMethodConfig: Record<string, string> = {
+  ultrasound: "Ultrasound",
+  blood: "Blood Test",
+  palpation: "Palpation",
+  other: "Other",
+};
+
+const testResultConfig: Record<string, { label: string; badgeClass: string }> = {
+  positive: { label: "Positive", badgeClass: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700" },
+  negative: { label: "Negative", badgeClass: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700" },
+  inconclusive: { label: "Inconclusive", badgeClass: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700" },
+};
+
+function PregnancyTestsCard({
+  tests,
+  breedingId,
+  canRecord,
+}: {
+  tests: PregnancyTest[];
+  breedingId: number;
+  canRecord: boolean;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [step, setStep] = useState<"details" | "action">("details");
+
+  const [testDate, setTestDate] = useState(new Date().toISOString().slice(0, 10));
+  const [method, setMethod] = useState<PregnancyTest["method"]>("ultrasound");
+  const [result, setResult] = useState<PregnancyTest["result"]>("positive");
+  const [testedBy, setTestedBy] = useState("");
+  const [notes, setNotes] = useState("");
+  const [addCover, setAddCover] = useState(false);
+  const [coverDate, setCoverDate] = useState(new Date().toISOString().slice(0, 10));
+  const [coverNotes, setCoverNotes] = useState("");
+
+  const createTest = useCreatePregnancyTest();
+
+  const resetForm = () => {
+    setStep("details");
+    setTestDate(new Date().toISOString().slice(0, 10));
+    setMethod("ultrasound");
+    setResult("positive");
+    setTestedBy("");
+    setNotes("");
+    setAddCover(false);
+    setCoverDate(new Date().toISOString().slice(0, 10));
+    setCoverNotes("");
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) resetForm();
+  };
+
+  const submit = (opts: { confirmPregnancy?: boolean; markOpen?: boolean } = {}) => {
+    createTest.mutate(
+      {
+        id: breedingId,
+        data: {
+          testDate: new Date(testDate + "T12:00:00").toISOString(),
+          method,
+          result,
+          testedBy: testedBy.trim() || undefined,
+          notes: notes.trim() || undefined,
+          confirmPregnancy: opts.confirmPregnancy || undefined,
+          markOpen: opts.markOpen || undefined,
+          addCoverEvent:
+            opts.markOpen && addCover
+              ? { eventDate: new Date(coverDate + "T12:00:00").toISOString(), notes: coverNotes.trim() || undefined }
+              : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Pregnancy test recorded" });
+          handleOpenChange(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+          queryClient.invalidateQueries({ queryKey: getListBreedingsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
+        },
+        onError: () => toast({ title: "Failed to record test", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleContinue = () => {
+    // Inconclusive has no follow-up action — save immediately.
+    if (result === "inconclusive") {
+      submit();
+    } else {
+      setStep("action");
+    }
+  };
+
+  return (
+    <Card className="border-primary/10 shadow-md">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" /> Pregnancy Tests
+          </CardTitle>
+          {canRecord && (
+            <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Record Pregnancy Test
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {tests.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No tests recorded yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {tests.map((t) => (
+              <li key={t.id} className="rounded-xl border border-border bg-card/50 p-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className={`${testResultConfig[t.result]?.badgeClass ?? ""} text-xs px-2 py-0 border`}>
+                      {testResultConfig[t.result]?.label ?? t.result}
+                    </Badge>
+                    <span className="text-sm font-medium text-foreground">{testMethodConfig[t.method] ?? t.method}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> {formatDate(t.testDate)}
+                  </span>
+                </div>
+                {(t.testedBy || t.notes) && (
+                  <div className="mt-2 text-sm text-muted-foreground space-y-1">
+                    {t.testedBy && <p>Tested by {t.testedBy}</p>}
+                    {t.notes && <p className="leading-relaxed">{t.notes}</p>}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+
+      <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Record Pregnancy Test</DialogTitle>
+            <DialogDescription>
+              {step === "details"
+                ? "Log the test date, method, and result."
+                : result === "positive"
+                ? "This test is positive. Confirm the pregnancy?"
+                : "This test is negative. Close out this cycle?"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {step === "details" ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Test Date</label>
+                  <Input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="bg-background/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Method</label>
+                  <Select value={method} onValueChange={(v) => setMethod(v as PregnancyTest["method"])}>
+                    <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ultrasound">Ultrasound</SelectItem>
+                      <SelectItem value="blood">Blood Test</SelectItem>
+                      <SelectItem value="palpation">Palpation</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Result</label>
+                <Select value={result} onValueChange={(v) => setResult(v as PregnancyTest["result"])}>
+                  <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="positive">Positive</SelectItem>
+                    <SelectItem value="negative">Negative</SelectItem>
+                    <SelectItem value="inconclusive">Inconclusive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tested By <span className="text-muted-foreground font-normal">(optional)</span></label>
+                <Input value={testedBy} onChange={(e) => setTestedBy(e.target.value)} placeholder="e.g. Dr. Smith" className="bg-background/50" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="bg-background/50 resize-none" placeholder="Any observations" />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
+                <Button type="button" onClick={handleContinue} disabled={createTest.isPending}>
+                  {result === "inconclusive" ? (createTest.isPending ? "Saving..." : "Save Test") : "Continue"}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : result === "positive" ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Confirming will set this breeding to <span className="font-medium text-foreground">Confirmed Pregnant</span> and mark the doe pregnant.
+              </p>
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => setStep("details")}>Back</Button>
+                <Button type="button" variant="outline" onClick={() => submit()} disabled={createTest.isPending}>
+                  Just Save Test
+                </Button>
+                <Button type="button" onClick={() => submit({ confirmPregnancy: true })} disabled={createTest.isPending}>
+                  {createTest.isPending ? "Saving..." : "Confirm Pregnancy"}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Marking open will set this breeding to <span className="font-medium text-foreground">Open</span> and mark the doe dry.
+              </p>
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input type="checkbox" checked={addCover} onChange={(e) => setAddCover(e.target.checked)} className="h-4 w-4" />
+                Log a final cover before closing out
+              </label>
+              {addCover && (
+                <div className="space-y-3 rounded-xl border border-border bg-card/50 p-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Cover Date</label>
+                    <Input type="date" value={coverDate} onChange={(e) => setCoverDate(e.target.value)} className="bg-background/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Cover Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <Input value={coverNotes} onChange={(e) => setCoverNotes(e.target.value)} placeholder="e.g. Final cover attempt" className="bg-background/50" />
+                  </div>
+                </div>
+              )}
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => setStep("details")}>Back</Button>
+                <Button type="button" variant="outline" onClick={() => submit()} disabled={createTest.isPending}>
+                  Just Save Test
+                </Button>
+                <Button type="button" onClick={() => submit({ markOpen: true })} disabled={createTest.isPending}>
+                  {createTest.isPending ? "Saving..." : "Mark Doe Open"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export default function BreedingDetail() {
   const params = useParams();
   const id = params.id ? parseInt(params.id, 10) : 0;
@@ -986,6 +1238,12 @@ export default function BreedingDetail() {
         </Card>
 
         <ExposureTimeline events={breeding.events ?? []} breedingId={id} isAi={isAi} />
+
+        <PregnancyTestsCard
+          tests={breeding.pregnancyTests ?? []}
+          breedingId={id}
+          canRecord={breeding.status === "bred" || breeding.status === "confirmed-pregnant"}
+        />
 
         {isEditingStatus && (
           <Card className="border-primary/10 shadow-md">
