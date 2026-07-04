@@ -620,3 +620,77 @@ describe("POST /api/breedings/:id/pregnancy-tests", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("pregnancy tests vs. manual status edits stay consistent", () => {
+  it("a confirming positive test re-confirms a doe after a manual reopen, leaving breeding and doe in agreement", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createBreeding(doe.id, "confirmed-pregnant");
+
+    // Manual edit: reopen the breeding. This drops the doe back to "dry".
+    const reopenRes = await agent
+      .put(`/api/breedings/${breeding.id}`)
+      .send({ status: "open" });
+    expect(reopenRes.status).toBe(200);
+    expect(reopenRes.body.status).toBe("open");
+    expect((await getDoe(doe.id)).lactationStatus).toBe("dry");
+
+    // A later positive test that confirms the pregnancy must bring both the
+    // breeding and the doe back into a consistent confirmed-pregnant state —
+    // the manual reopen is not silently left in place.
+    const testRes = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({
+        testDate: new Date().toISOString(),
+        method: "ultrasound",
+        result: "positive",
+        confirmPregnancy: true,
+      });
+
+    expect(testRes.status).toBe(201);
+    expect(testRes.body.status).toBe("confirmed-pregnant");
+    expect(testRes.body.doe.lactationStatus).toBe("pregnant");
+    expect((await getDoe(doe.id)).lactationStatus).toBe("pregnant");
+  });
+
+  it("logging a plain test on a kidded breeding does not regress the doe or overwrite the kidding outcome", async () => {
+    const doe = await createDoe("milking");
+    const breeding = await createBreeding(doe.id, "kidded");
+
+    // Record the kidding outcome so we can assert it survives the later test.
+    const [kid] = await db
+      .insert(kidsTable)
+      .values({
+        farmId: testFarmId,
+        breedingId: breeding.id,
+        name: "Existing Kid",
+        sex: "doe",
+        kidStatus: "alive",
+        birthDate: new Date(),
+      })
+      .returning();
+
+    // A pregnancy test recorded (e.g. mistakenly) against an already-kidded
+    // breeding must not roll the doe back off "milking" or reopen the breeding.
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/pregnancy-tests`)
+      .send({
+        testDate: new Date().toISOString(),
+        method: "palpation",
+        result: "inconclusive",
+        notes: "Recorded against a closed breeding",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("kidded");
+    expect(res.body.doe.lactationStatus).toBe("milking");
+    expect((await getDoe(doe.id)).lactationStatus).toBe("milking");
+
+    // The kidding outcome (the kid record) is untouched.
+    const kidsAfter = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.breedingId, breeding.id));
+    expect(kidsAfter).toHaveLength(1);
+    expect(kidsAfter[0].id).toBe(kid.id);
+  });
+});
