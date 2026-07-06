@@ -24,3 +24,11 @@ must stay in lockstep with each Drizzle table. After adding/altering a column in
 `lib/db/src/schema/*`, update the corresponding `ensure*` helper in the same
 change. Prod is read-only via tooling, so the only way prod heals is a republish
 that runs the updated boot ensure.
+
+**Tests don't run the boot ensure.** The vitest suites `import app` directly and
+never call `provision()`, so a newly added column will NOT exist in the dev DB
+when tests run — every `db.select()` on that table 500s and unrelated suites
+(e.g. superadmin farm creation, which inserts a settings row) fail with it. Fix:
+after adding the column + ensure helper, apply it to the dev DB once manually
+(`executeSql` `ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...`) before running
+tests. Do NOT use drizzle `push` (it drops `user_sessions`).

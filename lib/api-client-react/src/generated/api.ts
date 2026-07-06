@@ -42,6 +42,7 @@ import type {
   Farm,
   FarmSettings,
   Goat,
+  HealthDueResponse,
   HealthEvent,
   HealthStatus,
   ImportBreedingsBody,
@@ -1617,6 +1618,82 @@ export const useCreateHealthEventsBulk = <
 > => {
   return useMutation(getCreateHealthEventsBulkMutationOptions(options));
 };
+
+/**
+ * Uses the farm's per-event-type interval settings to work out which goats are due (or overdue) for routine work such as hoof trims, CD&T boosters, copper bolus, and deworming. Only goats worked on a herd work day are considered (dead, sold, and retired goats are excluded).
+ * @summary List goats with routine health work due or overdue
+ */
+export const getGetHealthWorkDueUrl = () => {
+  return `/api/health-events/due`;
+};
+
+export const getHealthWorkDue = async (
+  options?: RequestInit,
+): Promise<HealthDueResponse> => {
+  return customFetch<HealthDueResponse>(getGetHealthWorkDueUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHealthWorkDueQueryKey = () => {
+  return [`/api/health-events/due`] as const;
+};
+
+export const getGetHealthWorkDueQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHealthWorkDue>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthWorkDue>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetHealthWorkDueQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHealthWorkDue>>
+  > = ({ signal }) => getHealthWorkDue({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthWorkDue>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHealthWorkDueQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHealthWorkDue>>
+>;
+export type GetHealthWorkDueQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List goats with routine health work due or overdue
+ */
+
+export function useGetHealthWorkDue<
+  TData = Awaited<ReturnType<typeof getHealthWorkDue>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthWorkDue>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHealthWorkDueQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all breeding records

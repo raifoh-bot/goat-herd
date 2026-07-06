@@ -19,6 +19,7 @@ const HAND = { username: `settings-hand-${suffix}`, password: "hand-password-123
 const createdUserIds: number[] = [];
 let testFarmId: number;
 let originalUsesAi: boolean;
+let originalHealthScheduleIntervals: unknown;
 let settingsRowId: number;
 
 async function seedUser(
@@ -64,13 +65,18 @@ beforeAll(async () => {
     .where(eq(farmSettingsTable.farmId, testFarmId));
   settingsRowId = row.id;
   originalUsesAi = row.usesAi;
+  originalHealthScheduleIntervals = row.healthScheduleIntervals;
 });
 
 afterAll(async () => {
   // Restore the original setting value so this suite leaves no side effects.
   await db
     .update(farmSettingsTable)
-    .set({ usesAi: originalUsesAi })
+    .set({
+      usesAi: originalUsesAi,
+      healthScheduleIntervals:
+        (originalHealthScheduleIntervals as Record<string, number> | null) ?? null,
+    })
     .where(eq(farmSettingsTable.id, settingsRowId));
 
   if (createdUserIds.length > 0) {
@@ -205,6 +211,62 @@ describe("PUT /api/settings", () => {
     const agent = await login(ADMIN);
     const res = await agent.put("/api/settings").send({ gestationDays: 5 });
     expect(res.status).toBe(400);
+  });
+
+  it("persists health schedule intervals and reads them back", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent
+      .put("/api/settings")
+      .send({ healthScheduleIntervals: { hoof_trim: 56, deworming: 90 } });
+    expect(res.status).toBe(200);
+    expect(res.body.healthScheduleIntervals).toEqual({ hoof_trim: 56, deworming: 90 });
+
+    const readBack = await agent.get("/api/settings");
+    expect(readBack.body.healthScheduleIntervals).toEqual({ hoof_trim: 56, deworming: 90 });
+  });
+
+  it("normalizes schedule intervals: drops unknown keys and floors fractional days", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.put("/api/settings").send({
+      healthScheduleIntervals: {
+        hoof_trim: 42,
+        famacha: 30, // not schedulable → dropped
+        other: 30, // not schedulable → dropped
+        deworming: 45.7, // floored to 45
+      },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.healthScheduleIntervals).toEqual({ hoof_trim: 42, deworming: 45 });
+  });
+
+  it("rejects out-of-range schedule intervals", async () => {
+    const agent = await login(ADMIN);
+    const tooLow = await agent
+      .put("/api/settings")
+      .send({ healthScheduleIntervals: { cdt_shot: 0 } });
+    expect(tooLow.status).toBe(400);
+
+    const tooHigh = await agent
+      .put("/api/settings")
+      .send({ healthScheduleIntervals: { copper_bolus: 99999 } });
+    expect(tooHigh.status).toBe(400);
+  });
+
+  it("clears schedule intervals when given an empty object", async () => {
+    const agent = await login(ADMIN);
+    await agent.put("/api/settings").send({ healthScheduleIntervals: { hoof_trim: 56 } });
+
+    const res = await agent.put("/api/settings").send({ healthScheduleIntervals: {} });
+    expect(res.status).toBe(200);
+    expect(res.body.healthScheduleIntervals).toEqual({});
+  });
+
+  it("forbids a farm hand from changing schedule intervals", async () => {
+    const agent = await login(HAND);
+    const res = await agent
+      .put("/api/settings")
+      .send({ healthScheduleIntervals: { hoof_trim: 56 } });
+    expect(res.status).toBe(403);
   });
 });
 

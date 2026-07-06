@@ -6,6 +6,12 @@ import { farmsTable } from "./farms";
 /** One dashboard widget's persisted visibility/order state. */
 export type DashboardWidgetLayout = { id: string; visible: boolean };
 
+/** Event types a farm can put on a routine repeating schedule. */
+export type SchedulableEventType = "hoof_trim" | "cdt_shot" | "copper_bolus" | "deworming";
+
+/** Per-event-type routine interval in days. Absent types have no schedule. */
+export type HealthScheduleIntervals = Partial<Record<SchedulableEventType, number>>;
+
 export const farmSettingsTable = pgTable("farm_settings", {
   id: serial("id").primaryKey(),
   farmId: integer("farm_id").notNull().references(() => farmsTable.id).unique(),
@@ -41,6 +47,7 @@ export const farmSettingsTable = pgTable("farm_settings", {
     ]),
   dashboardLayout: jsonb("dashboard_layout").$type<DashboardWidgetLayout[]>(),
   famachaThreshold: integer("famacha_threshold").notNull().default(3),
+  healthScheduleIntervals: jsonb("health_schedule_intervals").$type<HealthScheduleIntervals>(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

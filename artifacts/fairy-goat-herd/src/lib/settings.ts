@@ -1,6 +1,7 @@
 import {
   useGetSettings,
   getGetSettingsQueryKey,
+  type HealthScheduleIntervals,
 } from "@workspace/api-client-react";
 import { BREED_SLUGS } from "@/lib/breeds";
 
@@ -25,6 +26,7 @@ export interface FarmSettingsValues {
   gestationDays: number;
   enabledBreeds: string[];
   famachaThreshold: number;
+  healthScheduleIntervals: HealthScheduleIntervals;
   isLoading: boolean;
 }
 
@@ -50,6 +52,7 @@ export function useFarmSettings(): FarmSettingsValues {
         ? data.enabledBreeds
         : [...BREED_SLUGS],
     famachaThreshold: data?.famachaThreshold ?? DEFAULT_FAMACHA_THRESHOLD,
+    healthScheduleIntervals: data?.healthScheduleIntervals ?? {},
     isLoading,
   };
 }

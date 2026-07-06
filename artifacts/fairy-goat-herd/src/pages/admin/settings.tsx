@@ -34,6 +34,15 @@ import { AccountTab } from "./account-tab";
 const TAB_VALUES = ["farm", "users", "account"] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
+// Event types that can be put on a repeating routine schedule, with a display
+// label and a hint of a typical cadence to guide the farmer.
+const SCHEDULABLE_EVENTS: { type: string; label: string; hint: string }[] = [
+  { type: "hoof_trim", label: "Hoof trim", hint: "e.g. every 56 days (8 weeks)" },
+  { type: "cdt_shot", label: "CD&T booster", hint: "e.g. every 365 days (yearly)" },
+  { type: "copper_bolus", label: "Copper bolus", hint: "e.g. every 182 days (6 months)" },
+  { type: "deworming", label: "Deworming", hint: "e.g. every 90 days" },
+];
+
 function FarmTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -47,6 +56,7 @@ function FarmTab() {
   const [adgaNumber, setAdgaNumber] = useState("");
   const [gestationDays, setGestationDays] = useState("");
   const [enabledBreeds, setEnabledBreeds] = useState<string[]>([...BREED_SLUGS]);
+  const [scheduleIntervals, setScheduleIntervals] = useState<Record<string, string>>({});
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Keep the editable fields in sync once the saved settings load in.
@@ -59,6 +69,15 @@ function FarmTab() {
         settings.enabledBreeds && settings.enabledBreeds.length > 0
           ? settings.enabledBreeds
           : [...BREED_SLUGS],
+      );
+      const saved = settings.healthScheduleIntervals ?? {};
+      setScheduleIntervals(
+        Object.fromEntries(
+          SCHEDULABLE_EVENTS.map(({ type }) => {
+            const value = (saved as Record<string, number | undefined>)[type];
+            return [type, typeof value === "number" ? String(value) : ""];
+          }),
+        ),
       );
     }
   }, [settings]);
@@ -167,6 +186,34 @@ function FarmTab() {
       {
         title: "Gestation length saved",
         description: `Expected kidding dates now use ${days} days.`,
+      },
+    );
+  };
+
+  const handleSaveSchedules = () => {
+    const intervals: Record<string, number> = {};
+    for (const { type, label } of SCHEDULABLE_EVENTS) {
+      const raw = (scheduleIntervals[type] ?? "").trim();
+      if (raw === "") continue;
+      const days = Number(raw);
+      if (!Number.isInteger(days) || days < 1 || days > 3650) {
+        toast({
+          title: `Check the ${label.toLowerCase()} interval`,
+          description: "Enter a whole number of days between 1 and 3650, or leave it blank.",
+          variant: "destructive",
+        });
+        return;
+      }
+      intervals[type] = days;
+    }
+    const count = Object.keys(intervals).length;
+    save(
+      { healthScheduleIntervals: intervals },
+      {
+        title: "Health schedules saved",
+        description: count
+          ? `Herd work days will now flag goats due for ${count} routine ${count === 1 ? "task" : "tasks"}.`
+          : "Routine schedules were cleared.",
       },
     );
   };
@@ -428,6 +475,45 @@ function FarmTab() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="mt-4 space-y-3 rounded-lg border border-border p-4">
+            <div>
+              <Label className="text-base font-medium">Routine work schedules</Label>
+              <p className="text-sm text-muted-foreground">
+                Set how often each routine task repeats, in days. On a Herd Work Day, goats
+                that are due or overdue get flagged and pre-selected. Leave a task blank to
+                skip scheduling it.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {SCHEDULABLE_EVENTS.map(({ type, label, hint }) => (
+                <div key={type} className="flex flex-wrap items-center gap-3">
+                  <Label htmlFor={`schedule-${type}`} className="w-32 shrink-0 text-sm font-medium">
+                    {label}
+                  </Label>
+                  <Input
+                    id={`schedule-${type}`}
+                    type="number"
+                    min={1}
+                    max={3650}
+                    inputMode="numeric"
+                    placeholder="—"
+                    className="w-24 bg-background/50"
+                    value={scheduleIntervals[type] ?? ""}
+                    disabled={busy}
+                    onChange={(e) =>
+                      setScheduleIntervals((prev) => ({ ...prev, [type]: e.target.value }))
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">days</span>
+                  <span className="text-xs text-muted-foreground">{hint}</span>
+                </div>
+              ))}
+            </div>
+            <Button type="button" onClick={handleSaveSchedules} disabled={busy}>
+              Save schedules
+            </Button>
           </div>
         </CardContent>
       </Card>

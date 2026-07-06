@@ -5,6 +5,7 @@ import { UpdateSettingsBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
 import { normalizeDashboardLayout } from "../lib/dashboardWidgets";
+import { normalizeHealthScheduleIntervals } from "../lib/healthSchedules";
 
 const router: IRouter = Router();
 
@@ -36,6 +37,7 @@ router.get("/settings", async (req, res): Promise<void> => {
   res.json({
     ...settings,
     dashboardLayout: normalizeDashboardLayout(settings.dashboardLayout),
+    healthScheduleIntervals: normalizeHealthScheduleIntervals(settings.healthScheduleIntervals),
   });
 });
 
@@ -60,6 +62,7 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     enabledBreeds,
     dashboardLayout,
     famachaThreshold,
+    healthScheduleIntervals,
   } = parsed.data;
   const changes: Partial<typeof farmSettingsTable.$inferInsert> = {
     updatedAt: new Date(),
@@ -78,6 +81,10 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     changes.enabledBreeds = Array.from(new Set(enabledBreeds));
   }
   if (famachaThreshold !== undefined) changes.famachaThreshold = famachaThreshold;
+  if (healthScheduleIntervals !== undefined) {
+    // Drop unknown keys and out-of-range values before persisting.
+    changes.healthScheduleIntervals = normalizeHealthScheduleIntervals(healthScheduleIntervals);
+  }
   if (dashboardLayout !== undefined) {
     // Normalize before persisting so unknown ids never get stored and any
     // missing widgets are filled in with defaults.
@@ -93,6 +100,7 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
   res.json({
     ...updated,
     dashboardLayout: normalizeDashboardLayout(updated.dashboardLayout),
+    healthScheduleIntervals: normalizeHealthScheduleIntervals(updated.healthScheduleIntervals),
   });
 });
 

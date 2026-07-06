@@ -39,6 +39,7 @@ function makeSettings(
     gestationDays: 150,
     enabledBreeds: [],
     famachaThreshold: 3,
+    healthScheduleIntervals: {},
     isLoading: false,
     ...overrides,
   };

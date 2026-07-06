@@ -442,6 +442,24 @@ paths:
         "404":
           description: One or more goats not found in this farm
 
+  /health-events/due:
+    get:
+      operationId: getHealthWorkDue
+      tags: [health-events]
+      summary: List goats with routine health work due or overdue
+      description: >-
+        Uses the farm's per-event-type interval settings to work out which
+        goats are due (or overdue) for routine work such as hoof trims, CD&T
+        boosters, copper bolus, and deworming. Only goats worked on a herd work
+        day are considered (dead, sold, and retired goats are excluded).
+      responses:
+        "200":
+          description: The configured intervals and the goats with work due
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthDueResponse"
+
   /breedings:
     get:
       operationId: listBreedings
@@ -3152,6 +3170,8 @@ components:
           minimum: 1
           maximum: 5
           description: FAMACHA score at or above which the app prompts to log a deworming.
+        healthScheduleIntervals:
+          $ref: "#/components/schemas/HealthScheduleIntervals"
         updatedAt:
           type: string
           format: date-time
@@ -3164,7 +3184,31 @@ components:
         - enabledBreeds
         - dashboardLayout
         - famachaThreshold
+        - healthScheduleIntervals
         - updatedAt
+
+    HealthScheduleIntervals:
+      type: object
+      description: >-
+        Per-event-type routine interval, in days, that a farm repeats this work
+        on. A type left out has no schedule and is never flagged as due.
+      properties:
+        hoof_trim:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        cdt_shot:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        copper_bolus:
+          type: integer
+          minimum: 1
+          maximum: 3650
+        deworming:
+          type: integer
+          minimum: 1
+          maximum: 3650
 
     DashboardWidget:
       type: object
@@ -3220,6 +3264,72 @@ components:
           minimum: 1
           maximum: 5
           description: FAMACHA score at or above which the app prompts to log a deworming.
+        healthScheduleIntervals:
+          $ref: "#/components/schemas/HealthScheduleIntervals"
+
+    DueHealthItem:
+      type: object
+      description: One event type that is coming due (or overdue) for a goat.
+      properties:
+        eventType:
+          type: string
+          enum: [hoof_trim, cdt_shot, copper_bolus, deworming]
+        status:
+          type: string
+          enum: [overdue, due-soon, never]
+          description: >-
+            "never" — the goat has no record of this work yet; "overdue" — the
+            interval has elapsed since the last time; "due-soon" — the due date
+            falls within the lookahead window.
+        intervalDays:
+          type: integer
+          description: The farm's configured interval in days for this event type.
+        lastEventDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: When this work was last done, or null if never.
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: When this work is next due, or null when it has never been done.
+        daysOverdue:
+          type: integer
+          description: Whole days past the due date; 0 for "never" and "due-soon".
+      required:
+        - eventType
+        - status
+        - intervalDays
+        - lastEventDate
+        - dueDate
+        - daysOverdue
+
+    GoatDueHealth:
+      type: object
+      properties:
+        goat:
+          $ref: "#/components/schemas/Goat"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DueHealthItem"
+      required:
+        - goat
+        - items
+
+    HealthDueResponse:
+      type: object
+      properties:
+        intervals:
+          $ref: "#/components/schemas/HealthScheduleIntervals"
+        goats:
+          type: array
+          items:
+            $ref: "#/components/schemas/GoatDueHealth"
+      required:
+        - intervals
+        - goats
 
     UpdateDashboardLayoutBody:
       type: object

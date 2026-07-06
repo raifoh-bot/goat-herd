@@ -8,6 +8,7 @@
 import type { DashboardWidget } from "./dashboardWidget";
 import type { FarmSettingsEnabledBreedsItem } from "./farmSettingsEnabledBreedsItem";
 import type { FarmSettingsWeightUnit } from "./farmSettingsWeightUnit";
+import type { HealthScheduleIntervals } from "./healthScheduleIntervals";
 
 export interface FarmSettings {
   id: number;
@@ -33,5 +34,6 @@ export interface FarmSettings {
    * @maximum 5
    */
   famachaThreshold: number;
+  healthScheduleIntervals: HealthScheduleIntervals;
   updatedAt: Date;
 }

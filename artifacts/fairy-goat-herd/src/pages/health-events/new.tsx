@@ -1,15 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, ClipboardCheck, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarClock, Check, ClipboardCheck, Loader2, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetHealthEventBulkSessionQueryKey,
+  getGetHealthWorkDueQueryKey,
   getListGoatHealthEventsQueryKey,
   useCreateHealthEventsBulk,
   useGetHealthEventBulkSession,
+  useGetHealthWorkDue,
 } from "@workspace/api-client-react";
 import type {
   BulkHealthEventItem,
+  DueHealthItem,
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -38,6 +41,25 @@ const STEPS = ["Select Goats", "Choose Tasks", "Goat Details & Review"] as const
 // Event types that support a per-goat dose.
 const DOSAGE_TYPES: HealthEventEventType[] = ["cdt_shot", "copper_bolus", "deworming", "other"];
 
+// Short labels for the schedulable task types shown on due badges.
+const SCHEDULE_TYPE_LABELS: Record<string, string> = {
+  hoof_trim: "Hoof trim",
+  cdt_shot: "CD&T",
+  copper_bolus: "Copper bolus",
+  deworming: "Deworming",
+};
+
+/** A compact human phrase for how overdue (or how new) a due item is. */
+function dueItemLabel(item: DueHealthItem): string {
+  const name = SCHEDULE_TYPE_LABELS[item.eventType] ?? item.eventType;
+  if (item.status === "never") return `${name} · never done`;
+  if (item.status === "overdue") {
+    const d = item.daysOverdue;
+    return `${name} · ${d === 0 ? "due today" : `${d} day${d === 1 ? "" : "s"} overdue`}`;
+  }
+  return `${name} · due soon`;
+}
+
 export default function HerdWorkDay() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -46,6 +68,9 @@ export default function HerdWorkDay() {
 
   const { data: goats, isLoading } = useGetHealthEventBulkSession({
     query: { queryKey: getGetHealthEventBulkSessionQueryKey() },
+  });
+  const { data: dueData } = useGetHealthWorkDue({
+    query: { queryKey: getGetHealthWorkDueQueryKey(), staleTime: 30_000 },
   });
   const bulkCreate = useCreateHealthEventsBulk();
 
@@ -73,6 +98,38 @@ export default function HerdWorkDay() {
     () => allGoats.filter((g) => selectedGoatIds.has(g.id)),
     [allGoats, selectedGoatIds],
   );
+
+  // Map goatId -> its due items so we can badge rows in the picker.
+  const dueByGoat = useMemo(() => {
+    const map = new Map<number, DueHealthItem[]>();
+    for (const entry of dueData?.goats ?? []) map.set(entry.goat.id, entry.items);
+    return map;
+  }, [dueData]);
+
+  // Goats and task types that are due now (overdue) or have never been done.
+  // These drive the one-time pre-selection so a farmer starts a work day with
+  // the right goats and tasks already ticked.
+  const { dueGoatIds, dueTaskTypes } = useMemo(() => {
+    const goatIds = new Set<number>();
+    const taskTypes = new Set<HealthEventEventType>();
+    for (const entry of dueData?.goats ?? []) {
+      const actionable = entry.items.filter((i) => i.status === "overdue" || i.status === "never");
+      if (actionable.length === 0) continue;
+      goatIds.add(entry.goat.id);
+      for (const item of actionable) taskTypes.add(item.eventType as HealthEventEventType);
+    }
+    return { dueGoatIds: goatIds, dueTaskTypes: taskTypes };
+  }, [dueData]);
+
+  // Pre-select due goats and their tasks exactly once, after the due list
+  // arrives. We never override the farmer's later manual edits.
+  const didPreselect = useRef(false);
+  useEffect(() => {
+    if (didPreselect.current || !dueData) return;
+    didPreselect.current = true;
+    if (dueGoatIds.size > 0) setSelectedGoatIds(new Set(dueGoatIds));
+    if (dueTaskTypes.size > 0) setSelectedTypes(new Set(dueTaskTypes));
+  }, [dueData, dueGoatIds, dueTaskTypes]);
 
   const famachaSelected = selectedTypes.has("famacha");
   const dewormingSelected = selectedTypes.has("deworming");
@@ -166,6 +223,7 @@ export default function HerdWorkDay() {
           for (const goat of selectedGoats) {
             queryClient.invalidateQueries({ queryKey: getListGoatHealthEventsQueryKey(goat.id) });
           }
+          queryClient.invalidateQueries({ queryKey: getGetHealthWorkDueQueryKey() });
           toast({
             title: "Herd work day logged",
             description: `${res.created} health event${res.created === 1 ? "" : "s"} recorded for ${selectedGoats.length} goat${selectedGoats.length === 1 ? "" : "s"}.`,
@@ -246,6 +304,20 @@ export default function HerdWorkDay() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
+              {dueGoatIds.size > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                  <CalendarClock className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">
+                      {dueGoatIds.size} goat{dueGoatIds.size === 1 ? "" : "s"} due for routine work
+                    </p>
+                    <p className="text-amber-800/80 dark:text-amber-200/80">
+                      Due and overdue goats and their tasks are pre-selected based on your
+                      farm's schedules. Adjust anything below before continuing.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -282,6 +354,25 @@ export default function HerdWorkDay() {
                           {breedLabels[goat.breed] ?? goat.breed}
                           {goat.sex ? ` · ${goat.sex === "doe" ? "Doe" : goat.sex === "buck" ? "Buck" : "Wether"}` : ""}
                         </p>
+                        {(dueByGoat.get(goat.id)?.length ?? 0) > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {dueByGoat.get(goat.id)!.map((item) => {
+                              const isOverdue = item.status === "overdue" || item.status === "never";
+                              return (
+                                <span
+                                  key={item.eventType}
+                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                    isOverdue
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200"
+                                      : "bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  {dueItemLabel(item)}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </label>
                   ))}

@@ -1388,6 +1388,227 @@ export const CreateHealthEventsBulkBody = zod
   .describe("A herd-work-day batch — one shared date, many per-goat events.");
 
 /**
+ * Uses the farm's per-event-type interval settings to work out which goats are due (or overdue) for routine work such as hoof trims, CD&T boosters, copper bolus, and deworming. Only goats worked on a herd work day are considered (dead, sold, and retired goats are excluded).
+ * @summary List goats with routine health work due or overdue
+ */
+export const getHealthWorkDueResponseIntervalsHoofTrimMax = 3650;
+
+export const getHealthWorkDueResponseIntervalsCdtShotMax = 3650;
+
+export const getHealthWorkDueResponseIntervalsCopperBolusMax = 3650;
+
+export const getHealthWorkDueResponseIntervalsDewormingMax = 3650;
+
+export const getHealthWorkDueResponseGoatsItemGoatMilkPerDayMin = 0;
+export const getHealthWorkDueResponseGoatsItemGoatMilkPerDayMax = 10;
+
+export const getHealthWorkDueResponseGoatsItemGoatImageUrlsMax = 4;
+
+export const getHealthWorkDueResponseGoatsItemGoatRightEarTattooMax = 4;
+
+export const getHealthWorkDueResponseGoatsItemGoatLeftEarTattooMax = 4;
+
+export const getHealthWorkDueResponseGoatsItemGoatRightTailTattooMax = 4;
+
+export const getHealthWorkDueResponseGoatsItemGoatLeftTailTattooMax = 4;
+
+export const getHealthWorkDueResponseGoatsItemGoatCenterTailTattooMax = 8;
+
+export const getHealthWorkDueResponseGoatsItemGoatEidNumberMax = 50;
+
+export const GetHealthWorkDueResponse = zod.object({
+  intervals: zod
+    .object({
+      hoof_trim: zod
+        .number()
+        .min(1)
+        .max(getHealthWorkDueResponseIntervalsHoofTrimMax)
+        .optional(),
+      cdt_shot: zod
+        .number()
+        .min(1)
+        .max(getHealthWorkDueResponseIntervalsCdtShotMax)
+        .optional(),
+      copper_bolus: zod
+        .number()
+        .min(1)
+        .max(getHealthWorkDueResponseIntervalsCopperBolusMax)
+        .optional(),
+      deworming: zod
+        .number()
+        .min(1)
+        .max(getHealthWorkDueResponseIntervalsDewormingMax)
+        .optional(),
+    })
+    .describe(
+      "Per-event-type routine interval, in days, that a farm repeats this work on. A type left out has no schedule and is never flagged as due.",
+    ),
+  goats: zod.array(
+    zod.object({
+      goat: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        registeredName: zod.string().optional(),
+        adgaId: zod.string().optional(),
+        damName: zod.string().optional(),
+        sireName: zod.string().optional(),
+        maternalGranddamName: zod.string().optional(),
+        maternalGrandsireName: zod.string().optional(),
+        paternalGranddamName: zod.string().optional(),
+        paternalGrandsireName: zod.string().optional(),
+        damRegNo: zod.string().optional(),
+        sireRegNo: zod.string().optional(),
+        maternalGranddamRegNo: zod.string().optional(),
+        maternalGrandsireRegNo: zod.string().optional(),
+        paternalGranddamRegNo: zod.string().optional(),
+        paternalGrandsireRegNo: zod.string().optional(),
+        dateOfBirth: zod.coerce.date().optional(),
+        sex: zod.enum(["doe", "buck", "wether"]).optional(),
+        breed: zod.enum([
+          "alpine",
+          "angora",
+          "boer",
+          "guernsey",
+          "kiko",
+          "lamancha",
+          "mixed",
+          "myotonic",
+          "nigerian-dwarf",
+          "nubian",
+          "oberhasli",
+          "pygmy",
+          "recorded-grade",
+          "saanen",
+          "sable",
+          "savanna",
+          "spanish",
+          "texmaster",
+          "toggenburg",
+        ]),
+        status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+        milkPerDay: zod
+          .number()
+          .min(getHealthWorkDueResponseGoatsItemGoatMilkPerDayMin)
+          .max(getHealthWorkDueResponseGoatsItemGoatMilkPerDayMax),
+        lactationStatus: zod
+          .enum([
+            "milking",
+            "dry",
+            "exposed",
+            "serviced",
+            "pregnant",
+            "kid",
+            "retired",
+          ])
+          .nullish(),
+        age: zod.number().describe("Calculated age in years from dateOfBirth"),
+        description: zod.string().optional(),
+        imageUrls: zod
+          .array(zod.string())
+          .max(getHealthWorkDueResponseGoatsItemGoatImageUrlsMax)
+          .optional()
+          .describe("Ordered list of up to 4 photo URLs for this goat"),
+        defaultPhotoIndex: zod
+          .number()
+          .nullish()
+          .describe(
+            "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+          ),
+        imageUrl: zod
+          .string()
+          .optional()
+          .describe(
+            "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
+          ),
+        leasedBuck: zod
+          .boolean()
+          .optional()
+          .describe(
+            "Buck is on a breeding lease and excluded from herd totals",
+          ),
+        herdStatus: zod
+          .enum([
+            "dead",
+            "first-freshener",
+            "leased",
+            "on-farm",
+            "retired",
+            "sold-registered",
+            "sold-not-registered",
+          ])
+          .nullish()
+          .describe("Current standing of the goat in the herd"),
+        rightEarTattoo: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatRightEarTattooMax)
+          .optional(),
+        leftEarTattoo: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatLeftEarTattooMax)
+          .optional(),
+        rightTailTattoo: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatRightTailTattooMax)
+          .optional(),
+        leftTailTattoo: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatLeftTailTattooMax)
+          .optional(),
+        centerTailTattoo: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatCenterTailTattooMax)
+          .optional(),
+        eidNumber: zod
+          .string()
+          .max(getHealthWorkDueResponseGoatsItemGoatEidNumberMax)
+          .optional(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+      items: zod.array(
+        zod
+          .object({
+            eventType: zod.enum([
+              "hoof_trim",
+              "cdt_shot",
+              "copper_bolus",
+              "deworming",
+            ]),
+            status: zod
+              .enum(["overdue", "due-soon", "never"])
+              .describe(
+                '\"never\" — the goat has no record of this work yet; \"overdue\" — the interval has elapsed since the last time; \"due-soon\" — the due date falls within the lookahead window.',
+              ),
+            intervalDays: zod
+              .number()
+              .describe(
+                "The farm's configured interval in days for this event type.",
+              ),
+            lastEventDate: zod.coerce
+              .date()
+              .nullable()
+              .describe("When this work was last done, or null if never."),
+            dueDate: zod.coerce
+              .date()
+              .nullable()
+              .describe(
+                "When this work is next due, or null when it has never been done.",
+              ),
+            daysOverdue: zod
+              .number()
+              .describe(
+                'Whole days past the due date; 0 for \"never\" and \"due-soon\".',
+              ),
+          })
+          .describe(
+            "One event type that is coming due (or overdue) for a goat.",
+          ),
+      ),
+    }),
+  ),
+});
+
+/**
  * @summary List all breeding records
  */
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;
@@ -2987,6 +3208,14 @@ export const SetUserPasswordBody = zod.object({
  */
 export const getSettingsResponseFamachaThresholdMax = 5;
 
+export const getSettingsResponseHealthScheduleIntervalsHoofTrimMax = 3650;
+
+export const getSettingsResponseHealthScheduleIntervalsCdtShotMax = 3650;
+
+export const getSettingsResponseHealthScheduleIntervalsCopperBolusMax = 3650;
+
+export const getSettingsResponseHealthScheduleIntervalsDewormingMax = 3650;
+
 export const GetSettingsResponse = zod.object({
   id: zod.number(),
   usesAi: zod
@@ -3071,6 +3300,32 @@ export const GetSettingsResponse = zod.object({
     .describe(
       "FAMACHA score at or above which the app prompts to log a deworming.",
     ),
+  healthScheduleIntervals: zod
+    .object({
+      hoof_trim: zod
+        .number()
+        .min(1)
+        .max(getSettingsResponseHealthScheduleIntervalsHoofTrimMax)
+        .optional(),
+      cdt_shot: zod
+        .number()
+        .min(1)
+        .max(getSettingsResponseHealthScheduleIntervalsCdtShotMax)
+        .optional(),
+      copper_bolus: zod
+        .number()
+        .min(1)
+        .max(getSettingsResponseHealthScheduleIntervalsCopperBolusMax)
+        .optional(),
+      deworming: zod
+        .number()
+        .min(1)
+        .max(getSettingsResponseHealthScheduleIntervalsDewormingMax)
+        .optional(),
+    })
+    .describe(
+      "Per-event-type routine interval, in days, that a farm repeats this work on. A type left out has no schedule and is never flagged as due.",
+    ),
   updatedAt: zod.coerce.date(),
 });
 
@@ -3085,6 +3340,14 @@ export const updateSettingsBodyGestationDaysMin = 100;
 export const updateSettingsBodyGestationDaysMax = 250;
 
 export const updateSettingsBodyFamachaThresholdMax = 5;
+
+export const updateSettingsBodyHealthScheduleIntervalsHoofTrimMax = 3650;
+
+export const updateSettingsBodyHealthScheduleIntervalsCdtShotMax = 3650;
+
+export const updateSettingsBodyHealthScheduleIntervalsCopperBolusMax = 3650;
+
+export const updateSettingsBodyHealthScheduleIntervalsDewormingMax = 3650;
 
 export const UpdateSettingsBody = zod
   .object({
@@ -3151,12 +3414,47 @@ export const UpdateSettingsBody = zod
       .describe(
         "FAMACHA score at or above which the app prompts to log a deworming.",
       ),
+    healthScheduleIntervals: zod
+      .object({
+        hoof_trim: zod
+          .number()
+          .min(1)
+          .max(updateSettingsBodyHealthScheduleIntervalsHoofTrimMax)
+          .optional(),
+        cdt_shot: zod
+          .number()
+          .min(1)
+          .max(updateSettingsBodyHealthScheduleIntervalsCdtShotMax)
+          .optional(),
+        copper_bolus: zod
+          .number()
+          .min(1)
+          .max(updateSettingsBodyHealthScheduleIntervalsCopperBolusMax)
+          .optional(),
+        deworming: zod
+          .number()
+          .min(1)
+          .max(updateSettingsBodyHealthScheduleIntervalsDewormingMax)
+          .optional(),
+      })
+      .optional()
+      .describe(
+        "Per-event-type routine interval, in days, that a farm repeats this work on. A type left out has no schedule and is never flagged as due.",
+      ),
   })
   .describe(
     "Partial update of the farm settings. Only the provided fields are changed.",
   );
 
 export const updateSettingsResponseFamachaThresholdMax = 5;
+
+export const updateSettingsResponseHealthScheduleIntervalsHoofTrimMax = 3650;
+
+export const updateSettingsResponseHealthScheduleIntervalsCdtShotMax = 3650;
+
+export const updateSettingsResponseHealthScheduleIntervalsCopperBolusMax = 3650;
+
+export const updateSettingsResponseHealthScheduleIntervalsDewormingMax = 3650;
 
 export const UpdateSettingsResponse = zod.object({
   id: zod.number(),
@@ -3241,6 +3539,32 @@ export const UpdateSettingsResponse = zod.object({
     .max(updateSettingsResponseFamachaThresholdMax)
     .describe(
       "FAMACHA score at or above which the app prompts to log a deworming.",
+    ),
+  healthScheduleIntervals: zod
+    .object({
+      hoof_trim: zod
+        .number()
+        .min(1)
+        .max(updateSettingsResponseHealthScheduleIntervalsHoofTrimMax)
+        .optional(),
+      cdt_shot: zod
+        .number()
+        .min(1)
+        .max(updateSettingsResponseHealthScheduleIntervalsCdtShotMax)
+        .optional(),
+      copper_bolus: zod
+        .number()
+        .min(1)
+        .max(updateSettingsResponseHealthScheduleIntervalsCopperBolusMax)
+        .optional(),
+      deworming: zod
+        .number()
+        .min(1)
+        .max(updateSettingsResponseHealthScheduleIntervalsDewormingMax)
+        .optional(),
+    })
+    .describe(
+      "Per-event-type routine interval, in days, that a farm repeats this work on. A type left out has no schedule and is never flagged as due.",
     ),
   updatedAt: zod.coerce.date(),
 });

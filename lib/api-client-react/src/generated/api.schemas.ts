@@ -1484,6 +1484,32 @@ export const FarmSettingsEnabledBreedsItem = {
   toggenburg: "toggenburg",
 } as const;
 
+/**
+ * Per-event-type routine interval, in days, that a farm repeats this work on. A type left out has no schedule and is never flagged as due.
+ */
+export interface HealthScheduleIntervals {
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  hoof_trim?: number;
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  cdt_shot?: number;
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  copper_bolus?: number;
+  /**
+   * @minimum 1
+   * @maximum 3650
+   */
+  deworming?: number;
+}
+
 export interface FarmSettings {
   id: number;
   /** Whether this farm uses artificial insemination. When false, AI-related UI is hidden. */
@@ -1508,6 +1534,7 @@ export interface FarmSettings {
    * @maximum 5
    */
   famachaThreshold: number;
+  healthScheduleIntervals: HealthScheduleIntervals;
   updatedAt: string;
 }
 
@@ -1573,6 +1600,56 @@ export interface UpdateFarmSettingsBody {
    * @maximum 5
    */
   famachaThreshold?: number;
+  healthScheduleIntervals?: HealthScheduleIntervals;
+}
+
+export type DueHealthItemEventType =
+  (typeof DueHealthItemEventType)[keyof typeof DueHealthItemEventType];
+
+export const DueHealthItemEventType = {
+  hoof_trim: "hoof_trim",
+  cdt_shot: "cdt_shot",
+  copper_bolus: "copper_bolus",
+  deworming: "deworming",
+} as const;
+
+/**
+ * "never" — the goat has no record of this work yet; "overdue" — the interval has elapsed since the last time; "due-soon" — the due date falls within the lookahead window.
+ */
+export type DueHealthItemStatus =
+  (typeof DueHealthItemStatus)[keyof typeof DueHealthItemStatus];
+
+export const DueHealthItemStatus = {
+  overdue: "overdue",
+  "due-soon": "due-soon",
+  never: "never",
+} as const;
+
+/**
+ * One event type that is coming due (or overdue) for a goat.
+ */
+export interface DueHealthItem {
+  eventType: DueHealthItemEventType;
+  /** "never" — the goat has no record of this work yet; "overdue" — the interval has elapsed since the last time; "due-soon" — the due date falls within the lookahead window. */
+  status: DueHealthItemStatus;
+  /** The farm's configured interval in days for this event type. */
+  intervalDays: number;
+  /** When this work was last done, or null if never. */
+  lastEventDate: string | null;
+  /** When this work is next due, or null when it has never been done. */
+  dueDate: string | null;
+  /** Whole days past the due date; 0 for "never" and "due-soon". */
+  daysOverdue: number;
+}
+
+export interface GoatDueHealth {
+  goat: Goat;
+  items: DueHealthItem[];
+}
+
+export interface HealthDueResponse {
+  intervals: HealthScheduleIntervals;
+  goats: GoatDueHealth[];
 }
 
 /**
