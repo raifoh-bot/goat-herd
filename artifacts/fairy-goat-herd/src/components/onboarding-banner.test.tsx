@@ -38,6 +38,7 @@ function makeSettings(
     weightUnit: "lb",
     gestationDays: 150,
     enabledBreeds: [],
+    famachaThreshold: 3,
     isLoading: false,
     ...overrides,
   };

@@ -27,5 +27,11 @@ export interface FarmSettings {
   enabledBreeds: FarmSettingsEnabledBreedsItem[];
   /** Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order. */
   dashboardLayout: DashboardWidget[];
+  /**
+   * FAMACHA score at or above which the app prompts to log a deworming.
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaThreshold: number;
   updatedAt: Date;
 }

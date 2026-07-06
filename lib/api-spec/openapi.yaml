@@ -327,6 +327,121 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportGoatsResult"
 
+  /goats/{id}/health-events:
+    get:
+      operationId: listGoatHealthEvents
+      tags: [health-events]
+      summary: List a goat's health events (newest first)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The goat's health events, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthEvent"
+        "404":
+          description: Goat not found
+    post:
+      operationId: createGoatHealthEvent
+      tags: [health-events]
+      summary: Record a health event for a goat (any farm member)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHealthEventBody"
+      responses:
+        "201":
+          description: Health event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEvent"
+        "404":
+          description: Goat not found
+
+  /goats/{id}/health-events/{eventId}:
+    delete:
+      operationId: deleteGoatHealthEvent
+      tags: [health-events]
+      summary: Delete a health event (Admin/Owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Health event deleted
+        "404":
+          description: Health event not found
+
+  /health-events/bulk-session:
+    get:
+      operationId: getHealthEventBulkSession
+      tags: [health-events]
+      summary: List the goats eligible for a herd-work-day bulk session
+      description: >-
+        Returns the farm's goats that are worked during a herd work day —
+        excludes goats whose herd status is dead, sold, or retired.
+      responses:
+        "200":
+          description: Eligible goats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goat"
+
+  /health-events/bulk:
+    post:
+      operationId: createHealthEventsBulk
+      tags: [health-events]
+      summary: Record health events for many goats in one batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkHealthEventsBody"
+      responses:
+        "201":
+          description: All events recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                    description: Number of health events created
+                required:
+                  - created
+        "404":
+          description: One or more goats not found in this farm
+
   /breedings:
     get:
       operationId: listBreedings
@@ -1778,6 +1893,128 @@ components:
         - method
         - result
 
+    HealthEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        goatId:
+          type: integer
+        eventType:
+          type: string
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+        eventDate:
+          type: string
+          format: date-time
+        famachaScore:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          description: FAMACHA anemia score (1 = healthy, 5 = severely anemic).
+        dosageMl:
+          type: number
+          nullable: true
+          description: Dose administered, in mL.
+        bodyWeight:
+          type: number
+          nullable: true
+          description: The goat's body weight at the time of the event (farm weight unit).
+        productName:
+          type: string
+          nullable: true
+          description: Product used (e.g. dewormer or vaccine brand).
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - goatId
+        - eventType
+        - eventDate
+        - createdAt
+        - updatedAt
+
+    CreateHealthEventBody:
+      type: object
+      properties:
+        eventType:
+          type: string
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+        eventDate:
+          type: string
+          format: date-time
+        famachaScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        dosageMl:
+          type: number
+          minimum: 0
+        bodyWeight:
+          type: number
+          minimum: 0
+        productName:
+          type: string
+          maxLength: 200
+        notes:
+          type: string
+          maxLength: 2000
+      required:
+        - eventType
+        - eventDate
+
+    BulkHealthEventItem:
+      type: object
+      description: One goat's health event inside a herd-work-day batch.
+      properties:
+        goatId:
+          type: integer
+        eventType:
+          type: string
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+        famachaScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        dosageMl:
+          type: number
+          minimum: 0
+        bodyWeight:
+          type: number
+          minimum: 0
+        productName:
+          type: string
+          maxLength: 200
+        notes:
+          type: string
+          maxLength: 2000
+      required:
+        - goatId
+        - eventType
+
+    BulkHealthEventsBody:
+      type: object
+      description: A herd-work-day batch — one shared date, many per-goat events.
+      properties:
+        eventDate:
+          type: string
+          format: date-time
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BulkHealthEventItem"
+      required:
+        - eventDate
+        - events
+
     BreedingEvent:
       type: object
       properties:
@@ -2836,6 +3073,11 @@ components:
           description: Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.
           items:
             $ref: "#/components/schemas/DashboardWidget"
+        famachaThreshold:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: FAMACHA score at or above which the app prompts to log a deworming.
         updatedAt:
           type: string
           format: date-time
@@ -2847,6 +3089,7 @@ components:
         - gestationDays
         - enabledBreeds
         - dashboardLayout
+        - famachaThreshold
         - updatedAt
 
     DashboardWidget:
@@ -2898,6 +3141,11 @@ components:
           description: Ordered list of dashboard widgets with their visibility.
           items:
             $ref: "#/components/schemas/DashboardWidget"
+        famachaThreshold:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: FAMACHA score at or above which the app prompts to log a deworming.
 
     UpdateDashboardLayoutBody:
       type: object

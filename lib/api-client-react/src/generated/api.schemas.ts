@@ -584,6 +584,112 @@ export interface CreatePregnancyTestBody {
   addCoverEvent?: CreatePregnancyTestBodyAddCoverEvent;
 }
 
+export type HealthEventEventType =
+  (typeof HealthEventEventType)[keyof typeof HealthEventEventType];
+
+export const HealthEventEventType = {
+  hoof_trim: "hoof_trim",
+  cdt_shot: "cdt_shot",
+  copper_bolus: "copper_bolus",
+  famacha: "famacha",
+  deworming: "deworming",
+  other: "other",
+} as const;
+
+export interface HealthEvent {
+  id: number;
+  goatId: number;
+  eventType: HealthEventEventType;
+  eventDate: string;
+  /**
+   * FAMACHA anemia score (1 = healthy, 5 = severely anemic).
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaScore?: number | null;
+  /** Dose administered, in mL. */
+  dosageMl?: number | null;
+  /** The goat's body weight at the time of the event (farm weight unit). */
+  bodyWeight?: number | null;
+  /** Product used (e.g. dewormer or vaccine brand). */
+  productName?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateHealthEventBodyEventType =
+  (typeof CreateHealthEventBodyEventType)[keyof typeof CreateHealthEventBodyEventType];
+
+export const CreateHealthEventBodyEventType = {
+  hoof_trim: "hoof_trim",
+  cdt_shot: "cdt_shot",
+  copper_bolus: "copper_bolus",
+  famacha: "famacha",
+  deworming: "deworming",
+  other: "other",
+} as const;
+
+export interface CreateHealthEventBody {
+  eventType: CreateHealthEventBodyEventType;
+  eventDate: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaScore?: number;
+  /** @minimum 0 */
+  dosageMl?: number;
+  /** @minimum 0 */
+  bodyWeight?: number;
+  /** @maxLength 200 */
+  productName?: string;
+  /** @maxLength 2000 */
+  notes?: string;
+}
+
+export type BulkHealthEventItemEventType =
+  (typeof BulkHealthEventItemEventType)[keyof typeof BulkHealthEventItemEventType];
+
+export const BulkHealthEventItemEventType = {
+  hoof_trim: "hoof_trim",
+  cdt_shot: "cdt_shot",
+  copper_bolus: "copper_bolus",
+  famacha: "famacha",
+  deworming: "deworming",
+  other: "other",
+} as const;
+
+/**
+ * One goat's health event inside a herd-work-day batch.
+ */
+export interface BulkHealthEventItem {
+  goatId: number;
+  eventType: BulkHealthEventItemEventType;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaScore?: number;
+  /** @minimum 0 */
+  dosageMl?: number;
+  /** @minimum 0 */
+  bodyWeight?: number;
+  /** @maxLength 200 */
+  productName?: string;
+  /** @maxLength 2000 */
+  notes?: string;
+}
+
+/**
+ * A herd-work-day batch — one shared date, many per-goat events.
+ */
+export interface BulkHealthEventsBody {
+  eventDate: string;
+  /** @minItems 1 */
+  events: BulkHealthEventItem[];
+}
+
 export type CreateBreedingEventBodyEventType =
   (typeof CreateBreedingEventBodyEventType)[keyof typeof CreateBreedingEventBodyEventType];
 
@@ -1366,6 +1472,12 @@ export interface FarmSettings {
   enabledBreeds: FarmSettingsEnabledBreedsItem[];
   /** Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order. */
   dashboardLayout: DashboardWidget[];
+  /**
+   * FAMACHA score at or above which the app prompts to log a deworming.
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaThreshold: number;
   updatedAt: string;
 }
 
@@ -1425,6 +1537,12 @@ export interface UpdateFarmSettingsBody {
   enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
   /** Ordered list of dashboard widgets with their visibility. */
   dashboardLayout?: DashboardWidget[];
+  /**
+   * FAMACHA score at or above which the app prompts to log a deworming.
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaThreshold?: number;
 }
 
 /**
@@ -1459,3 +1577,8 @@ export const ListGoatsSex = {
   buck: "buck",
   wether: "wether",
 } as const;
+
+export type CreateHealthEventsBulk201 = {
+  /** Number of health events created */
+  created: number;
+};

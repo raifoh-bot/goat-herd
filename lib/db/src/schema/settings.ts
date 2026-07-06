@@ -40,6 +40,7 @@ export const farmSettingsTable = pgTable("farm_settings", {
       "toggenburg",
     ]),
   dashboardLayout: jsonb("dashboard_layout").$type<DashboardWidgetLayout[]>(),
+  famachaThreshold: integer("famacha_threshold").notNull().default(3),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useSearch, useLocation } from "wouter";
-import { Filter, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, X, MoreHorizontal } from "lucide-react";
+import { Filter, HeartPulse, LayoutGrid, LayoutList, List, Plus, Search, Upload, Download, ArrowRight, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, X, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -240,6 +240,12 @@ export default function GoatsList() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Link href="/health-events/new">
+              <Button variant="outline" className="shadow-sm">
+                <HeartPulse className="mr-2 h-4 w-4" />
+                Log Herd Work Day
+              </Button>
+            </Link>
             <Link href="/goats/new">
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />

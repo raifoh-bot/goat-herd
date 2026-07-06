@@ -50,6 +50,10 @@ export async function ensureFarmSettings(): Promise<void> {
       ADD COLUMN IF NOT EXISTS "dashboard_layout" jsonb;
   `);
   await pool.query(`
+    ALTER TABLE "farm_settings"
+      ADD COLUMN IF NOT EXISTS "famacha_threshold" integer NOT NULL DEFAULT 3;
+  `);
+  await pool.query(`
     INSERT INTO "farm_settings" ("uses_ai")
     SELECT true
     WHERE NOT EXISTS (SELECT 1 FROM "farm_settings");

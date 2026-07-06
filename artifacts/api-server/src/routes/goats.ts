@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { db, goatsTable } from "@workspace/db";
+import { db, goatsTable, healthEventsTable } from "@workspace/db";
 import {
   AddGoatPhotoBody,
   AddGoatPhotoParams,
@@ -299,10 +299,23 @@ router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  const [goat] = await db
-    .delete(goatsTable)
-    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
-    .returning();
+  const goat = await db.transaction(async (tx) => {
+    // Health events reference the goat; remove them first so the goat row
+    // can be deleted without violating the foreign key.
+    await tx
+      .delete(healthEventsTable)
+      .where(
+        and(
+          eq(healthEventsTable.goatId, params.data.id),
+          eq(healthEventsTable.farmId, farmId(req)),
+        ),
+      );
+    const [deleted] = await tx
+      .delete(goatsTable)
+      .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
+      .returning();
+    return deleted;
+  });
 
   if (!goat) {
     res.status(404).json({ error: "Goat not found" });

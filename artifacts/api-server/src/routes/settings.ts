@@ -59,6 +59,7 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     gestationDays,
     enabledBreeds,
     dashboardLayout,
+    famachaThreshold,
   } = parsed.data;
   const changes: Partial<typeof farmSettingsTable.$inferInsert> = {
     updatedAt: new Date(),
@@ -76,6 +77,7 @@ router.put("/settings", requireManager, async (req, res): Promise<void> => {
     // De-dupe while preserving the catalog-validated entries Zod already checked.
     changes.enabledBreeds = Array.from(new Set(enabledBreeds));
   }
+  if (famachaThreshold !== undefined) changes.famachaThreshold = famachaThreshold;
   if (dashboardLayout !== undefined) {
     // Normalize before persisting so unknown ids never get stored and any
     // missing widgets are filled in with defaults.

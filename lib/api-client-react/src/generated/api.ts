@@ -25,11 +25,14 @@ import type {
   BreedingDetail,
   BreedingEvent,
   BreedingWithDoe,
+  BulkHealthEventsBody,
   ChangePasswordBody,
   CreateBreedingBody,
   CreateBreedingEventBody,
   CreateFarmBody,
   CreateGoatBody,
+  CreateHealthEventBody,
+  CreateHealthEventsBulk201,
   CreatePregnancyTestBody,
   CreateSemenStrawBody,
   CreateUserBody,
@@ -39,6 +42,7 @@ import type {
   Farm,
   FarmSettings,
   Goat,
+  HealthEvent,
   HealthStatus,
   ImportBreedingsBody,
   ImportBreedingsResult,
@@ -1184,6 +1188,432 @@ export const useImportGoats = <
   TContext
 > => {
   return useMutation(getImportGoatsMutationOptions(options));
+};
+
+/**
+ * @summary List a goat's health events (newest first)
+ */
+export const getListGoatHealthEventsUrl = (id: number) => {
+  return `/api/goats/${id}/health-events`;
+};
+
+export const listGoatHealthEvents = async (
+  id: number,
+  options?: RequestInit,
+): Promise<HealthEvent[]> => {
+  return customFetch<HealthEvent[]>(getListGoatHealthEventsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListGoatHealthEventsQueryKey = (id: number) => {
+  return [`/api/goats/${id}/health-events`] as const;
+};
+
+export const getListGoatHealthEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGoatHealthEvents>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGoatHealthEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListGoatHealthEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listGoatHealthEvents>>
+  > = ({ signal }) => listGoatHealthEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGoatHealthEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGoatHealthEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGoatHealthEvents>>
+>;
+export type ListGoatHealthEventsQueryError = ErrorType<void>;
+
+/**
+ * @summary List a goat's health events (newest first)
+ */
+
+export function useListGoatHealthEvents<
+  TData = Awaited<ReturnType<typeof listGoatHealthEvents>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGoatHealthEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGoatHealthEventsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a health event for a goat (any farm member)
+ */
+export const getCreateGoatHealthEventUrl = (id: number) => {
+  return `/api/goats/${id}/health-events`;
+};
+
+export const createGoatHealthEvent = async (
+  id: number,
+  createHealthEventBody: CreateHealthEventBody,
+  options?: RequestInit,
+): Promise<HealthEvent> => {
+  return customFetch<HealthEvent>(getCreateGoatHealthEventUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createHealthEventBody),
+  });
+};
+
+export const getCreateGoatHealthEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGoatHealthEvent>>,
+    TError,
+    { id: number; data: BodyType<CreateHealthEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createGoatHealthEvent>>,
+  TError,
+  { id: number; data: BodyType<CreateHealthEventBody> },
+  TContext
+> => {
+  const mutationKey = ["createGoatHealthEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createGoatHealthEvent>>,
+    { id: number; data: BodyType<CreateHealthEventBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createGoatHealthEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateGoatHealthEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createGoatHealthEvent>>
+>;
+export type CreateGoatHealthEventMutationBody = BodyType<CreateHealthEventBody>;
+export type CreateGoatHealthEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a health event for a goat (any farm member)
+ */
+export const useCreateGoatHealthEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGoatHealthEvent>>,
+    TError,
+    { id: number; data: BodyType<CreateHealthEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createGoatHealthEvent>>,
+  TError,
+  { id: number; data: BodyType<CreateHealthEventBody> },
+  TContext
+> => {
+  return useMutation(getCreateGoatHealthEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete a health event (Admin/Owner only)
+ */
+export const getDeleteGoatHealthEventUrl = (id: number, eventId: number) => {
+  return `/api/goats/${id}/health-events/${eventId}`;
+};
+
+export const deleteGoatHealthEvent = async (
+  id: number,
+  eventId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteGoatHealthEventUrl(id, eventId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteGoatHealthEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGoatHealthEvent>>,
+    TError,
+    { id: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteGoatHealthEvent>>,
+  TError,
+  { id: number; eventId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteGoatHealthEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteGoatHealthEvent>>,
+    { id: number; eventId: number }
+  > = (props) => {
+    const { id, eventId } = props ?? {};
+
+    return deleteGoatHealthEvent(id, eventId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteGoatHealthEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteGoatHealthEvent>>
+>;
+
+export type DeleteGoatHealthEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a health event (Admin/Owner only)
+ */
+export const useDeleteGoatHealthEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGoatHealthEvent>>,
+    TError,
+    { id: number; eventId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteGoatHealthEvent>>,
+  TError,
+  { id: number; eventId: number },
+  TContext
+> => {
+  return useMutation(getDeleteGoatHealthEventMutationOptions(options));
+};
+
+/**
+ * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold, or retired.
+ * @summary List the goats eligible for a herd-work-day bulk session
+ */
+export const getGetHealthEventBulkSessionUrl = () => {
+  return `/api/health-events/bulk-session`;
+};
+
+export const getHealthEventBulkSession = async (
+  options?: RequestInit,
+): Promise<Goat[]> => {
+  return customFetch<Goat[]>(getGetHealthEventBulkSessionUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHealthEventBulkSessionQueryKey = () => {
+  return [`/api/health-events/bulk-session`] as const;
+};
+
+export const getGetHealthEventBulkSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHealthEventBulkSession>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthEventBulkSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHealthEventBulkSessionQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHealthEventBulkSession>>
+  > = ({ signal }) => getHealthEventBulkSession({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthEventBulkSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHealthEventBulkSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHealthEventBulkSession>>
+>;
+export type GetHealthEventBulkSessionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the goats eligible for a herd-work-day bulk session
+ */
+
+export function useGetHealthEventBulkSession<
+  TData = Awaited<ReturnType<typeof getHealthEventBulkSession>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHealthEventBulkSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHealthEventBulkSessionQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record health events for many goats in one batch
+ */
+export const getCreateHealthEventsBulkUrl = () => {
+  return `/api/health-events/bulk`;
+};
+
+export const createHealthEventsBulk = async (
+  bulkHealthEventsBody: BulkHealthEventsBody,
+  options?: RequestInit,
+): Promise<CreateHealthEventsBulk201> => {
+  return customFetch<CreateHealthEventsBulk201>(
+    getCreateHealthEventsBulkUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(bulkHealthEventsBody),
+    },
+  );
+};
+
+export const getCreateHealthEventsBulkMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHealthEventsBulk>>,
+    TError,
+    { data: BodyType<BulkHealthEventsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHealthEventsBulk>>,
+  TError,
+  { data: BodyType<BulkHealthEventsBody> },
+  TContext
+> => {
+  const mutationKey = ["createHealthEventsBulk"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHealthEventsBulk>>,
+    { data: BodyType<BulkHealthEventsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHealthEventsBulk(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHealthEventsBulkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHealthEventsBulk>>
+>;
+export type CreateHealthEventsBulkMutationBody = BodyType<BulkHealthEventsBody>;
+export type CreateHealthEventsBulkMutationError = ErrorType<void>;
+
+/**
+ * @summary Record health events for many goats in one batch
+ */
+export const useCreateHealthEventsBulk = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHealthEventsBulk>>,
+    TError,
+    { data: BodyType<BulkHealthEventsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHealthEventsBulk>>,
+  TError,
+  { data: BodyType<BulkHealthEventsBody> },
+  TContext
+> => {
+  return useMutation(getCreateHealthEventsBulkMutationOptions(options));
 };
 
 /**

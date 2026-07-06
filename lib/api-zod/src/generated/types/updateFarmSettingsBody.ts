@@ -32,4 +32,10 @@ export interface UpdateFarmSettingsBody {
   enabledBreeds?: UpdateFarmSettingsBodyEnabledBreedsItem[];
   /** Ordered list of dashboard widgets with their visibility. */
   dashboardLayout?: DashboardWidget[];
+  /**
+   * FAMACHA score at or above which the app prompts to log a deworming.
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaThreshold?: number;
 }

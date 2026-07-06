@@ -27,6 +27,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - **Goats** (`goats`): id, farmId, name, damName, sireName, maternalGranddamName, maternalGrandsireName, paternalGranddamName, paternalGrandsireName, dateOfBirth, breed, status (healthy/watch/treatment/dry), milkPerDay, lactationStatus (milking/dry/pregnant/kid), age (legacy), description, imageUrl, createdAt, updatedAt
 - **Breedings** (`breedings`): id, doeId (FK→goats), sireName, breedingDate, expectedKiddingDate, status (bred/confirmed-pregnant/kidded/open), notes, createdAt, updatedAt
 - **Kids** (`kids`): id, breedingId (FK→breedings), name, sex (doe/buck/doa), birthDate, birthWeight, notes, createdAt, updatedAt
+- **Health Events** (`health_events`): id, farmId, goatId (FK→goats), eventType (hoof_trim/cdt_shot/copper_bolus/famacha/deworming/other), eventDate, famachaScore (1–5, only kept for famacha/deworming events), dosageMl, bodyWeight, productName, notes, createdAt. Deleting a goat deletes its health events in the same transaction.
 
 ## API Endpoints
 
@@ -43,6 +44,13 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - `GET /api/breedings/:id` — get breeding detail with doe and kids
 - `PUT /api/breedings/:id` — update breeding status/notes
 - `POST /api/breedings/:id/kids` — record kidding outcomes (auto-sets doe to milking)
+
+### Health Events
+- `GET /api/goats/:id/health-events` — list a goat's health events (newest first)
+- `POST /api/goats/:id/health-events` — record a health event (farmhand allowed)
+- `DELETE /api/goats/:id/health-events/:eventId` — delete a health event (Admin/Owner only)
+- `GET /api/health-events/bulk-session` — active goats eligible for a herd work day (excludes dead/sold/retired)
+- `POST /api/health-events/bulk` — record a batch of events for many goats in one transaction (farmhand allowed); returns `{created}`
 
 ### Dashboard
 - `GET /api/dashboard/summary` — herd totals, health counts, lactation counts, avg milk production
@@ -68,7 +76,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - Username/password auth with server-side sessions (express-session + connect-pg-simple, stored in the `user_sessions` table). Passwords are hashed with bcrypt. No external auth provider.
 - Sessions are rolling with an idle timeout (default 7 days, override via `SESSION_IDLE_TIMEOUT_MS`). Requires `SESSION_SECRET`. Cookie security follows `NODE_ENV` (secure in production) unless `SESSION_COOKIE_SECURE` is set explicitly.
 - All `/api` routes except `/api/health*` and `/api/auth/login` require authentication.
-- **Roles**: `superadmin` is a global operator (no farm) who manages farms. `admin` and `owner` have full access within their farm (identical). `farmhand` is read-only on goats/breedings/semen but CAN record breedings, kiddings, and breeding events; cannot delete anything or manage users. `superadmin` cannot be assigned via the user-management API (it's created by seeding only); `requireRole` grants superadmin a bypass on farm-scoped role checks.
+- **Roles**: `superadmin` is a global operator (no farm) who manages farms. `admin` and `owner` have full access within their farm (identical). `farmhand` is read-only on goats/breedings/semen but CAN record breedings, kiddings, breeding events, and health events (single and bulk); cannot delete anything or manage users. `superadmin` cannot be assigned via the user-management API (it's created by seeding only); `requireRole` grants superadmin a bypass on farm-scoped role checks.
 - Role enforcement is server-side via `requireAuth` + `requireRole` middleware. The frontend `AuthGuard` redirects unauthenticated users to `/login`.
 
 ## Multi-Tenancy
@@ -135,6 +143,7 @@ redirects to `/<slug>/...`.
 - `/breedings` — Breeding records list (active/past sections)
 - `/breedings/new` — Record a new breeding form (auto-calculates ~150 day kidding date)
 - `/breedings/:id` — Breeding detail with status updates and kidding recording dialog
+- `/health-events/new` — "Herd Work Day" 3-step bulk wizard (pick goats → pick tasks → FAMACHA scores & review); FAMACHA scores at/above the farm threshold suggest an extra deworming event per goat (opt-out). Linked from the sidebar and a "Log Herd Work Day" button on the herd list. The goat detail page has a Health History card with an ad hoc "Add Event" dialog. The farm settings page has a FAMACHA threshold setting (1–5, default 3, `famachaThreshold` in farm settings).
 - `/login` — Login page (public; outside the AuthGuard)
 - `/register` — Public farm self-registration (creates a farm + first admin)
 - `/superadmin/farms` — Super-admin panel: list/create farms and toggle active/suspended (superadmin only)

@@ -9,6 +9,7 @@ export type WeightUnit = "kg" | "lb";
 export const DEFAULT_FARM_NAME = "MyGoatHerd";
 export const DEFAULT_WEIGHT_UNIT: WeightUnit = "lb";
 export const DEFAULT_GESTATION_DAYS = 150;
+export const DEFAULT_FAMACHA_THRESHOLD = 3;
 
 /** The short label shown next to a weight value (e.g. "4.2 lbs", "1.9 kg"). */
 export function weightUnitLabel(unit: WeightUnit): string {
@@ -23,6 +24,7 @@ export interface FarmSettingsValues {
   weightUnit: WeightUnit;
   gestationDays: number;
   enabledBreeds: string[];
+  famachaThreshold: number;
   isLoading: boolean;
 }
 
@@ -47,6 +49,7 @@ export function useFarmSettings(): FarmSettingsValues {
       data?.enabledBreeds && data.enabledBreeds.length > 0
         ? data.enabledBreeds
         : [...BREED_SLUGS],
+    famachaThreshold: data?.famachaThreshold ?? DEFAULT_FAMACHA_THRESHOLD,
     isLoading,
   };
 }

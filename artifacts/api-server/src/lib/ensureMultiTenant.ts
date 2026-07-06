@@ -195,6 +195,35 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 8b. Health events table (hoof trims, CDT shots, copper bolus, FAMACHA
+  //     scores, dewormings). Created directly with farm_id NOT NULL — there is
+  //     no legacy single-farm data to backfill — plus FKs to farms + goats and
+  //     lookup indexes.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "health_events" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "goat_id" integer NOT NULL REFERENCES "goats"("id"),
+        "event_type" text NOT NULL,
+        "event_date" timestamp NOT NULL,
+        "famacha_score" integer,
+        "dosage_ml" double precision,
+        "body_weight" double precision,
+        "product_name" text,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "health_events_farm_id_idx" ON "health_events" ("farm_id");`,
+    );
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "health_events_goat_id_idx" ON "health_events" ("goat_id");`,
+    );
+  }
+
   // 8. Goats can carry up to 4 photos. Add the image_urls array column and
   //    migrate any existing single image_url into it exactly once. The legacy
   //    image_url column is left in place (nullable) but no longer written to.

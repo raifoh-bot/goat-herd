@@ -1026,6 +1026,296 @@ export const ImportGoatsBody = zod.object({
 });
 
 /**
+ * @summary List a goat's health events (newest first)
+ */
+export const ListGoatHealthEventsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const listGoatHealthEventsResponseFamachaScoreMax = 5;
+
+export const ListGoatHealthEventsResponseItem = zod.object({
+  id: zod.number(),
+  goatId: zod.number(),
+  eventType: zod.enum([
+    "hoof_trim",
+    "cdt_shot",
+    "copper_bolus",
+    "famacha",
+    "deworming",
+    "other",
+  ]),
+  eventDate: zod.coerce.date(),
+  famachaScore: zod
+    .number()
+    .min(1)
+    .max(listGoatHealthEventsResponseFamachaScoreMax)
+    .nullish()
+    .describe("FAMACHA anemia score (1 = healthy, 5 = severely anemic)."),
+  dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
+  bodyWeight: zod
+    .number()
+    .nullish()
+    .describe(
+      "The goat's body weight at the time of the event (farm weight unit).",
+    ),
+  productName: zod
+    .string()
+    .nullish()
+    .describe("Product used (e.g. dewormer or vaccine brand)."),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListGoatHealthEventsResponse = zod.array(
+  ListGoatHealthEventsResponseItem,
+);
+
+/**
+ * @summary Record a health event for a goat (any farm member)
+ */
+export const CreateGoatHealthEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const createGoatHealthEventBodyFamachaScoreMax = 5;
+
+export const createGoatHealthEventBodyDosageMlMin = 0;
+
+export const createGoatHealthEventBodyBodyWeightMin = 0;
+
+export const createGoatHealthEventBodyProductNameMax = 200;
+
+export const createGoatHealthEventBodyNotesMax = 2000;
+
+export const CreateGoatHealthEventBody = zod.object({
+  eventType: zod.enum([
+    "hoof_trim",
+    "cdt_shot",
+    "copper_bolus",
+    "famacha",
+    "deworming",
+    "other",
+  ]),
+  eventDate: zod.coerce.date(),
+  famachaScore: zod
+    .number()
+    .min(1)
+    .max(createGoatHealthEventBodyFamachaScoreMax)
+    .optional(),
+  dosageMl: zod.number().min(createGoatHealthEventBodyDosageMlMin).optional(),
+  bodyWeight: zod
+    .number()
+    .min(createGoatHealthEventBodyBodyWeightMin)
+    .optional(),
+  productName: zod
+    .string()
+    .max(createGoatHealthEventBodyProductNameMax)
+    .optional(),
+  notes: zod.string().max(createGoatHealthEventBodyNotesMax).optional(),
+});
+
+/**
+ * @summary Delete a health event (Admin/Owner only)
+ */
+export const DeleteGoatHealthEventParams = zod.object({
+  id: zod.coerce.number(),
+  eventId: zod.coerce.number(),
+});
+
+/**
+ * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold, or retired.
+ * @summary List the goats eligible for a herd-work-day bulk session
+ */
+export const getHealthEventBulkSessionResponseMilkPerDayMin = 0;
+export const getHealthEventBulkSessionResponseMilkPerDayMax = 10;
+
+export const getHealthEventBulkSessionResponseImageUrlsMax = 4;
+
+export const getHealthEventBulkSessionResponseRightEarTattooMax = 4;
+
+export const getHealthEventBulkSessionResponseLeftEarTattooMax = 4;
+
+export const getHealthEventBulkSessionResponseRightTailTattooMax = 4;
+
+export const getHealthEventBulkSessionResponseLeftTailTattooMax = 4;
+
+export const getHealthEventBulkSessionResponseCenterTailTattooMax = 8;
+
+export const getHealthEventBulkSessionResponseEidNumberMax = 50;
+
+export const GetHealthEventBulkSessionResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
+  damName: zod.string().optional(),
+  sireName: zod.string().optional(),
+  maternalGranddamName: zod.string().optional(),
+  maternalGrandsireName: zod.string().optional(),
+  paternalGranddamName: zod.string().optional(),
+  paternalGrandsireName: zod.string().optional(),
+  damRegNo: zod.string().optional(),
+  sireRegNo: zod.string().optional(),
+  maternalGranddamRegNo: zod.string().optional(),
+  maternalGrandsireRegNo: zod.string().optional(),
+  paternalGranddamRegNo: zod.string().optional(),
+  paternalGrandsireRegNo: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck", "wether"]).optional(),
+  breed: zod.enum([
+    "alpine",
+    "angora",
+    "boer",
+    "guernsey",
+    "kiko",
+    "lamancha",
+    "mixed",
+    "myotonic",
+    "nigerian-dwarf",
+    "nubian",
+    "oberhasli",
+    "pygmy",
+    "recorded-grade",
+    "saanen",
+    "sable",
+    "savanna",
+    "spanish",
+    "texmaster",
+    "toggenburg",
+  ]),
+  status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+  milkPerDay: zod
+    .number()
+    .min(getHealthEventBulkSessionResponseMilkPerDayMin)
+    .max(getHealthEventBulkSessionResponseMilkPerDayMax),
+  lactationStatus: zod
+    .enum([
+      "milking",
+      "dry",
+      "exposed",
+      "serviced",
+      "pregnant",
+      "kid",
+      "retired",
+    ])
+    .nullish(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
+  description: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(getHealthEventBulkSessionResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
+    ),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
+  rightEarTattoo: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseLeftEarTattooMax)
+    .optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod
+    .string()
+    .max(getHealthEventBulkSessionResponseEidNumberMax)
+    .optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetHealthEventBulkSessionResponse = zod.array(
+  GetHealthEventBulkSessionResponseItem,
+);
+
+/**
+ * @summary Record health events for many goats in one batch
+ */
+export const createHealthEventsBulkBodyEventsItemFamachaScoreMax = 5;
+
+export const createHealthEventsBulkBodyEventsItemDosageMlMin = 0;
+
+export const createHealthEventsBulkBodyEventsItemBodyWeightMin = 0;
+
+export const createHealthEventsBulkBodyEventsItemProductNameMax = 200;
+
+export const createHealthEventsBulkBodyEventsItemNotesMax = 2000;
+
+export const CreateHealthEventsBulkBody = zod
+  .object({
+    eventDate: zod.coerce.date(),
+    events: zod
+      .array(
+        zod
+          .object({
+            goatId: zod.number(),
+            eventType: zod.enum([
+              "hoof_trim",
+              "cdt_shot",
+              "copper_bolus",
+              "famacha",
+              "deworming",
+              "other",
+            ]),
+            famachaScore: zod
+              .number()
+              .min(1)
+              .max(createHealthEventsBulkBodyEventsItemFamachaScoreMax)
+              .optional(),
+            dosageMl: zod
+              .number()
+              .min(createHealthEventsBulkBodyEventsItemDosageMlMin)
+              .optional(),
+            bodyWeight: zod
+              .number()
+              .min(createHealthEventsBulkBodyEventsItemBodyWeightMin)
+              .optional(),
+            productName: zod
+              .string()
+              .max(createHealthEventsBulkBodyEventsItemProductNameMax)
+              .optional(),
+            notes: zod
+              .string()
+              .max(createHealthEventsBulkBodyEventsItemNotesMax)
+              .optional(),
+          })
+          .describe("One goat's health event inside a herd-work-day batch."),
+      )
+      .min(1),
+  })
+  .describe("A herd-work-day batch — one shared date, many per-goat events.");
+
+/**
  * @summary List all breeding records
  */
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;
@@ -2575,6 +2865,8 @@ export const SetUserPasswordBody = zod.object({
 /**
  * @summary Get the farm settings
  */
+export const getSettingsResponseFamachaThresholdMax = 5;
+
 export const GetSettingsResponse = zod.object({
   id: zod.number(),
   usesAi: zod
@@ -2652,6 +2944,13 @@ export const GetSettingsResponse = zod.object({
     .describe(
       "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
     ),
+  famachaThreshold: zod
+    .number()
+    .min(1)
+    .max(getSettingsResponseFamachaThresholdMax)
+    .describe(
+      "FAMACHA score at or above which the app prompts to log a deworming.",
+    ),
   updatedAt: zod.coerce.date(),
 });
 
@@ -2664,6 +2963,8 @@ export const updateSettingsBodyAdgaNumberMax = 50;
 
 export const updateSettingsBodyGestationDaysMin = 100;
 export const updateSettingsBodyGestationDaysMax = 250;
+
+export const updateSettingsBodyFamachaThresholdMax = 5;
 
 export const UpdateSettingsBody = zod
   .object({
@@ -2722,10 +3023,20 @@ export const UpdateSettingsBody = zod
       )
       .optional()
       .describe("Ordered list of dashboard widgets with their visibility."),
+    famachaThreshold: zod
+      .number()
+      .min(1)
+      .max(updateSettingsBodyFamachaThresholdMax)
+      .optional()
+      .describe(
+        "FAMACHA score at or above which the app prompts to log a deworming.",
+      ),
   })
   .describe(
     "Partial update of the farm settings. Only the provided fields are changed.",
   );
+
+export const updateSettingsResponseFamachaThresholdMax = 5;
 
 export const UpdateSettingsResponse = zod.object({
   id: zod.number(),
@@ -2803,6 +3114,13 @@ export const UpdateSettingsResponse = zod.object({
     )
     .describe(
       "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
+    ),
+  famachaThreshold: zod
+    .number()
+    .min(1)
+    .max(updateSettingsResponseFamachaThresholdMax)
+    .describe(
+      "FAMACHA score at or above which the app prompts to log a deworming.",
     ),
   updatedAt: zod.coerce.date(),
 });

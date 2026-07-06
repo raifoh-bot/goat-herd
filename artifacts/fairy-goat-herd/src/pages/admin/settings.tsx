@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Settings, Zap, Home, CalendarClock, Loader2, Upload, X, PawPrint } from "lucide-react";
+import { Settings, Zap, Home, CalendarClock, HeartPulse, Loader2, Upload, X, PawPrint } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetSettings,
@@ -10,7 +10,7 @@ import {
 import { useUpload } from "@workspace/object-storage-web";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@/lib/auth";
-import { DEFAULT_FARM_NAME, DEFAULT_GESTATION_DAYS } from "@/lib/settings";
+import { DEFAULT_FARM_NAME, DEFAULT_GESTATION_DAYS, DEFAULT_FAMACHA_THRESHOLD } from "@/lib/settings";
 import { BREED_CATALOG, BREED_SLUGS } from "@/lib/breeds";
 import { GoatIcon } from "@/components/goat-icon";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { UsersTab } from "./users-tab";
@@ -381,6 +382,52 @@ function FarmTab() {
               disabled={busy}
               onCheckedChange={handleToggleAi}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/10 shadow-lg">
+        <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <HeartPulse className="h-4 w-4 text-primary" /> Herd Health
+          </CardTitle>
+          <CardDescription>
+            Defaults for health tracking and herd work days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 rounded-lg border border-border p-4">
+            <Label htmlFor="famacha-threshold" className="text-base font-medium">
+              FAMACHA deworming threshold
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              When a goat scores at or above this FAMACHA level (1 = healthy, 5 = severely
+              anemic), the app suggests logging a deworming.
+            </p>
+            <Select
+              value={String(settings?.famachaThreshold ?? DEFAULT_FAMACHA_THRESHOLD)}
+              disabled={busy}
+              onValueChange={(value) =>
+                save(
+                  { famachaThreshold: Number(value) },
+                  {
+                    title: "FAMACHA threshold saved",
+                    description: `Deworming will be suggested at a score of ${value} or higher.`,
+                  },
+                )
+              }
+            >
+              <SelectTrigger id="famacha-threshold" className="bg-background/50 sm:max-w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <SelectItem key={score} value={String(score)}>
+                    {score}+
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
