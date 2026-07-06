@@ -65,6 +65,55 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
   return { timesKidded: kiddings.length, lastKiddingDate };
 }
 
+export interface KiddingHistoryRow {
+  breedingId: number;
+  date: string | null;
+  sireName: string | null;
+  kidsSummary: string;
+}
+
+/** One kidding's date: prefer actual kid birth dates, then expected date, then breeding date. */
+function kiddingDate(b: BreedingWithDoe): string | null {
+  const kidDates = (b.kids ?? [])
+    .map((k) => k.birthDate)
+    .filter((d): d is string => Boolean(d));
+  return kidDates.sort().at(-1) ?? b.expectedKiddingDate ?? b.breedingDate ?? null;
+}
+
+/** Summarize a kidding's litter, e.g. "2 does, 1 buck (1 DOA)". */
+export function summarizeKids(kids: BreedingWithDoe["kids"]): string {
+  const list = kids ?? [];
+  if (list.length === 0) return "Not recorded";
+
+  const does = list.filter((k) => k.sex === "doe").length;
+  const bucks = list.filter((k) => k.sex === "buck").length;
+  const doa = list.filter((k) => k.kidStatus === "doa").length;
+
+  const parts: string[] = [];
+  if (does > 0) parts.push(`${does} ${does === 1 ? "doe" : "does"}`);
+  if (bucks > 0) parts.push(`${bucks} ${bucks === 1 ? "buck" : "bucks"}`);
+
+  let summary = parts.length > 0 ? parts.join(", ") : `${list.length} kids`;
+  if (doa > 0) summary += ` (${doa} DOA)`;
+  return summary;
+}
+
+/** Derive a doe's per-kidding history rows (newest first) from the farm's breeding records. */
+export function deriveKiddingHistory(
+  goatId: number,
+  breedings: BreedingWithDoe[],
+): KiddingHistoryRow[] {
+  return breedings
+    .filter((b) => b.doeId === goatId && b.status === "kidded")
+    .map((b) => ({
+      breedingId: b.id,
+      date: kiddingDate(b),
+      sireName: b.sireName || null,
+      kidsSummary: summarizeKids(b.kids),
+    }))
+    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+}
+
 /** A single ancestor box in the pedigree tree. */
 function AncestorBox({
   relation,
@@ -97,7 +146,15 @@ function CertificateSkeleton() {
 }
 
 /** The printable one-page certificate body for a single goat. */
-function Certificate({ goat, kiddingRecord }: { goat: Goat; kiddingRecord?: KiddingRecord | null }) {
+function Certificate({
+  goat,
+  kiddingRecord,
+  kiddingHistory,
+}: {
+  goat: Goat;
+  kiddingRecord?: KiddingRecord | null;
+  kiddingHistory?: KiddingHistoryRow[] | null;
+}) {
   const tattoos = TATTOO_FIELDS
     .map((f) => ({ label: f.label, value: goat[f.key] as string | null | undefined }))
     .filter((t) => t.value);
@@ -175,6 +232,47 @@ function Certificate({ goat, kiddingRecord }: { goat: Goat; kiddingRecord?: Kidd
                 </div>
               </div>
             </div>
+            {kiddingHistory && kiddingHistory.length > 0 && (
+              <table className="mt-3 w-full border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border print:border-foreground/30">
+                    <th className="py-1 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Date
+                    </th>
+                    <th className="py-1 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Sire
+                    </th>
+                    <th className="py-1 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Kids Born
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kiddingHistory.map((row) => (
+                    <tr
+                      key={row.breedingId}
+                      className="border-b border-border/50 last:border-b-0 print:border-foreground/20"
+                    >
+                      <td className="py-1 pr-3 text-foreground">
+                        {row.date
+                          ? formatDate(row.date, { month: "short", day: "numeric", year: "numeric" })
+                          : "—"}
+                      </td>
+                      <td
+                        className={`py-1 pr-3 ${row.sireName ? "text-foreground" : "italic text-muted-foreground"}`}
+                      >
+                        {row.sireName ?? "Not recorded"}
+                      </td>
+                      <td
+                        className={`py-1 ${row.kidsSummary === "Not recorded" ? "italic text-muted-foreground" : "text-foreground"}`}
+                      >
+                        {row.kidsSummary}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -293,6 +391,11 @@ export default function PedigreeCertificate() {
     return deriveKiddingRecord(goat.id, breedings);
   }, [isDoe, goat, breedings]);
 
+  const kiddingHistory = useMemo(() => {
+    if (!isDoe || !goat || !breedings) return null;
+    return deriveKiddingHistory(goat.id, breedings);
+  }, [isDoe, goat, breedings]);
+
   const handleSelect = (value: string) => {
     setLocation(`${location.split("?")[0]}?goat=${value}`, { replace: true });
   };
@@ -351,7 +454,7 @@ export default function PedigreeCertificate() {
       ) : goatLoading || !goat || (isDoe && breedingsLoading) ? (
         <CertificateSkeleton />
       ) : (
-        <Certificate goat={goat} kiddingRecord={kiddingRecord} />
+        <Certificate goat={goat} kiddingRecord={kiddingRecord} kiddingHistory={kiddingHistory} />
       )}
     </Layout>
   );
