@@ -22,6 +22,7 @@ import HerdWorkDay from "@/pages/health-events/new";
 import InventoryList from "@/pages/inventory/index";
 import Reports from "@/pages/reports/index";
 import LineageReports from "@/pages/reports/lineage";
+import BarnWorksheet from "@/pages/reports/barn-worksheet";
 import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ function AuthenticatedRoutes() {
         <Route path="/inventory" component={InventoryList} />
         <Route path="/reports" component={Reports} />
         <Route path="/reports/lineage" component={LineageReports} />
+        <Route path="/reports/barn-worksheet" component={BarnWorksheet} />
         <Route path="/lineage">
           <Redirect to="/reports/lineage" replace />
         </Route>
