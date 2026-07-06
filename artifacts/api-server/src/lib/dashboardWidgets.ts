@@ -16,6 +16,7 @@ export const DEFAULT_DASHBOARD_WIDGET_IDS = [
   "breed-breakdown",
   "recent-activity",
   "breeding-calendar",
+  "health-due",
 ] as const;
 
 /**

@@ -290,6 +290,7 @@ describe("dashboard layout customization", () => {
       { id: "breed-breakdown", visible: true },
       { id: "recent-activity", visible: true },
       { id: "breeding-calendar", visible: true },
+      { id: "health-due", visible: true },
     ]);
   });
 
@@ -305,6 +306,7 @@ describe("dashboard layout customization", () => {
       { id: "upcoming-kiddings", visible: true },
       { id: "breed-breakdown", visible: true },
       { id: "breeding-calendar", visible: true },
+      { id: "health-due", visible: true },
     ];
     const res = await agent.put("/api/settings").send({ dashboardLayout: layout });
     expect(res.status).toBe(200);
@@ -334,6 +336,7 @@ describe("dashboard layout customization", () => {
       { id: "recent-activity", visible: true },
       // A newly-shipped widget is appended visible to a layout that predates it.
       { id: "breeding-calendar", visible: true },
+      { id: "health-due", visible: true },
     ]);
   });
 

@@ -6,9 +6,11 @@ import {
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
   getGetSettingsQueryKey,
+  getGetHealthWorkDueQueryKey,
   getListBreedingsQueryKey,
   useGetBreedBreakdown,
   useGetDashboardSummary,
+  useGetHealthWorkDue,
   useGetRecentActivity,
   useGetSettings,
   useListBreedings,
@@ -25,6 +27,7 @@ import {
 } from "@/lib/dashboard-widgets";
 import { CustomizeDashboard } from "@/components/customize-dashboard";
 import { BreedingCalendarWidget } from "@/components/dashboard/BreedingCalendarWidget";
+import { HealthDueWidget, hasHealthSchedules } from "@/components/dashboard/HealthDueWidget";
 import { OnboardingBanner } from "@/components/onboarding-banner";
 import { useFarmSettings } from "@/lib/settings";
 import { getEffectiveDueDate } from "@/lib/breeding";
@@ -54,6 +57,7 @@ const WIDE_WIDGETS = new Set<DashboardWidgetId>([
   "breed-breakdown",
   "recent-activity",
   "breeding-calendar",
+  "health-due",
 ]);
 
 const BREED_BAR_COLORS = [
@@ -82,6 +86,7 @@ export default function Dashboard() {
   const showUpcomingKiddings = visibleWidgets.some((w) => w.id === "upcoming-kiddings");
   const showBreedingCalendar = visibleWidgets.some((w) => w.id === "breeding-calendar");
   const showBreedBreakdown = visibleWidgets.some((w) => w.id === "breed-breakdown");
+  const showHealthDue = visibleWidgets.some((w) => w.id === "health-due");
 
   const { data: breedings, isLoading: isLoadingBreedings } = useListBreedings({
     query: {
@@ -92,6 +97,13 @@ export default function Dashboard() {
   const { data: breedBreakdown, isLoading: isLoadingBreedBreakdown } = useGetBreedBreakdown({
     query: { queryKey: getGetBreedBreakdownQueryKey(), enabled: showBreedBreakdown },
   });
+  const { data: healthDue, isLoading: isLoadingHealthDue } = useGetHealthWorkDue({
+    query: { queryKey: getGetHealthWorkDueQueryKey(), enabled: showHealthDue },
+  });
+
+  // The Health Work Due widget only makes sense once a farm has configured at
+  // least one routine schedule; otherwise it is hidden entirely (no empty slot).
+  const healthDueConfigured = hasHealthSchedules(healthDue);
 
   const lactationChartData = summary?.doeLactationBreakdown
     ? [
@@ -154,6 +166,8 @@ export default function Dashboard() {
         return <UpcomingKiddingsCard breedings={breedings} isLoading={isLoadingBreedings} />;
       case "breeding-calendar":
         return <BreedingCalendarWidget breedings={breedings} isLoading={isLoadingBreedings} />;
+      case "health-due":
+        return <HealthDueWidget data={healthDue} isLoading={isLoadingHealthDue} />;
       case "breed-breakdown":
         return <BreedBreakdownCard breakdown={breedBreakdown} isLoading={isLoadingBreedBreakdown} />;
       case "recent-activity":
@@ -194,7 +208,9 @@ export default function Dashboard() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 [grid-auto-flow:row_dense] items-start">
-            {visibleWidgets.map((w) => (
+            {visibleWidgets
+              .filter((w) => w.id !== "health-due" || isLoadingHealthDue || healthDueConfigured)
+              .map((w) => (
               <div
                 key={w.id}
                 className={WIDE_WIDGETS.has(w.id as DashboardWidgetId) ? "md:col-span-2" : "md:col-span-1"}

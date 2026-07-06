@@ -10,7 +10,8 @@ export type DashboardWidgetId =
   | "upcoming-kiddings"
   | "breed-breakdown"
   | "recent-activity"
-  | "breeding-calendar";
+  | "breeding-calendar"
+  | "health-due";
 
 export interface DashboardWidgetDef {
   id: DashboardWidgetId;
@@ -46,6 +47,11 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
     id: "breeding-calendar",
     label: "Breeding Calendar",
     description: "Month-grid calendar of expected kidding dates with Google, Outlook, and .ics export.",
+  },
+  {
+    id: "health-due",
+    label: "Health Work Due",
+    description: "Goats overdue or coming due for routine health work, based on your schedule.",
   },
 ];
 
