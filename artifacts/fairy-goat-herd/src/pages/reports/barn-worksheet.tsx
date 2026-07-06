@@ -30,21 +30,39 @@ function sexLabel(sex: string | null | undefined) {
 
 /** Blank task columns the farmer fills in by hand while working the herd. */
 const TASK_COLUMNS = [
-  { label: "FAMACHA (1–5)", width: "print:w-[0.9in]" },
-  { label: "Dewormed (Y/N + product/dose)", width: "print:w-[1.4in]" },
-  { label: "Hoof Trim", width: "print:w-[0.7in]" },
-  { label: "CDT", width: "print:w-[0.6in]" },
-  { label: "Copper Bolus", width: "print:w-[0.7in]" },
-  { label: "Weight", width: "print:w-[0.8in]" },
-  { label: "Notes", width: "" },
-];
+  { id: "famacha", label: "FAMACHA (1–5)", width: "print:w-[0.9in]" },
+  { id: "dewormed", label: "Dewormed (Y/N + product/dose)", width: "print:w-[1.4in]" },
+  { id: "hoof-trim", label: "Hoof Trim", width: "print:w-[0.7in]" },
+  { id: "cdt", label: "CDT", width: "print:w-[0.6in]" },
+  { id: "copper-bolus", label: "Copper Bolus", width: "print:w-[0.7in]" },
+  { id: "weight", label: "Weight", width: "print:w-[0.8in]" },
+  { id: "notes", label: "Notes", width: "" },
+] as const;
+
+type TaskColumnId = (typeof TASK_COLUMNS)[number]["id"];
 
 export default function BarnWorksheet() {
   const [statusFilter, setStatusFilter] = useState<ListGoatsStatus | undefined>("on-farm");
   const [sexFilter, setSexFilter] = useState<ListGoatsSex | undefined>(undefined);
   const [breedFilter, setBreedFilter] = useState<string | undefined>(undefined);
   const [selected, setSelected] = useState<Set<Goat["id"]>>(new Set());
+  const [selectedColumns, setSelectedColumns] = useState<Set<TaskColumnId>>(
+    () => new Set(TASK_COLUMNS.map((c) => c.id)),
+  );
   const initializedRef = useRef(false);
+
+  const visibleColumns = TASK_COLUMNS.filter((c) => selectedColumns.has(c.id));
+
+  function toggleColumn(id: TaskColumnId) {
+    setSelectedColumns((prev) => {
+      // Keep at least one task column selected.
+      if (prev.has(id) && prev.size === 1) return prev;
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const { data: goats, isLoading } = useListGoats(
     { status: statusFilter, sex: sexFilter },
@@ -188,6 +206,35 @@ export default function BarnWorksheet() {
         )}
       </div>
 
+      {/* Task column controls — hidden when printing. */}
+      <div className="no-print mb-8 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-foreground mb-1">Task Columns</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Pick the columns for today's tasks. Unchecked columns are left off the sheet so the rest get wider writing space.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+          {TASK_COLUMNS.map((col) => {
+            const isOnlySelected = selectedColumns.has(col.id) && selectedColumns.size === 1;
+            return (
+              <label
+                key={col.id}
+                className={`flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 text-sm transition-colors ${
+                  isOnlySelected ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-muted/40"
+                }`}
+              >
+                <Checkbox
+                  checked={selectedColumns.has(col.id)}
+                  onCheckedChange={() => toggleColumn(col.id)}
+                  disabled={isOnlySelected}
+                  aria-label={`Include ${col.label} column`}
+                />
+                <span className="min-w-0 flex-1 truncate font-medium text-foreground">{col.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Worksheet — this is both the on-screen preview and the printed output. */}
       {selectedGoats.length === 0 ? (
         <div className="no-print flex flex-col items-center justify-center py-16 text-center bg-card/50 rounded-xl border border-dashed border-primary/20">
@@ -216,8 +263,8 @@ export default function BarnWorksheet() {
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Breed</th>
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Sex</th>
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Age</th>
-                  {TASK_COLUMNS.map((col) => (
-                    <th key={col.label} className={`border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground ${col.width}`}>
+                  {visibleColumns.map((col) => (
+                    <th key={col.id} className={`border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground ${col.width}`}>
                       {col.label}
                     </th>
                   ))}
@@ -232,8 +279,8 @@ export default function BarnWorksheet() {
                     <td className="border border-foreground/30 px-2 py-1 text-muted-foreground print:text-foreground align-top whitespace-nowrap">
                       {goat.dateOfBirth ? formatAge(goat.dateOfBirth) : "—"}
                     </td>
-                    {TASK_COLUMNS.map((col) => (
-                      <td key={col.label} className="border border-foreground/30 px-2 py-1" />
+                    {visibleColumns.map((col) => (
+                      <td key={col.id} className="border border-foreground/30 px-2 py-1" />
                     ))}
                   </tr>
                 ))}
