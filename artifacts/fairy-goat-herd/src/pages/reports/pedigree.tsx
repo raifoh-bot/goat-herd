@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
 import { Award, Printer } from "lucide-react";
-import { useGetGoat, useListGoats, getGetGoatQueryKey } from "@workspace/api-client-react";
+import {
+  useGetGoat,
+  useListGoats,
+  useListBreedings,
+  getGetGoatQueryKey,
+  getListBreedingsQueryKey,
+} from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +22,7 @@ import { ReportHeader } from "@/components/report-header";
 import { breedLabels } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
-import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Goat, BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const TATTOO_FIELDS: { key: keyof Goat; label: string }[] = [
   { key: "rightEarTattoo", label: "Right Ear" },
@@ -31,6 +37,32 @@ function sexLabel(sex: Goat["sex"]): string {
   if (sex === "buck") return "Buck";
   if (sex === "wether") return "Wether";
   return "—";
+}
+
+export interface KiddingRecord {
+  timesKidded: number;
+  lastKiddingDate: string | null;
+}
+
+/** Derive a doe's kidding history from the farm's breeding records. */
+export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]): KiddingRecord {
+  const kiddings = breedings.filter((b) => b.doeId === goatId && b.status === "kidded");
+
+  let lastKiddingDate: string | null = null;
+  for (const b of kiddings) {
+    // Prefer the actual kid birth dates; fall back to the expected kidding
+    // date, then the breeding date, so every kidding contributes a date.
+    const kidDates = (b.kids ?? [])
+      .map((k) => k.birthDate)
+      .filter((d): d is string => Boolean(d));
+    const candidate =
+      kidDates.sort().at(-1) ?? b.expectedKiddingDate ?? b.breedingDate ?? null;
+    if (candidate && (!lastKiddingDate || candidate > lastKiddingDate)) {
+      lastKiddingDate = candidate;
+    }
+  }
+
+  return { timesKidded: kiddings.length, lastKiddingDate };
 }
 
 /** A single ancestor box in the pedigree tree. */
@@ -65,7 +97,7 @@ function CertificateSkeleton() {
 }
 
 /** The printable one-page certificate body for a single goat. */
-function Certificate({ goat }: { goat: Goat }) {
+function Certificate({ goat, kiddingRecord }: { goat: Goat; kiddingRecord?: KiddingRecord | null }) {
   const tattoos = TATTOO_FIELDS
     .map((f) => ({ label: f.label, value: goat[f.key] as string | null | undefined }))
     .filter((t) => t.value);
@@ -108,6 +140,43 @@ function Certificate({ goat }: { goat: Goat }) {
             </div>
           ))}
         </div>
+
+        {/* Kidding record (does only) */}
+        {goat.sex === "doe" && kiddingRecord && (
+          <div>
+            <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 border-b border-border pb-1">
+              Kidding Record
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              <div className="rounded-lg border border-border bg-muted/30 px-4 py-2 text-center print:rounded-none print:border-foreground/30 print:bg-transparent">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  Times Kidded
+                </div>
+                <div className="font-semibold text-foreground">{kiddingRecord.timesKidded}</div>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 px-4 py-2 text-center print:rounded-none print:border-foreground/30 print:bg-transparent">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  Last Kidding
+                </div>
+                <div
+                  className={
+                    kiddingRecord.lastKiddingDate
+                      ? "font-semibold text-foreground"
+                      : "text-sm italic text-muted-foreground"
+                  }
+                >
+                  {kiddingRecord.lastKiddingDate
+                    ? formatDate(kiddingRecord.lastKiddingDate, {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "None recorded"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Identification */}
         {(tattoos.length > 0 || goat.eidNumber) && (
@@ -211,6 +280,19 @@ export default function PedigreeCertificate() {
     },
   });
 
+  const isDoe = goat?.sex === "doe";
+  const { data: breedings, isLoading: breedingsLoading } = useListBreedings({
+    query: {
+      queryKey: getListBreedingsQueryKey(),
+      enabled: isDoe,
+    },
+  });
+
+  const kiddingRecord = useMemo(() => {
+    if (!isDoe || !goat || !breedings) return null;
+    return deriveKiddingRecord(goat.id, breedings);
+  }, [isDoe, goat, breedings]);
+
   const handleSelect = (value: string) => {
     setLocation(`${location.split("?")[0]}?goat=${value}`, { replace: true });
   };
@@ -266,10 +348,10 @@ export default function PedigreeCertificate() {
         <div className="no-print flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center text-muted-foreground">
           <p>That goat could not be found. Pick another one from the list above.</p>
         </div>
-      ) : goatLoading || !goat ? (
+      ) : goatLoading || !goat || (isDoe && breedingsLoading) ? (
         <CertificateSkeleton />
       ) : (
-        <Certificate goat={goat} />
+        <Certificate goat={goat} kiddingRecord={kiddingRecord} />
       )}
     </Layout>
   );
