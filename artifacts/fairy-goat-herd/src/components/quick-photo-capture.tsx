@@ -9,6 +9,7 @@ import {
   getListGoatsQueryKey,
   useAddGoatPhoto,
   useListGoats,
+  useSetGoatDefaultPhoto,
 } from "@workspace/api-client-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
@@ -20,11 +21,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
+import { useIsManager } from "@/lib/auth";
 import { breedLabels } from "@/lib/breeds";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +50,7 @@ export function QuickPhotoCapture() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [setAsDefault, setSetAsDefault] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +66,8 @@ export function QuickPhotoCapture() {
 
   const { uploadFile } = useUpload();
   const addGoatPhoto = useAddGoatPhoto();
+  const setGoatDefaultPhoto = useSetGoatDefaultPhoto();
+  const isManager = useIsManager();
 
   const filteredGoats = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -82,6 +88,7 @@ export function QuickPhotoCapture() {
     setSearch("");
     setSelectedId(null);
     setSaveError(null);
+    setSetAsDefault(false);
     setIsSaving(false);
   };
 
@@ -134,16 +141,36 @@ export function QuickPhotoCapture() {
       }
 
       const imageUrl = `/api/storage${uploaded.objectPath}`;
-      const updated = await addGoatPhoto.mutateAsync({ id: goat.id, data: { imageUrl } });
+      let updated = await addGoatPhoto.mutateAsync({ id: goat.id, data: { imageUrl } });
 
+      // Managers can mark the just-added photo as the goat's main photo. The
+      // new photo is appended last, so its index is the final position.
+      let madeDefault = false;
+      if (isManager && setAsDefault) {
+        const newIndex = Math.max(0, (updated.imageUrls?.length ?? 1) - 1);
+        try {
+          updated = await setGoatDefaultPhoto.mutateAsync({ id: goat.id, data: { index: newIndex } });
+          madeDefault = true;
+        } catch {
+          // The photo was still added; surface the partial success below rather
+          // than failing the whole flow.
+          madeDefault = false;
+        }
+      }
+
+      queryClient.setQueryData(getGetGoatQueryKey(goat.id), updated);
       queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getGetGoatQueryKey(goat.id) });
       queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetBreedBreakdownQueryKey() });
 
       toast({
         title: "Photo added",
-        description: `Added a new photo to ${updated.name}.`,
+        description:
+          isManager && setAsDefault
+            ? madeDefault
+              ? `Added a new photo to ${updated.name} and set it as the main photo.`
+              : `Added a new photo to ${updated.name}, but couldn't set it as the main photo.`
+            : `Added a new photo to ${updated.name}.`,
         action: (
           <ToastAction altText={`View ${updated.name}`} onClick={() => setLocation(`/goats/${goat.id}`)}>
             View
@@ -312,6 +339,17 @@ export function QuickPhotoCapture() {
                   </div>
                 )}
               </ScrollArea>
+
+              {isManager && (
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-sm">
+                  <Checkbox
+                    checked={setAsDefault}
+                    onCheckedChange={(checked) => setSetAsDefault(checked === true)}
+                    disabled={isSaving}
+                  />
+                  <span className="font-medium text-foreground">Make this the main photo</span>
+                </label>
+              )}
 
               {saveError && <p className="text-sm font-medium text-destructive">{saveError}</p>}
 
