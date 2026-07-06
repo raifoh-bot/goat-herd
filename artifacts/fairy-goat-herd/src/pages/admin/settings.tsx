@@ -391,6 +391,7 @@ function FarmTab() {
             </Label>
             <p className="text-sm text-muted-foreground">
               Used to auto-calculate the expected kidding date when recording a breeding.
+              Also editable under Herd Health below.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Input
@@ -443,6 +444,35 @@ function FarmTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="space-y-2 rounded-lg border border-border p-4">
+            <Label htmlFor="gestation-days-health" className="text-base font-medium">
+              Default gestation length (days)
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Used to auto-calculate the expected kidding date when recording a breeding.
+              This is the same setting shown in the Breeding section above.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Input
+                id="gestation-days-health"
+                type="number"
+                min={100}
+                max={250}
+                step={1}
+                value={gestationDays}
+                disabled={busy}
+                onChange={(e) => setGestationDays(e.target.value)}
+                className="bg-background/50 sm:max-w-[160px]"
+              />
+              <Button
+                onClick={handleSaveGestation}
+                disabled={busy || gestationDays === String(settings?.gestationDays ?? "")}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2 rounded-lg border border-border p-4">
             <Label htmlFor="famacha-threshold" className="text-base font-medium">
               FAMACHA deworming threshold

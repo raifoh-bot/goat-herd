@@ -37,3 +37,12 @@ was missing it. **Fix:** add those three compilerOptions.
 `&&` short-circuits and leaf-artifact errors never run — so leaf errors can hide for a long
 time. After any codegen change, run the FULL `pnpm run typecheck` and expect to fix latent
 leaf errors too.
+
+## Stale .tsbuildinfo can hide real errors on the first typecheck
+A first `pnpm run typecheck` in a session can report "Done" while a genuine
+compile error exists, because the incremental `.tsbuildinfo` marks unrelated
+files as unchanged and skips rechecking them. A later edit (even in an
+unrelated file) can invalidate the cache and surface the pre-existing error.
+**Lesson:** trust a *clean* full typecheck result, but if validation later
+fails a typecheck that "passed" earlier, suspect a latent pre-existing error
+that the cache masked — it is likely not caused by your last edit.
