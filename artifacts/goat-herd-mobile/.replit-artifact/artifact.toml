@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/goat-herd-mobile/"
+title = "MyGoatHerd Mobile"
+version = "1.0.0"
+id = "artifacts/goat-herd-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/goat-herd-mobile/" ]
+localPort = 18201
+
+[services.development]
+run = "pnpm --filter @workspace/goat-herd-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/goat-herd-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/goat-herd-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "18201"
+BASE_PATH = "/goat-herd-mobile/"

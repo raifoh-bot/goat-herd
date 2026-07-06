@@ -49,3 +49,8 @@ externalPort = 3001
 [[ports]]
 localPort = 21278
 externalPort = 3003
+
+[userenv]
+
+[userenv.production]
+AUTH_BEARER_BRIDGE = "true"
