@@ -144,7 +144,8 @@ redirects to `/<slug>/...`.
 - `/breedings/new` — Record a new breeding form (auto-calculates ~150 day kidding date)
 - `/breedings/:id` — Breeding detail with status updates and kidding recording dialog
 - `/health-events/new` — "Herd Work Day" 3-step bulk wizard (pick goats → pick tasks → FAMACHA scores & review); FAMACHA scores at/above the farm threshold suggest an extra deworming event per goat (opt-out). Linked from the sidebar and a "Log Herd Work Day" button on the herd list. The goat detail page has a Health History card with an ad hoc "Add Event" dialog. The farm settings page has a FAMACHA threshold setting (1–5, default 3, `famachaThreshold` in farm settings).
-- `/reports` — Reports hub (cards for Lineage Report and Barn Worksheet)
+- `/reports` — Reports hub (cards for Lineage Report, Barn Worksheet, Pedigree Certificate, Health History Report, Show Time)
+- `/reports/health-history` — Printable per-goat health record (`?goat=<id>`): identity section (name, breed, sex, DOB/age, status, lactation status) + chronological health events table (oldest first). No lineage — suited to buyers of unregistered goats. Linked from the goat detail page next to the Pedigree Certificate button.
 - `/reports/barn-worksheet` — Printable work day worksheet: filter/select goats (breed, sex, herd status; select-all + per-goat checkboxes, defaults to all on-farm goats), then print one table (alphabetical, one row per goat) with pre-filled identity columns and blank hand-write columns (FAMACHA, deworming, hoof trim, CDT, copper bolus, weight, notes). Landscape `@page`, repeating `<thead>`, work-day date and recorded-by blanks, `ReportHeader` on print.
 - `/login` — Login page (public; outside the AuthGuard)
 - `/register` — Public farm self-registration (creates a farm + first admin)

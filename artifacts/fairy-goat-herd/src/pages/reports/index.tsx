@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Award, GitBranch, ClipboardList, ChevronRight, Trophy, type LucideIcon } from "lucide-react";
+import { Award, GitBranch, ClipboardList, ChevronRight, HeartPulse, Trophy, type LucideIcon } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -32,6 +32,12 @@ const REPORTS: ReportEntry[] = [
     title: "Pedigree Certificate",
     description: "Printable one-page pedigree for a single goat — for sales, shows, and registration paperwork.",
     icon: Award,
+  },
+  {
+    href: "/reports/health-history",
+    title: "Health History Report",
+    description: "Printable health record for a single goat — ideal for providing to a buyer of an unregistered goat.",
+    icon: HeartPulse,
   },
   {
     href: "/reports/show-time",

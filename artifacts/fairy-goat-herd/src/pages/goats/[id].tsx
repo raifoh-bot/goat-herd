@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Award, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, ImagePlus, Loader2, Milk, Printer, Star, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Award, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, HeartPulse, ImagePlus, Loader2, Milk, Printer, Star, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { ReportHeader } from "@/components/report-header";
 import { GoatForm } from "@/components/goat-form";
@@ -347,6 +347,11 @@ export default function GoatDetails() {
                 <Button variant="outline" asChild>
                   <Link href={`/reports/pedigree?goat=${goat.id}`}>
                     <Award className="mr-2 h-4 w-4" /> Pedigree Certificate
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href={`/reports/health-history?goat=${goat.id}`}>
+                    <HeartPulse className="mr-2 h-4 w-4" /> Health History Report
                   </Link>
                 </Button>
                 {isManager && (
