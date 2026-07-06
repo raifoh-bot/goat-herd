@@ -11,6 +11,13 @@ import {
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
+// The only object-entity paths eligible for deletion: the exact shape produced
+// by getObjectEntityUploadURL (`/objects/uploads/<uuid>`). Keeps deletion from
+// ever touching anything outside the uploads namespace, even if a caller passes
+// a crafted path from a user-controllable field.
+const UPLOADED_OBJECT_ENTITY_PATH =
+  /^\/objects\/uploads\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export const objectStorageClient = new Storage({
   credentials: {
     audience: "replit",
@@ -154,6 +161,40 @@ export class ObjectStorageService {
     return objectFile;
   }
 
+  // Best-effort deletion of an uploaded object entity. Accepts the object-entity
+  // path in any of the forms the app stores/serves it as — the internal
+  // `/objects/...` form as well as the frontend-facing `/storage/objects/...`
+  // and `/api/storage/objects/...` forms. Returns true if the object was deleted
+  // (or already gone), false if the path isn't a deletable uploaded object.
+  // Throws only on unexpected storage errors so callers can decide whether to
+  // swallow them.
+  //
+  // Deletion is deliberately restricted to the exact shape produced by
+  // getObjectEntityUploadURL — `/objects/uploads/<uuid>`. Photo URLs are stored
+  // in user-controllable fields (goat.imageUrls), so without this constraint a
+  // crafted path (e.g. `/objects/.private/...` or a traversal) could target
+  // arbitrary storage objects. Callers are still responsible for tenant
+  // ownership checks before invoking this method.
+  async deleteObjectEntity(objectPath: string): Promise<boolean> {
+    // Canonicalize to the single internal `/objects/uploads/<uuid>` key so every
+    // accepted representation resolves to the same object before we act on it.
+    const canonical = canonicalUploadObjectPath(objectPath);
+    if (!canonical) {
+      return false;
+    }
+
+    try {
+      const objectFile = await this.getObjectEntityFile(canonical);
+      await objectFile.delete({ ignoreNotFound: true });
+      return true;
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        return true;
+      }
+      throw error;
+    }
+  }
+
   normalizeObjectEntityPath(rawPath: string): string {
     if (!rawPath.startsWith("https://storage.googleapis.com/")) {
       return rawPath;
@@ -204,6 +245,35 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+}
+
+// Canonicalizes an uploaded-photo path in any accepted representation to the
+// single internal object key `/objects/uploads/<uuid>`, or returns null if the
+// path isn't a valid uploaded object. Accepted inputs: the internal
+// `/objects/uploads/<uuid>` form and the frontend-facing `/storage/...` and
+// `/api/storage/...` prefixed forms. Anything else (traversal, storage
+// internals, arbitrary strings) is rejected — imageUrls is user-controllable.
+export function canonicalUploadObjectPath(path: string): string | null {
+  let normalized = path;
+  if (normalized.startsWith("/api/storage/")) {
+    normalized = normalized.slice("/api/storage".length);
+  } else if (normalized.startsWith("/storage/")) {
+    normalized = normalized.slice("/storage".length);
+  }
+
+  if (!UPLOADED_OBJECT_ENTITY_PATH.test(normalized)) {
+    return null;
+  }
+  return normalized;
+}
+
+// All accepted stored representations of a canonical upload key. Used to detect
+// whether a row still references the underlying object regardless of which
+// prefix form the path was persisted with (e.g. `/api/storage/objects/...` vs
+// the bare `/objects/...`), so an alternate representation can't slip past an
+// ownership/reference check.
+export function uploadObjectPathVariants(canonicalPath: string): string[] {
+  return [canonicalPath, `/storage${canonicalPath}`, `/api/storage${canonicalPath}`];
 }
 
 function parseObjectPath(path: string): {

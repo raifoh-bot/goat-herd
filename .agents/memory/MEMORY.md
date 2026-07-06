@@ -18,3 +18,4 @@
 - [Object storage lost grant](object-storage-lost-grant.md) — upload 500 + sidecar 401 in dev+prod = "no allowed resources"; stale config secrets block setupObjectStorage self-heal; user must delete the 3 secrets, then re-provision.
 - [Workflow names are artifact-prefixed](workflow-names-prefixed.md) — restart needs "artifacts/<dir>: <service>", not the bare service name; list via listWorkflows() first.
 - [Verifying auth-protected pages headlessly](authenticated-page-verification.md) — nix chromium + puppeteer-core recipe; bearer token for curl seeding; avoid networkidle0 with Vite HMR.
+- [Storage cleanup IDOR guard](storage-cleanup-idor.md) — deleting objects from user-controllable URL fields needs a strict path pattern + "unreferenced by any row" ownership check, or it's a cross-tenant destructive IDOR.

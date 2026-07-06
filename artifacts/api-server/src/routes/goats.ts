@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, arrayOverlaps, desc, eq } from "drizzle-orm";
 import { db, goatsTable, healthEventsTable } from "@workspace/db";
 import {
   AddGoatPhotoBody,
@@ -18,11 +18,61 @@ import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
 import { sendCsv } from "../lib/csv";
 import { withImageAlias } from "../lib/goatImage";
+import {
+  ObjectStorageService,
+  canonicalUploadObjectPath,
+  uploadObjectPathVariants,
+} from "../lib/objectStorage";
+import type { Request } from "express";
 
 const router: IRouter = Router();
+const objectStorageService = new ObjectStorageService();
 
 // Goats are read-only for Farm Hands; only Admin/Owner may create, edit, or delete.
 const requireManager = requireRole("admin", "owner");
+
+// Best-effort cleanup of orphaned photo objects in Object Storage. Never throws
+// — storage failures are logged so they can't block the goat delete/update that
+// already succeeded in the database.
+//
+// A photo object is deleted only once NO goat (in any farm) still references it.
+// Photo URLs live in the user-controllable `imageUrls` field, so without this
+// guard a farm admin could point a goat at another farm's photo, then remove it,
+// to trigger deletion of an object they don't own. Since deletion runs after the
+// owning goat's row has already been updated/deleted, a lingering reference means
+// the object still belongs to someone else — so we leave it alone.
+async function deletePhotoObjects(req: Request, paths: Array<string | null | undefined>): Promise<void> {
+  for (const path of paths) {
+    if (!path) continue;
+    try {
+      // Canonicalize first so the reference check and the deletion act on the
+      // exact same underlying object. Non-upload/crafted paths canonicalize to
+      // null and are skipped entirely.
+      const canonical = canonicalUploadObjectPath(path);
+      if (!canonical) {
+        continue;
+      }
+
+      // Only delete once NO goat references the object in ANY of its accepted
+      // path representations. Checking every variant closes the bypass where a
+      // row stores `/api/storage/objects/...` while the delete request uses the
+      // bare `/objects/...` form (or vice versa).
+      const [stillReferenced] = await db
+        .select({ id: goatsTable.id })
+        .from(goatsTable)
+        .where(arrayOverlaps(goatsTable.imageUrls, uploadObjectPathVariants(canonical)))
+        .limit(1);
+
+      if (stillReferenced) {
+        continue;
+      }
+
+      await objectStorageService.deleteObjectEntity(canonical);
+    } catch (error) {
+      req.log.error({ err: error, objectPath: path }, "Failed to delete orphaned goat photo");
+    }
+  }
+}
 
 router.get("/goats", async (req, res): Promise<void> => {
   const params = ListGoatsQueryParams.safeParse(req.query);
@@ -197,6 +247,16 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
+  const [existing] = await db
+    .select()
+    .from(goatsTable)
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))));
+
+  if (!existing) {
+    res.status(404).json({ error: "Goat not found" });
+    return;
+  }
+
   const [goat] = await db
     .update(goatsTable)
     .set({ ...parsed.data, updatedAt: new Date() })
@@ -206,6 +266,16 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
   if (!goat) {
     res.status(404).json({ error: "Goat not found" });
     return;
+  }
+
+  // If the photo set changed, clean up any objects that were removed/replaced.
+  // Only touches photos no longer referenced by the saved goat.
+  if (parsed.data.imageUrls !== undefined) {
+    const remaining = new Set(goat.imageUrls ?? []);
+    const removed = (existing.imageUrls ?? []).filter((url) => !remaining.has(url));
+    if (removed.length > 0) {
+      await deletePhotoObjects(req, removed);
+    }
   }
 
   res.json(withImageAlias(goat));
@@ -321,6 +391,10 @@ router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Goat not found" });
     return;
   }
+
+  // Clean up the goat's photo objects so deleted goats don't leave orphaned
+  // files behind. Best-effort — failures are logged, not surfaced.
+  await deletePhotoObjects(req, goat.imageUrls ?? []);
 
   res.sendStatus(204);
 });

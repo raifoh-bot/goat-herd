@@ -1,9 +1,16 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, goatsTable, usersTable, farmsTable } from "@workspace/db";
+import { randomUUID } from "crypto";
+import { ObjectStorageService } from "../lib/objectStorage";
 import app from "../app";
+
+// Helpers to build photo paths in the exact form the frontend persists them
+// (`/api/storage/objects/uploads/<uuid>`) and the bare internal form.
+const photoUrl = (uuid: string = randomUUID()) => `/api/storage/objects/uploads/${uuid}`;
+const bareObjectUrl = (uuid: string) => `/objects/uploads/${uuid}`;
 
 // These integration tests exercise tattoo/EID clearing semantics on goat updates.
 // They run against the live database, so every created row is tracked and removed
@@ -169,6 +176,202 @@ describe("dashboard responses resolve the default photo", () => {
     expect(res.status).toBe(200);
     entry = (res.body as Array<{ id: number; imageUrl: string | null }>).find((g) => g.id === goatId);
     expect(entry?.imageUrl).toBe("/api/storage/objects/x.jpg");
+  });
+});
+
+describe("Orphaned photo cleanup", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("deletes all of a goat's photo objects when the goat is deleted", async () => {
+    const spy = vi
+      .spyOn(ObjectStorageService.prototype, "deleteObjectEntity")
+      .mockResolvedValue(true);
+
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    const uuidA = randomUUID();
+    const uuidB = randomUUID();
+    const setRes = await agent
+      .put(`/api/goats/${goatId}`)
+      .send({ imageUrls: [photoUrl(uuidA), photoUrl(uuidB)] });
+    expect(setRes.status).toBe(200);
+    spy.mockClear();
+
+    const deleteRes = await agent.delete(`/api/goats/${goatId}`);
+    expect(deleteRes.status).toBe(204);
+
+    // Cleanup canonicalizes to the bare `/objects/uploads/<uuid>` key.
+    expect(spy).toHaveBeenCalledWith(bareObjectUrl(uuidA));
+    expect(spy).toHaveBeenCalledWith(bareObjectUrl(uuidB));
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it("deletes only the removed photo when a photo is replaced/removed on update", async () => {
+    const spy = vi
+      .spyOn(ObjectStorageService.prototype, "deleteObjectEntity")
+      .mockResolvedValue(true);
+
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    const uuidA = randomUUID();
+    const uuidB = randomUUID();
+    const photoA = photoUrl(uuidA);
+    const setRes = await agent
+      .put(`/api/goats/${goatId}`)
+      .send({ imageUrls: [photoA, photoUrl(uuidB)] });
+    expect(setRes.status).toBe(200);
+    spy.mockClear();
+
+    // Keep photoA, drop photoB — only photoB should be cleaned up.
+    const updateRes = await agent.put(`/api/goats/${goatId}`).send({ imageUrls: [photoA] });
+    expect(updateRes.status).toBe(200);
+
+    expect(spy).toHaveBeenCalledWith(bareObjectUrl(uuidB));
+    expect(spy).not.toHaveBeenCalledWith(bareObjectUrl(uuidA));
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not touch storage when an update leaves the photo set unchanged", async () => {
+    const spy = vi
+      .spyOn(ObjectStorageService.prototype, "deleteObjectEntity")
+      .mockResolvedValue(true);
+
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    const photoA = photoUrl();
+    const setRes = await agent.put(`/api/goats/${goatId}`).send({ imageUrls: [photoA] });
+    expect(setRes.status).toBe(200);
+    spy.mockClear();
+
+    // An unrelated field change must not delete the retained photo.
+    const updateRes = await agent.put(`/api/goats/${goatId}`).send({ description: "grazing" });
+    expect(updateRes.status).toBe(200);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("does not delete a photo object that another goat still references", async () => {
+    const spy = vi
+      .spyOn(ObjectStorageService.prototype, "deleteObjectEntity")
+      .mockResolvedValue(true);
+
+    // Goat A legitimately owns `sharedPhoto`.
+    const createA = await agent.post("/api/goats").send({
+      name: `Owner ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createA.status).toBe(201);
+    const goatA = createA.body.id as number;
+    createdGoatIds.push(goatA);
+    const sharedUuid = randomUUID();
+    const sharedPhoto = photoUrl(sharedUuid);
+    expect((await agent.put(`/api/goats/${goatA}`).send({ imageUrls: [sharedPhoto] })).status).toBe(200);
+
+    // Goat B forges a reference to A's photo alongside one it actually owns.
+    const createB = await agent.post("/api/goats").send({
+      name: `Forger ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createB.status).toBe(201);
+    const goatB = createB.body.id as number;
+    createdGoatIds.push(goatB);
+    const ownUuid = randomUUID();
+    const ownPhoto = photoUrl(ownUuid);
+    expect(
+      (await agent.put(`/api/goats/${goatB}`).send({ imageUrls: [sharedPhoto, ownPhoto] })).status,
+    ).toBe(200);
+    spy.mockClear();
+
+    // B removes both photos. Only its own photo should be deleted; the shared
+    // one must survive because A still references it.
+    const updateRes = await agent.put(`/api/goats/${goatB}`).send({ imageUrls: [] });
+    expect(updateRes.status).toBe(200);
+
+    expect(spy).toHaveBeenCalledWith(bareObjectUrl(ownUuid));
+    expect(spy).not.toHaveBeenCalledWith(bareObjectUrl(sharedUuid));
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("still deletes the goat (204) even when storage cleanup fails", async () => {
+    vi.spyOn(ObjectStorageService.prototype, "deleteObjectEntity").mockRejectedValue(
+      new Error("storage unavailable"),
+    );
+
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    const setRes = await agent
+      .put(`/api/goats/${goatId}`)
+      .send({ imageUrls: [photoUrl()] });
+    expect(setRes.status).toBe(200);
+
+    const deleteRes = await agent.delete(`/api/goats/${goatId}`);
+    expect(deleteRes.status).toBe(204);
+  });
+
+  it("skips deletion when a differently-formatted path references the same object", async () => {
+    const spy = vi
+      .spyOn(ObjectStorageService.prototype, "deleteObjectEntity")
+      .mockResolvedValue(true);
+
+    // Victim goat stores the object in the frontend `/api/storage/...` form.
+    const uuid = randomUUID();
+    const createVictim = await agent.post("/api/goats").send({
+      name: `Victim ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createVictim.status).toBe(201);
+    const victimId = createVictim.body.id as number;
+    createdGoatIds.push(victimId);
+    expect(
+      (await agent.put(`/api/goats/${victimId}`).send({ imageUrls: [photoUrl(uuid)] })).status,
+    ).toBe(200);
+
+    // Attacker goat references the SAME underlying object via the bare
+    // `/objects/uploads/<uuid>` form, then removes it.
+    const createAttacker = await agent.post("/api/goats").send({
+      name: `Attacker ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+    });
+    expect(createAttacker.status).toBe(201);
+    const attackerId = createAttacker.body.id as number;
+    createdGoatIds.push(attackerId);
+    expect(
+      (await agent.put(`/api/goats/${attackerId}`).send({ imageUrls: [bareObjectUrl(uuid)] })).status,
+    ).toBe(200);
+    spy.mockClear();
+
+    const updateRes = await agent.put(`/api/goats/${attackerId}`).send({ imageUrls: [] });
+    expect(updateRes.status).toBe(200);
+
+    // The victim still references the object (in another representation), so it
+    // must NOT be deleted despite the alternate path form.
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
