@@ -210,7 +210,7 @@ export default function WorksheetResults() {
 
         <div className="mb-6">
           <h1 className="font-serif text-2xl md:text-3xl font-semibold text-foreground flex items-center gap-3">
-            <ClipboardList className="h-7 w-7 text-primary" /> Enter Worksheet Results
+            <ClipboardList className="h-7 w-7 text-primary" /> Enter Barn Worksheet Results
           </h1>
           <p className="text-muted-foreground mt-1">
             Type in what you wrote on the printed Barn Worksheet. Leave a goat's row blank to skip it —

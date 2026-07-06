@@ -29,7 +29,7 @@ const REPORTS: ReportEntry[] = [
   },
   {
     href: "/health-events/worksheet",
-    title: "Enter Worksheet Results",
+    title: "Enter Barn Worksheet Results",
     description: "Type back a finished paper worksheet into a per-goat grid — saved as health events in one entry.",
     icon: PencilLine,
   },
