@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Award, GitBranch, ClipboardList, ChevronRight, HeartPulse, Trophy, type LucideIcon } from "lucide-react";
+import { Award, GitBranch, ClipboardList, ChevronRight, HeartPulse, PencilLine, Trophy, type LucideIcon } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -26,6 +26,12 @@ const REPORTS: ReportEntry[] = [
     title: "Barn Worksheet",
     description: "Print-ready work day sheet: one row per goat with blank columns to mark off health tasks by hand.",
     icon: ClipboardList,
+  },
+  {
+    href: "/health-events/worksheet",
+    title: "Enter Worksheet Results",
+    description: "Type back a finished paper worksheet into a per-goat grid — saved as health events in one entry.",
+    icon: PencilLine,
   },
   {
     href: "/reports/pedigree",

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Printer, ClipboardList } from "lucide-react";
+import { Link } from "wouter";
+import { Printer, ClipboardList, PencilLine } from "lucide-react";
 import { getListGoatsQueryKey, useListGoats } from "@workspace/api-client-react";
 import type { Goat, ListGoatsSex, ListGoatsStatus } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Layout } from "@/components/layout";
@@ -121,13 +122,20 @@ export default function BarnWorksheet() {
             Pick the goats for your work day, print the sheet, and mark off each task by hand in the barn or field.
           </p>
         </div>
-        <Button
-          onClick={() => window.print()}
-          disabled={selectedGoats.length === 0}
-          className="self-start shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
-        >
-          <Printer className="mr-2 h-4 w-4" /> Print Worksheet
-        </Button>
+        <div className="flex flex-wrap gap-2 self-start shrink-0">
+          <Link href="/health-events/worksheet">
+            <Button variant="outline">
+              <PencilLine className="mr-2 h-4 w-4" /> Enter Results
+            </Button>
+          </Link>
+          <Button
+            onClick={() => window.print()}
+            disabled={selectedGoats.length === 0}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+          >
+            <Printer className="mr-2 h-4 w-4" /> Print Worksheet
+          </Button>
+        </div>
       </div>
 
       {/* Goat selection controls — hidden when printing. */}

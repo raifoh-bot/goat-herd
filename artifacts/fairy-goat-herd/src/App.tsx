@@ -19,6 +19,7 @@ import BreedingNew from "@/pages/breedings/new";
 import BreedingImport from "@/pages/breedings/import";
 import BreedingDetail from "@/pages/breedings/[id]";
 import HerdWorkDay from "@/pages/health-events/new";
+import WorksheetResults from "@/pages/health-events/worksheet";
 import InventoryList from "@/pages/inventory/index";
 import Reports from "@/pages/reports/index";
 import LineageReports from "@/pages/reports/lineage";
@@ -83,6 +84,7 @@ function AuthenticatedRoutes() {
         <Route path="/breedings/import" component={BreedingImport} />
         <Route path="/breedings/:id" component={BreedingDetail} />
         <Route path="/health-events/new" component={HerdWorkDay} />
+        <Route path="/health-events/worksheet" component={WorksheetResults} />
         <Route path="/inventory" component={InventoryList} />
         <Route path="/reports" component={Reports} />
         <Route path="/reports/lineage" component={LineageReports} />
