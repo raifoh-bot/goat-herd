@@ -11,7 +11,7 @@ import type {
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
 import { AlertTriangle, Bug, Droplets, Eye, Footprints, HeartPulse, Loader2, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -259,36 +259,32 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-card/50 p-4 group">
-      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="h-4 w-4 text-primary" />
+    <div className="flex items-start gap-2.5 py-2 group">
+      <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+        <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-foreground text-sm">{config?.label ?? event.eventType}</span>
-          <span className="text-xs text-muted-foreground">
-            {formatDate(new Date(event.eventDate), { month: "short", day: "numeric", year: "numeric" })}
-          </span>
+          {details.map((d) => (
+            <Badge key={d} variant="outline" className="text-xs font-normal px-1.5 py-0">{d}</Badge>
+          ))}
         </div>
-        {details.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {details.map((d) => (
-              <Badge key={d} variant="outline" className="text-xs font-normal">{d}</Badge>
-            ))}
-          </div>
-        )}
-        {event.notes && <p className="text-sm text-muted-foreground mt-1.5">{event.notes}</p>}
+        {event.notes && <p className="text-xs text-muted-foreground mt-0.5">{event.notes}</p>}
       </div>
+      <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
+        {formatDate(new Date(event.eventDate), { month: "short", day: "numeric", year: "numeric" })}
+      </span>
       {isManager && (
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+          className="h-6 w-6 text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
           onClick={remove}
           disabled={deleteEvent.isPending}
           aria-label="Delete health event"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>
@@ -307,23 +303,31 @@ export function HealthHistoryCard({ goatId, goatName }: { goatId: number; goatNa
 
   return (
     <Card className="border-primary/10 shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="font-serif text-lg flex items-center gap-2">
-          <HeartPulse className="h-4 w-4 text-primary" /> Health History
-        </CardTitle>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 gap-3 pb-3">
+        <div className="space-y-1">
+          <CardTitle className="font-serif text-lg flex items-center gap-2">
+            <HeartPulse className="h-4 w-4 text-primary" /> Health History
+          </CardTitle>
+          <CardDescription className="text-xs">
+            A running log of this goat's care — hoof trims, CD&T shots, FAMACHA scores,
+            dewormings, and treatments — with dates, products, and doses.
+          </CardDescription>
+        </div>
+        <Button size="sm" onClick={() => setAddOpen(true)} className="shrink-0">
           <Plus className="h-4 w-4 mr-1" /> Add Event
         </Button>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : sorted.length > 0 ? (
-          sorted.map((event) => (
-            <EventRow key={event.id} event={event} goatId={goatId} weightUnit={weightUnit} />
-          ))
+          <div className="divide-y divide-border/60">
+            {sorted.map((event) => (
+              <EventRow key={event.id} event={event} goatId={goatId} weightUnit={weightUnit} />
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
             <Footprints className="h-8 w-8 text-muted-foreground/30 mb-3" />
