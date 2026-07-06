@@ -77,7 +77,8 @@ export const GoatHerdStatus = {
   leased: "leased",
   "on-farm": "on-farm",
   retired: "retired",
-  sold: "sold",
+  "sold-registered": "sold-registered",
+  "sold-not-registered": "sold-not-registered",
 } as const;
 
 export interface Goat {
@@ -210,7 +211,8 @@ export const CreateGoatBodyHerdStatus = {
   leased: "leased",
   "on-farm": "on-farm",
   retired: "retired",
-  sold: "sold",
+  "sold-registered": "sold-registered",
+  "sold-not-registered": "sold-not-registered",
 } as const;
 
 export interface CreateGoatBody {
@@ -347,7 +349,8 @@ export const UpdateGoatBodyHerdStatus = {
   leased: "leased",
   "on-farm": "on-farm",
   retired: "retired",
-  sold: "sold",
+  "sold-registered": "sold-registered",
+  "sold-not-registered": "sold-not-registered",
 } as const;
 
 export interface UpdateGoatBody {
@@ -1567,7 +1570,8 @@ export const ListGoatsStatus = {
   leased: "leased",
   "on-farm": "on-farm",
   retired: "retired",
-  sold: "sold",
+  "sold-registered": "sold-registered",
+  "sold-not-registered": "sold-not-registered",
 } as const;
 
 export type ListGoatsSex = (typeof ListGoatsSex)[keyof typeof ListGoatsSex];

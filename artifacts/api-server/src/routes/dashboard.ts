@@ -16,7 +16,8 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     (g) =>
       !g.leasedBuck &&
       g.herdStatus !== "dead" &&
-      g.herdStatus !== "sold" &&
+      g.herdStatus !== "sold-registered" &&
+      g.herdStatus !== "sold-not-registered" &&
       g.herdStatus !== "leased",
   );
   const totalGoats = ownedGoats.length;

@@ -505,7 +505,8 @@ export default function GoatDetails() {
                           : goat.herdStatus === "leased" ? "Leased"
                           : goat.herdStatus === "on-farm" ? "On Farm"
                           : goat.herdStatus === "retired" ? "Retired"
-                          : goat.herdStatus === "sold" ? "Sold"
+                          : goat.herdStatus === "sold-registered" ? "Sold-Registered"
+                          : goat.herdStatus === "sold-not-registered" ? "Sold-Not Registered"
                           : "—"}
                       </span>
                     </div>

@@ -608,7 +608,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
         breed: doe?.breed ?? "mixed",
         dateOfBirth: kid.birthDate,
         lactationStatus: "kid",
-        herdStatus: kid.kidStatus === "sold" ? "sold" : kid.kidStatus === "dead" ? "dead" : null,
+        herdStatus: kid.kidStatus === "sold" ? "sold-not-registered" : kid.kidStatus === "dead" ? "dead" : null,
         // Dam info (the doe from this breeding)
         damName: doe?.registeredName ?? doe?.name ?? "",
         // Sire info (the buck name from this breeding)
@@ -690,7 +690,7 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
     if (parsed.data.name !== undefined) goatUpdate.name = parsed.data.name || (updated.sex === "doe" ? "Unnamed Doe" : "Unnamed Buck");
     if (parsed.data.sex !== undefined) goatUpdate.sex = parsed.data.sex;
     if (parsed.data.kidStatus !== undefined) {
-      if (parsed.data.kidStatus === "sold") goatUpdate.herdStatus = "sold";
+      if (parsed.data.kidStatus === "sold") goatUpdate.herdStatus = "sold-not-registered";
       else if (parsed.data.kidStatus === "dead") goatUpdate.herdStatus = "dead";
       else if (parsed.data.kidStatus === "alive") goatUpdate.herdStatus = "on-farm";
     }

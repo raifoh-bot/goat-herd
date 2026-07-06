@@ -225,7 +225,8 @@ describe("GET /api/health-events/bulk-session", () => {
     const eligible = await createGoat({ herdStatus: "on-farm" });
     const noStatus = await createGoat();
     const dead = await createGoat({ herdStatus: "dead" });
-    const sold = await createGoat({ herdStatus: "sold" });
+    const sold = await createGoat({ herdStatus: "sold-not-registered" });
+    const soldRegistered = await createGoat({ herdStatus: "sold-registered" });
     const retired = await createGoat({ herdStatus: "retired" });
 
     const res = await adminAgent.get("/api/health-events/bulk-session");
@@ -235,6 +236,7 @@ describe("GET /api/health-events/bulk-session", () => {
     expect(ids).toContain(noStatus.id);
     expect(ids).not.toContain(dead.id);
     expect(ids).not.toContain(sold.id);
+    expect(ids).not.toContain(soldRegistered.id);
     expect(ids).not.toContain(retired.id);
   });
 });

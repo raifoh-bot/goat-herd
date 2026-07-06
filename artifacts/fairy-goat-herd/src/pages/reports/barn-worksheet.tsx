@@ -16,7 +16,8 @@ const herdStatusLabels: Record<string, string> = {
   "first-freshener": "First Freshener",
   leased: "Leased",
   retired: "Retired",
-  sold: "Sold",
+  "sold-registered": "Sold-Registered",
+  "sold-not-registered": "Sold-Not Registered",
   dead: "Dead",
 };
 

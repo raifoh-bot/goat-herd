@@ -44,7 +44,8 @@ const herdStatusLabels: Record<string, string> = {
   leased: "Leased",
   "on-farm": "On Farm",
   retired: "Retired",
-  sold: "Sold",
+  "sold-registered": "Sold-Registered",
+  "sold-not-registered": "Sold-Not Registered",
 };
 
 type ViewMode = "grid" | "compact" | "list";
@@ -283,7 +284,8 @@ export default function GoatsList() {
                 <SelectItem value="first-freshener">First Freshener</SelectItem>
                 <SelectItem value="leased">Leased</SelectItem>
                 <SelectItem value="retired">Retired</SelectItem>
-                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="sold-registered">Sold-Registered</SelectItem>
+                <SelectItem value="sold-not-registered">Sold-Not Registered</SelectItem>
                 <SelectItem value="dead">Dead</SelectItem>
               </SelectContent>
             </Select>

@@ -1451,7 +1451,7 @@ export const useDeleteGoatHealthEvent = <
 };
 
 /**
- * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold, or retired.
+ * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold (registered or not registered), or retired.
  * @summary List the goats eligible for a herd-work-day bulk session
  */
 export const getGetHealthEventBulkSessionUrl = () => {

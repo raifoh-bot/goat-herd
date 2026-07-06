@@ -132,7 +132,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [dead, first-freshener, leased, on-farm, retired, sold]
+            enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
         - name: sex
           in: query
           schema:
@@ -404,7 +404,7 @@ paths:
       summary: List the goats eligible for a herd-work-day bulk session
       description: >-
         Returns the farm's goats that are worked during a herd work day —
-        excludes goats whose herd status is dead, sold, or retired.
+        excludes goats whose herd status is dead, sold (registered or not registered), or retired.
       responses:
         "200":
           description: Eligible goats
@@ -1464,7 +1464,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold]
+          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
           description: Current standing of the goat in the herd
         rightEarTattoo:
           type: string
@@ -1569,7 +1569,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold]
+          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -1689,7 +1689,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold]
+          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4

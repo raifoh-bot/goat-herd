@@ -239,5 +239,15 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 9. The "sold" herd status was split into "sold-registered" and
+  //    "sold-not-registered". Migrate any legacy "sold" rows exactly once;
+  //    "sold-not-registered" is the conservative default (no registration
+  //    paperwork implied) and can be changed per goat afterwards.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(
+      `UPDATE "goats" SET "herd_status" = 'sold-not-registered' WHERE "herd_status" = 'sold';`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }

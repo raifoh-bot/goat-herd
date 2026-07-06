@@ -56,7 +56,15 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListGoatsQueryParams = zod.object({
   status: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .optional(),
   sex: zod.enum(["doe", "buck", "wether"]).optional(),
 });
@@ -158,7 +166,15 @@ export const ListGoatsResponseItem = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
@@ -272,7 +288,15 @@ export const CreateGoatBody = zod.object({
     .describe("Ordered list of up to 4 photo URLs for this goat"),
   leasedBuck: zod.boolean().optional(),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish(),
   rightEarTattoo: zod.string().max(createGoatBodyRightEarTattooMax).nullish(),
   leftEarTattoo: zod.string().max(createGoatBodyLeftEarTattooMax).nullish(),
@@ -389,7 +413,15 @@ export const GetGoatResponse = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod.string().max(getGoatResponseRightEarTattooMax).optional(),
@@ -502,7 +534,15 @@ export const UpdateGoatBody = zod.object({
     .describe("Ordered list of up to 4 photo URLs for this goat"),
   leasedBuck: zod.boolean().optional(),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish(),
   rightEarTattoo: zod.string().max(updateGoatBodyRightEarTattooMax).nullish(),
   leftEarTattoo: zod.string().max(updateGoatBodyLeftEarTattooMax).nullish(),
@@ -612,7 +652,15 @@ export const UpdateGoatResponse = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
@@ -761,7 +809,15 @@ export const AddGoatPhotoResponse = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
@@ -905,7 +961,15 @@ export const SetGoatDefaultPhotoResponse = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
@@ -1124,7 +1188,7 @@ export const DeleteGoatHealthEventParams = zod.object({
 });
 
 /**
- * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold, or retired.
+ * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold (registered or not registered), or retired.
  * @summary List the goats eligible for a herd-work-day bulk session
  */
 export const getHealthEventBulkSessionResponseMilkPerDayMin = 0;
@@ -1224,7 +1288,15 @@ export const GetHealthEventBulkSessionResponseItem = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
@@ -1457,7 +1529,8 @@ export const ListBreedingsResponseItem = zod
               "leased",
               "on-farm",
               "retired",
-              "sold",
+              "sold-registered",
+              "sold-not-registered",
             ])
             .nullish()
             .describe("Current standing of the goat in the herd"),
@@ -1762,7 +1835,8 @@ export const GetBreedingResponse = zod
               "leased",
               "on-farm",
               "retired",
-              "sold",
+              "sold-registered",
+              "sold-not-registered",
             ])
             .nullish()
             .describe("Current standing of the goat in the herd"),
@@ -2304,7 +2378,8 @@ export const GetDashboardSummaryResponse = zod.object({
           "leased",
           "on-farm",
           "retired",
-          "sold",
+          "sold-registered",
+          "sold-not-registered",
         ])
         .nullish()
         .describe("Current standing of the goat in the herd"),
@@ -2469,7 +2544,15 @@ export const GetRecentActivityResponseItem = zod.object({
     .optional()
     .describe("Buck is on a breeding lease and excluded from herd totals"),
   herdStatus: zod
-    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .enum([
+      "dead",
+      "first-freshener",
+      "leased",
+      "on-farm",
+      "retired",
+      "sold-registered",
+      "sold-not-registered",
+    ])
     .nullish()
     .describe("Current standing of the goat in the herd"),
   rightEarTattoo: zod
