@@ -2876,6 +2876,10 @@ export const LoginResponse = zod.object({
 /**
  * @summary Get the currently authenticated user
  */
+export const getCurrentUserResponseDashboardLayoutItemXMin = 0;
+
+export const getCurrentUserResponseDashboardLayoutItemYMin = 0;
+
 export const GetCurrentUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
@@ -2898,8 +2902,32 @@ export const GetCurrentUserResponse = zod.object({
           visible: zod
             .boolean()
             .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(getCurrentUserResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(getCurrentUserResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
         })
-        .describe("A single dashboard widget's visibility and order position."),
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
     )
     .nullish()
     .describe(
@@ -3206,6 +3234,10 @@ export const SetUserPasswordBody = zod.object({
 /**
  * @summary Get the farm settings
  */
+export const getSettingsResponseDashboardLayoutItemXMin = 0;
+
+export const getSettingsResponseDashboardLayoutItemYMin = 0;
+
 export const getSettingsResponseFamachaThresholdMax = 5;
 
 export const getSettingsResponseHealthScheduleIntervalsHoofTrimMax = 3650;
@@ -3287,8 +3319,32 @@ export const GetSettingsResponse = zod.object({
           visible: zod
             .boolean()
             .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(getSettingsResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(getSettingsResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
         })
-        .describe("A single dashboard widget's visibility and order position."),
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
     )
     .describe(
       "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
@@ -3338,6 +3394,10 @@ export const updateSettingsBodyAdgaNumberMax = 50;
 
 export const updateSettingsBodyGestationDaysMin = 100;
 export const updateSettingsBodyGestationDaysMax = 250;
+
+export const updateSettingsBodyDashboardLayoutItemXMin = 0;
+
+export const updateSettingsBodyDashboardLayoutItemYMin = 0;
 
 export const updateSettingsBodyFamachaThresholdMax = 5;
 
@@ -3399,9 +3459,33 @@ export const UpdateSettingsBody = zod
             visible: zod
               .boolean()
               .describe("Whether the widget is shown on the dashboard."),
+            x: zod
+              .number()
+              .min(updateSettingsBodyDashboardLayoutItemXMin)
+              .optional()
+              .describe(
+                "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+              ),
+            y: zod
+              .number()
+              .min(updateSettingsBodyDashboardLayoutItemYMin)
+              .optional()
+              .describe(
+                "Row index of the widget's top-left corner on the grid.",
+              ),
+            w: zod
+              .number()
+              .min(1)
+              .optional()
+              .describe("Width of the widget in grid columns."),
+            h: zod
+              .number()
+              .min(1)
+              .optional()
+              .describe("Height of the widget in grid rows."),
           })
           .describe(
-            "A single dashboard widget's visibility and order position.",
+            "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
           ),
       )
       .optional()
@@ -3445,6 +3529,10 @@ export const UpdateSettingsBody = zod
   .describe(
     "Partial update of the farm settings. Only the provided fields are changed.",
   );
+
+export const updateSettingsResponseDashboardLayoutItemXMin = 0;
+
+export const updateSettingsResponseDashboardLayoutItemYMin = 0;
 
 export const updateSettingsResponseFamachaThresholdMax = 5;
 
@@ -3527,8 +3615,32 @@ export const UpdateSettingsResponse = zod.object({
           visible: zod
             .boolean()
             .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(updateSettingsResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(updateSettingsResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
         })
-        .describe("A single dashboard widget's visibility and order position."),
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
     )
     .describe(
       "Ordered list of dashboard widgets with their visibility. Normalized server-side so unknown ids are stripped and missing widgets are appended in default order.",
@@ -3584,6 +3696,10 @@ export const ChangeOwnPasswordBody = zod.object({
  * Saves a per-user dashboard arrangement that overrides the farm-wide default for this user only. Send `dashboardLayout: null` to remove the personal override and fall back to the farm default.
  * @summary Set or clear the current user's personal dashboard layout
  */
+export const updateDashboardLayoutBodyDashboardLayoutItemXMin = 0;
+
+export const updateDashboardLayoutBodyDashboardLayoutItemYMin = 0;
+
 export const UpdateDashboardLayoutBody = zod
   .object({
     dashboardLayout: zod
@@ -3598,9 +3714,33 @@ export const UpdateDashboardLayoutBody = zod
             visible: zod
               .boolean()
               .describe("Whether the widget is shown on the dashboard."),
+            x: zod
+              .number()
+              .min(updateDashboardLayoutBodyDashboardLayoutItemXMin)
+              .optional()
+              .describe(
+                "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+              ),
+            y: zod
+              .number()
+              .min(updateDashboardLayoutBodyDashboardLayoutItemYMin)
+              .optional()
+              .describe(
+                "Row index of the widget's top-left corner on the grid.",
+              ),
+            w: zod
+              .number()
+              .min(1)
+              .optional()
+              .describe("Width of the widget in grid columns."),
+            h: zod
+              .number()
+              .min(1)
+              .optional()
+              .describe("Height of the widget in grid rows."),
           })
           .describe(
-            "A single dashboard widget's visibility and order position.",
+            "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
           ),
       )
       .nullable()
@@ -3611,6 +3751,10 @@ export const UpdateDashboardLayoutBody = zod
   .describe(
     "Sets the current user's personal dashboard layout. A null value clears the personal override so the farm-wide default applies.",
   );
+
+export const updateDashboardLayoutResponseDashboardLayoutItemXMin = 0;
+
+export const updateDashboardLayoutResponseDashboardLayoutItemYMin = 0;
 
 export const UpdateDashboardLayoutResponse = zod.object({
   id: zod.number(),
@@ -3634,8 +3778,32 @@ export const UpdateDashboardLayoutResponse = zod.object({
           visible: zod
             .boolean()
             .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(updateDashboardLayoutResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(updateDashboardLayoutResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
         })
-        .describe("A single dashboard widget's visibility and order position."),
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
     )
     .nullish()
     .describe(

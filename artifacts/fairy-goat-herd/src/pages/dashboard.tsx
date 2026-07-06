@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint } from "lucide-react";
+import { Responsive, WidthProvider, type Layout as GridLayoutItem } from "react-grid-layout";
+import { useQueryClient } from "@tanstack/react-query";
+import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint, GripHorizontal, Move, Check } from "lucide-react";
 import {
   getGetBreedBreakdownQueryKey,
+  getGetCurrentUserQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetRecentActivityQueryKey,
   getGetSettingsQueryKey,
@@ -14,18 +17,23 @@ import {
   useGetRecentActivity,
   useGetSettings,
   useListBreedings,
+  useUpdateDashboardLayout,
+  useUpdateSettings,
   type BreedingWithDoe,
   type BreedCount,
+  type DashboardWidget,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { breedLabels } from "@/lib/breeds";
 import { useAuth, useIsManager } from "@/lib/auth";
 import {
-  DASHBOARD_WIDGETS,
   resolveDashboardLayout,
+  getWidgetGridItem,
   type DashboardWidgetId,
 } from "@/lib/dashboard-widgets";
 import { CustomizeDashboard } from "@/components/customize-dashboard";
+import { useToast } from "@/hooks/use-toast";
+import "react-grid-layout/css/styles.css";
 import { BreedingCalendarWidget } from "@/components/dashboard/BreedingCalendarWidget";
 import { HealthDueWidget, hasHealthSchedules } from "@/components/dashboard/HealthDueWidget";
 import { OnboardingBanner } from "@/components/onboarding-banner";
@@ -50,15 +58,17 @@ const LACTATION_COLORS: Record<string, string> = {
   Retired: "hsl(var(--chart-5))",
 };
 
-/** Widgets that take a full-width / wide column slot in the grid. */
-const WIDE_WIDGETS = new Set<DashboardWidgetId>([
-  "does-breakdown",
-  "upcoming-kiddings",
-  "breed-breakdown",
-  "recent-activity",
-  "breeding-calendar",
-  "health-due",
-]);
+const ResponsiveGridLayout = WidthProvider(Responsive);
+
+/**
+ * Breakpoints for the dashboard grid. Below Tailwind's `md` (768px) the grid
+ * collapses to a single stacked column; at/above it we use the full 12-column
+ * snap grid.
+ */
+const GRID_BREAKPOINTS = { lg: 768, xs: 0 };
+const GRID_COLS = { lg: 12, xs: 1 };
+const GRID_ROW_HEIGHT = 40;
+const GRID_MARGIN: [number, number] = [16, 16];
 
 const BREED_BAR_COLORS = [
   "hsl(var(--chart-1))",
@@ -72,6 +82,12 @@ export default function Dashboard() {
   const isManager = useIsManager();
   const { user } = useAuth();
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<"lg" | "xs">("lg");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const updatePersonal = useUpdateDashboardLayout();
+  const updateFarm = useUpdateSettings();
 
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: recentActivity, isLoading: isLoadingActivity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
@@ -79,10 +95,24 @@ export default function Dashboard() {
 
   // A user's personal layout wins when set; otherwise fall back to the
   // farm-wide default. resolveDashboardLayout keeps either stable against the
-  // current widget catalog.
+  // current widget catalog and fills in default grid coordinates.
   const personalLayout = user.dashboardLayout;
-  const layout = resolveDashboardLayout(personalLayout ?? settings?.dashboardLayout);
-  const visibleWidgets = layout.filter((w) => w.visible);
+  const resolvedLayout = useMemo(
+    () => resolveDashboardLayout(personalLayout ?? settings?.dashboardLayout),
+    [personalLayout, settings?.dashboardLayout],
+  );
+
+  // Local working copy so drag/resize feels instant; it re-syncs whenever the
+  // saved layout changes (a save round-trips, or the Customize panel toggles a
+  // widget's visibility).
+  const [widgets, setWidgets] = useState<DashboardWidget[]>(resolvedLayout);
+  const resolvedKey = JSON.stringify(resolvedLayout);
+  useEffect(() => {
+    setWidgets(resolvedLayout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedKey]);
+
+  const visibleWidgets = widgets.filter((w) => w.visible);
   const showUpcomingKiddings = visibleWidgets.some((w) => w.id === "upcoming-kiddings");
   const showBreedingCalendar = visibleWidgets.some((w) => w.id === "breeding-calendar");
   const showBreedBreakdown = visibleWidgets.some((w) => w.id === "breed-breakdown");
@@ -116,6 +146,85 @@ export default function Dashboard() {
         { name: "Retired", value: summary.doeLactationBreakdown.retired },
       ].filter((d) => d.value > 0)
     : [];
+
+  // The Health Work Due widget only renders once a farm has configured at least
+  // one routine schedule; otherwise it is dropped entirely (no empty slot).
+  const renderedWidgets = visibleWidgets.filter(
+    (w) => w.id !== "health-due" || isLoadingHealthDue || healthDueConfigured,
+  );
+
+  const gridLayouts = useMemo(() => {
+    const lg: GridLayoutItem[] = renderedWidgets.map((w) => {
+      const gi = getWidgetGridItem(w.id);
+      return {
+        i: w.id,
+        x: w.x ?? gi?.x ?? 0,
+        y: w.y ?? gi?.y ?? 0,
+        w: w.w ?? gi?.w ?? 3,
+        h: w.h ?? gi?.h ?? 3,
+        minW: gi?.minW ?? 2,
+        minH: gi?.minH ?? 2,
+      };
+    });
+    // On the single-column mobile stack, widgets keep their saved order but span
+    // the full width; positions here are never persisted.
+    const xs: GridLayoutItem[] = renderedWidgets.map((w, idx) => {
+      const gi = getWidgetGridItem(w.id);
+      return {
+        i: w.id,
+        x: 0,
+        y: idx,
+        w: 1,
+        h: w.h ?? gi?.h ?? 3,
+        minW: 1,
+        minH: gi?.minH ?? 2,
+      };
+    });
+    return { lg, xs };
+  }, [renderedWidgets]);
+
+  const persistLayout = (next: DashboardWidget[]) => {
+    const onError = () =>
+      toast({
+        title: "Could not save layout",
+        description: "Your dashboard arrangement could not be saved.",
+        variant: "destructive",
+      });
+    // With no personal override, a manager edits the shared farm default on
+    // canvas; everyone else's moves create/update their own personal layout.
+    if (personalLayout == null && isManager) {
+      updateFarm.mutate(
+        { data: { dashboardLayout: next } },
+        {
+          onSuccess: () =>
+            queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() }),
+          onError,
+        },
+      );
+    } else {
+      updatePersonal.mutate(
+        { data: { dashboardLayout: next } },
+        {
+          onSuccess: () =>
+            queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() }),
+          onError,
+        },
+      );
+    }
+  };
+
+  const handleGridChange = (newLayout: GridLayoutItem[]) => {
+    // Only desktop (12-column) moves are persisted; the single-column mobile
+    // stack is a read-only projection of the saved order.
+    if (currentBreakpoint !== "lg") return;
+    const byId = new Map(newLayout.map((item) => [item.i, item]));
+    const next = widgets.map((w) => {
+      const item = byId.get(w.id);
+      return item ? { ...w, x: item.x, y: item.y, w: item.w, h: item.h } : w;
+    });
+    setWidgets(next);
+    persistLayout(next);
+  };
 
   const renderWidget = (id: string) => {
     switch (id as DashboardWidgetId) {
@@ -188,15 +297,36 @@ export default function Dashboard() {
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">Herd Overview</h2>
             <p className="text-muted-foreground">Track production, health, and composition across your goat herd.</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={() => setCustomizeOpen(true)}
-          >
-            <SlidersHorizontal className="mr-2 h-4 w-4" /> Customize
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            {visibleWidgets.length > 0 && (
+              <Button
+                variant={editMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditMode((v) => !v)}
+              >
+                {editMode ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" /> Done editing
+                  </>
+                ) : (
+                  <>
+                    <Move className="mr-2 h-4 w-4" /> Edit layout
+                  </>
+                )}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setCustomizeOpen(true)}>
+              <SlidersHorizontal className="mr-2 h-4 w-4" /> Customize
+            </Button>
+          </div>
         </div>
+
+        {editMode && currentBreakpoint === "lg" && (
+          <p className="text-sm text-muted-foreground">
+            Drag the handle at the top of a widget to move it, or drag its
+            bottom-right corner to resize. Changes save automatically.
+          </p>
+        )}
 
         {visibleWidgets.length === 0 ? (
           <Card className="border-dashed border-primary/20">
@@ -207,18 +337,41 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 [grid-auto-flow:row_dense] items-start">
-            {visibleWidgets
-              .filter((w) => w.id !== "health-due" || isLoadingHealthDue || healthDueConfigured)
-              .map((w) => (
-              <div
-                key={w.id}
-                className={WIDE_WIDGETS.has(w.id as DashboardWidgetId) ? "md:col-span-2" : "md:col-span-1"}
-              >
-                {renderWidget(w.id)}
+          <ResponsiveGridLayout
+            layouts={gridLayouts}
+            breakpoints={GRID_BREAKPOINTS}
+            cols={GRID_COLS}
+            rowHeight={GRID_ROW_HEIGHT}
+            margin={GRID_MARGIN}
+            containerPadding={[0, 0]}
+            isDraggable={editMode && currentBreakpoint === "lg"}
+            isResizable={editMode && currentBreakpoint === "lg"}
+            draggableHandle=".widget-drag-handle"
+            onBreakpointChange={(bp) => setCurrentBreakpoint(bp === "lg" ? "lg" : "xs")}
+            onDragStop={handleGridChange}
+            onResizeStop={handleGridChange}
+            compactType="vertical"
+            useCSSTransforms
+          >
+            {renderedWidgets.map((w) => (
+              <div key={w.id} className="relative h-full">
+                {editMode && currentBreakpoint === "lg" && (
+                  <div className="widget-drag-handle absolute inset-x-0 top-0 z-10 flex h-6 cursor-move items-center justify-center rounded-t-xl bg-primary/10 text-primary/60 transition-colors hover:bg-primary/20">
+                    <GripHorizontal className="h-4 w-4" />
+                  </div>
+                )}
+                <div
+                  className={`h-full overflow-hidden ${
+                    editMode && currentBreakpoint === "lg"
+                      ? "rounded-xl pt-6 ring-2 ring-primary/30"
+                      : ""
+                  }`}
+                >
+                  <div className="h-full overflow-auto">{renderWidget(w.id)}</div>
+                </div>
               </div>
             ))}
-          </div>
+          </ResponsiveGridLayout>
         )}
       </div>
 

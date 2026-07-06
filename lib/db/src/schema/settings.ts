@@ -3,8 +3,20 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { farmsTable } from "./farms";
 
-/** One dashboard widget's persisted visibility/order state. */
-export type DashboardWidgetLayout = { id: string; visible: boolean };
+/**
+ * One dashboard widget's persisted state: visibility plus its placement on the
+ * 12-column snap grid. The x/y/w/h coordinates are optional so layouts saved
+ * before drag-and-resize shipped (id + visible only) still validate and are
+ * forward-migrated with default coordinates on the next save.
+ */
+export type DashboardWidgetLayout = {
+  id: string;
+  visible: boolean;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+};
 
 /** Event types a farm can put on a routine repeating schedule. */
 export type SchedulableEventType = "hoof_trim" | "cdt_shot" | "copper_bolus" | "deworming";

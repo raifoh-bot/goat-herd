@@ -3212,7 +3212,12 @@ components:
 
     DashboardWidget:
       type: object
-      description: A single dashboard widget's visibility and order position.
+      description: >-
+        A single dashboard widget's visibility and grid placement. The x/y/w/h
+        fields describe the widget's position and size on a 12-column snap grid.
+        They are optional so layouts saved before drag-and-resize shipped
+        (which only carried id + visible) are forward-migrated with default
+        coordinates on the next save.
       properties:
         id:
           type: string
@@ -3220,6 +3225,22 @@ components:
         visible:
           type: boolean
           description: Whether the widget is shown on the dashboard.
+        x:
+          type: integer
+          minimum: 0
+          description: Column index (0-11) of the widget's top-left corner on the 12-column grid.
+        y:
+          type: integer
+          minimum: 0
+          description: Row index of the widget's top-left corner on the grid.
+        w:
+          type: integer
+          minimum: 1
+          description: Width of the widget in grid columns.
+        h:
+          type: integer
+          minimum: 1
+          description: Height of the widget in grid rows.
       required:
         - id
         - visible

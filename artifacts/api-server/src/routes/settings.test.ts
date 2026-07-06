@@ -271,6 +271,22 @@ describe("PUT /api/settings", () => {
 });
 
 describe("dashboard layout customization", () => {
+  // The normalizer injects each widget's default 12-column grid placement when
+  // the saved entry omits x/y/w/h, so expectations carry the coordinates too.
+  const GRID: Record<string, { x: number; y: number; w: number; h: number }> = {
+    "total-goats": { x: 0, y: 0, w: 3, h: 3 },
+    "health-status": { x: 3, y: 0, w: 3, h: 3 },
+    "milking-status": { x: 6, y: 0, w: 3, h: 3 },
+    "avg-milk": { x: 9, y: 0, w: 3, h: 3 },
+    "does-breakdown": { x: 0, y: 3, w: 6, h: 6 },
+    "upcoming-kiddings": { x: 6, y: 3, w: 6, h: 6 },
+    "breed-breakdown": { x: 0, y: 9, w: 6, h: 6 },
+    "recent-activity": { x: 6, y: 9, w: 6, h: 6 },
+    "breeding-calendar": { x: 0, y: 15, w: 6, h: 7 },
+    "health-due": { x: 6, y: 15, w: 6, h: 5 },
+  };
+  const withGrid = (id: string, visible: boolean) => ({ id, visible, ...GRID[id] });
+
   it("returns a normalized default layout when none is saved", async () => {
     await db
       .update(farmSettingsTable)
@@ -281,32 +297,32 @@ describe("dashboard layout customization", () => {
     const res = await agent.get("/api/settings");
     expect(res.status).toBe(200);
     expect(res.body.dashboardLayout).toEqual([
-      { id: "total-goats", visible: true },
-      { id: "health-status", visible: true },
-      { id: "milking-status", visible: true },
-      { id: "avg-milk", visible: true },
-      { id: "does-breakdown", visible: true },
-      { id: "upcoming-kiddings", visible: true },
-      { id: "breed-breakdown", visible: true },
-      { id: "recent-activity", visible: true },
-      { id: "breeding-calendar", visible: true },
-      { id: "health-due", visible: true },
+      withGrid("total-goats", true),
+      withGrid("health-status", true),
+      withGrid("milking-status", true),
+      withGrid("avg-milk", true),
+      withGrid("does-breakdown", true),
+      withGrid("upcoming-kiddings", true),
+      withGrid("breed-breakdown", true),
+      withGrid("recent-activity", true),
+      withGrid("breeding-calendar", true),
+      withGrid("health-due", true),
     ]);
   });
 
-  it("persists a reordered + hidden layout for an admin", async () => {
+  it("persists a reordered + hidden layout with grid positions for an admin", async () => {
     const agent = await login(ADMIN);
     const layout = [
-      { id: "recent-activity", visible: true },
-      { id: "total-goats", visible: false },
-      { id: "health-status", visible: true },
-      { id: "milking-status", visible: true },
-      { id: "avg-milk", visible: true },
-      { id: "does-breakdown", visible: true },
-      { id: "upcoming-kiddings", visible: true },
-      { id: "breed-breakdown", visible: true },
-      { id: "breeding-calendar", visible: true },
-      { id: "health-due", visible: true },
+      { id: "recent-activity", visible: true, x: 0, y: 0, w: 6, h: 5 },
+      { id: "total-goats", visible: false, x: 6, y: 0, w: 3, h: 3 },
+      { id: "health-status", visible: true, x: 9, y: 0, w: 3, h: 3 },
+      { id: "milking-status", visible: true, x: 0, y: 5, w: 3, h: 3 },
+      { id: "avg-milk", visible: true, x: 3, y: 5, w: 3, h: 3 },
+      { id: "does-breakdown", visible: true, x: 6, y: 5, w: 6, h: 6 },
+      { id: "upcoming-kiddings", visible: true, x: 0, y: 8, w: 6, h: 6 },
+      { id: "breed-breakdown", visible: true, x: 0, y: 14, w: 6, h: 6 },
+      { id: "breeding-calendar", visible: true, x: 6, y: 14, w: 6, h: 7 },
+      { id: "health-due", visible: true, x: 0, y: 20, w: 6, h: 5 },
     ];
     const res = await agent.put("/api/settings").send({ dashboardLayout: layout });
     expect(res.status).toBe(200);
@@ -314,6 +330,31 @@ describe("dashboard layout customization", () => {
 
     const readBack = await agent.get("/api/settings");
     expect(readBack.body.dashboardLayout).toEqual(layout);
+  });
+
+  it("forward-migrates a legacy id+visible layout with default grid positions", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.put("/api/settings").send({
+      dashboardLayout: [
+        { id: "total-goats", visible: true },
+        { id: "health-status", visible: false },
+      ],
+    });
+    expect(res.status).toBe(200);
+    // The two saved widgets keep their order/visibility and gain default grid
+    // coordinates; the rest are appended visible in catalog order.
+    expect(res.body.dashboardLayout).toEqual([
+      withGrid("total-goats", true),
+      withGrid("health-status", false),
+      withGrid("milking-status", true),
+      withGrid("avg-milk", true),
+      withGrid("does-breakdown", true),
+      withGrid("upcoming-kiddings", true),
+      withGrid("breed-breakdown", true),
+      withGrid("recent-activity", true),
+      withGrid("breeding-calendar", true),
+      withGrid("health-due", true),
+    ]);
   });
 
   it("strips unknown widget ids and appends missing ones on save", async () => {
@@ -326,17 +367,17 @@ describe("dashboard layout customization", () => {
     });
     expect(res.status).toBe(200);
     expect(res.body.dashboardLayout).toEqual([
-      { id: "milking-status", visible: false },
-      { id: "total-goats", visible: true },
-      { id: "health-status", visible: true },
-      { id: "avg-milk", visible: true },
-      { id: "does-breakdown", visible: true },
-      { id: "upcoming-kiddings", visible: true },
-      { id: "breed-breakdown", visible: true },
-      { id: "recent-activity", visible: true },
+      withGrid("milking-status", false),
+      withGrid("total-goats", true),
+      withGrid("health-status", true),
+      withGrid("avg-milk", true),
+      withGrid("does-breakdown", true),
+      withGrid("upcoming-kiddings", true),
+      withGrid("breed-breakdown", true),
+      withGrid("recent-activity", true),
       // A newly-shipped widget is appended visible to a layout that predates it.
-      { id: "breeding-calendar", visible: true },
-      { id: "health-due", visible: true },
+      withGrid("breeding-calendar", true),
+      withGrid("health-due", true),
     ]);
   });
 

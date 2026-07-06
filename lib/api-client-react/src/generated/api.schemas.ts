@@ -1193,13 +1193,33 @@ export const AuthUserRole = {
 } as const;
 
 /**
- * A single dashboard widget's visibility and order position.
+ * A single dashboard widget's visibility and grid placement. The x/y/w/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.
  */
 export interface DashboardWidget {
   /** The widget identifier (e.g. total-goats, health-status). */
   id: string;
   /** Whether the widget is shown on the dashboard. */
   visible: boolean;
+  /**
+   * Column index (0-11) of the widget's top-left corner on the 12-column grid.
+   * @minimum 0
+   */
+  x?: number;
+  /**
+   * Row index of the widget's top-left corner on the grid.
+   * @minimum 0
+   */
+  y?: number;
+  /**
+   * Width of the widget in grid columns.
+   * @minimum 1
+   */
+  w?: number;
+  /**
+   * Height of the widget in grid rows.
+   * @minimum 1
+   */
+  h?: number;
 }
 
 export interface AuthUser {

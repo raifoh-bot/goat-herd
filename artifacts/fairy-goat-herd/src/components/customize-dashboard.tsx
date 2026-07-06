@@ -1,23 +1,6 @@
 import { useEffect, useState } from "react";
-import { GripVertical, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
   getGetCurrentUserQueryKey,
   getGetSettingsQueryKey,
@@ -156,7 +139,8 @@ export function CustomizeDashboard({
         <SheetHeader>
           <SheetTitle className="font-serif">Customize Dashboard</SheetTitle>
           <SheetDescription>
-            Show, hide, and reorder the widgets on your herd overview.
+            Show or hide the widgets on your herd overview. Use "Edit layout" on
+            the dashboard to drag and resize them.
           </SheetDescription>
         </SheetHeader>
 
@@ -268,22 +252,6 @@ function WidgetEditor({
   setDraft: (updater: (prev: DashboardWidget[]) => DashboardWidget[]) => void;
   disabled: boolean;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    setDraft((prev) => {
-      const oldIndex = prev.findIndex((w) => w.id === active.id);
-      const newIndex = prev.findIndex((w) => w.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
-      return arrayMove(prev, oldIndex, newIndex);
-    });
-  };
-
   const toggleVisible = (id: string, visible: boolean) => {
     setDraft((prev) => prev.map((w) => (w.id === id ? { ...w, visible } : w)));
   };
@@ -293,53 +261,26 @@ function WidgetEditor({
       className={`-mx-1 px-1 py-4 ${disabled ? "pointer-events-none opacity-50" : ""}`}
       aria-disabled={disabled}
     >
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={draft.map((w) => w.id)} strategy={verticalListSortingStrategy}>
-          <ul className="space-y-2">
-            {draft.map((widget) => (
-              <SortableWidgetRow key={widget.id} widget={widget} onToggle={toggleVisible} />
-            ))}
-          </ul>
-        </SortableContext>
-      </DndContext>
+      <ul className="space-y-2">
+        {draft.map((widget) => (
+          <WidgetRow key={widget.id} widget={widget} onToggle={toggleVisible} />
+        ))}
+      </ul>
     </div>
   );
 }
 
-function SortableWidgetRow({
+function WidgetRow({
   widget,
   onToggle,
 }: {
   widget: DashboardWidget;
   onToggle: (id: string, visible: boolean) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: widget.id,
-  });
   const def = getWidgetDef(widget.id);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 ${
-        isDragging ? "z-10 shadow-lg" : ""
-      }`}
-    >
-      <button
-        type="button"
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
-        aria-label={`Reorder ${def?.label ?? widget.id}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
+    <li className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="flex-1">
         <p className="text-sm font-medium text-foreground">{def?.label ?? widget.id}</p>
         {def?.description && (
