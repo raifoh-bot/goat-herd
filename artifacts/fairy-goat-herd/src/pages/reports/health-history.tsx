@@ -1,26 +1,18 @@
-import { useMemo } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearch } from "wouter";
 import { HeartPulse, Printer } from "lucide-react";
 import {
-  useGetGoat,
   useListGoats,
   useListGoatHealthEvents,
-  getGetGoatQueryKey,
   getListGoatHealthEventsQueryKey,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ReportHeader } from "@/components/report-header";
 import { healthEventTypeConfig } from "@/components/health-history";
-import { breedLabels } from "@/lib/breeds";
+import { breedLabels, breedLabel } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
@@ -192,16 +184,45 @@ function HealthRecord({
   );
 }
 
+/** Fetches one goat's health events and renders its printable record. */
+function GoatHealthRecordSection({
+  goat,
+  weightUnit,
+  isLast,
+}: {
+  goat: Goat;
+  weightUnit: string;
+  isLast: boolean;
+}) {
+  const { data: events, isLoading } = useListGoatHealthEvents(goat.id, {
+    query: { queryKey: getListGoatHealthEventsQueryKey(goat.id) },
+  });
+
+  return (
+    <div className={isLast ? "" : "print:break-after-page"}>
+      {isLoading ? (
+        <ReportSkeleton />
+      ) : (
+        <HealthRecord goat={goat} events={events ?? []} weightUnit={weightUnit} />
+      )}
+    </div>
+  );
+}
+
 export default function HealthHistoryReport() {
   const search = useSearch();
-  const [location, setLocation] = useLocation();
   const { weightUnit } = useFarmSettings();
 
-  const selectedId = useMemo(() => {
+  // Deep link support: `?goat=<id>` pre-selects a single goat (linked from the
+  // goat detail page). Selection beyond that is managed locally.
+  const deepLinkId = useMemo(() => {
     const raw = new URLSearchParams(search).get("goat");
     const parsed = raw ? parseInt(raw, 10) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [search]);
+
+  const [selected, setSelected] = useState<Set<Goat["id"]>>(new Set());
+  const initializedRef = useRef(false);
 
   const { data: goats, isLoading: goatsLoading } = useListGoats();
   const sortedGoats = useMemo(
@@ -209,23 +230,35 @@ export default function HealthHistoryReport() {
     [goats],
   );
 
-  const { data: goat, isLoading: goatLoading, isError } = useGetGoat(selectedId ?? 0, {
-    query: {
-      enabled: selectedId !== null,
-      queryKey: getGetGoatQueryKey(selectedId ?? 0),
-    },
-  });
+  // Initialize selection from the deep link once goats load.
+  useEffect(() => {
+    if (initializedRef.current || !goats) return;
+    initializedRef.current = true;
+    if (deepLinkId !== null && goats.some((g) => g.id === deepLinkId)) {
+      setSelected(new Set([deepLinkId]));
+    }
+  }, [goats, deepLinkId]);
 
-  const { data: events, isLoading: eventsLoading } = useListGoatHealthEvents(selectedId ?? 0, {
-    query: {
-      enabled: selectedId !== null,
-      queryKey: getListGoatHealthEventsQueryKey(selectedId ?? 0),
-    },
-  });
+  const selectedGoats = sortedGoats.filter((g) => selected.has(g.id));
+  const allSelected = sortedGoats.length > 0 && sortedGoats.every((g) => selected.has(g.id));
+  const deepLinkMissing =
+    deepLinkId !== null && goats !== undefined && !goats.some((g) => g.id === deepLinkId);
 
-  const handleSelect = (value: string) => {
-    setLocation(`${location.split("?")[0]}?goat=${value}`, { replace: true });
-  };
+  function toggleGoat(id: Goat["id"]) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected(() => {
+      if (allSelected) return new Set();
+      return new Set(sortedGoats.map((g) => g.id));
+    });
+  }
 
   return (
     <Layout>
@@ -235,53 +268,95 @@ export default function HealthHistoryReport() {
         <div>
           <h1 className="font-serif text-3xl font-bold text-foreground mb-1">Health History Report</h1>
           <p className="text-muted-foreground text-sm">
-            Printable health record for a single goat — ideal for providing to a buyer of an unregistered goat.
+            Printable health records — pick one goat, or several to print one record per page (handy when selling a group).
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => window.print()}
           className="self-start shrink-0"
-          disabled={!goat}
+          disabled={selectedGoats.length === 0}
         >
           <Printer className="mr-2 h-4 w-4" /> Print / Export
         </Button>
       </div>
 
-      <div className="no-print mb-6 max-w-sm">
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Goat</label>
-        <Select
-          value={selectedId !== null ? String(selectedId) : undefined}
-          onValueChange={handleSelect}
-          disabled={goatsLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={goatsLoading ? "Loading goats…" : "Choose a goat…"} />
-          </SelectTrigger>
-          <SelectContent>
-            {sortedGoats.map((g) => (
-              <SelectItem key={g.id} value={String(g.id)}>
-                {g.name}
-                {g.registeredName ? ` — ${g.registeredName}` : ""}
-              </SelectItem>
+      {/* Goat selection — hidden when printing. */}
+      <div className="no-print mb-8 rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-medium text-foreground">Goats</div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleAll}
+            disabled={sortedGoats.length === 0}
+            className="shrink-0"
+          >
+            {allSelected ? "Deselect All" : "Select All"}
+          </Button>
+        </div>
+
+        {goatsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-10 rounded-lg" />
             ))}
-          </SelectContent>
-        </Select>
+          </div>
+        ) : sortedGoats.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No goats in the herd yet.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-72 overflow-y-auto pr-1">
+              {sortedGoats.map((goat) => (
+                <label
+                  key={goat.id}
+                  className="flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 text-sm cursor-pointer hover:bg-muted/40 transition-colors"
+                >
+                  <Checkbox
+                    checked={selected.has(goat.id)}
+                    onCheckedChange={() => toggleGoat(goat.id)}
+                    aria-label={`Include ${goat.name}`}
+                  />
+                  <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                    {goat.name}
+                    {goat.registeredName ? (
+                      <span className="font-normal text-muted-foreground"> — {goat.registeredName}</span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {breedLabel(goat.breed)} · {sexLabel(goat.sex)}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {selectedGoats.length} of {sortedGoats.length} goat{sortedGoats.length !== 1 ? "s" : ""} selected
+              {selectedGoats.length > 1 ? " — each prints on its own page." : "."}
+            </p>
+          </>
+        )}
       </div>
 
-      {selectedId === null ? (
-        <div className="no-print flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center text-muted-foreground">
-          <HeartPulse className="mb-3 h-10 w-10 text-muted-foreground/30" />
-          <p>Choose a goat above to generate its health history report.</p>
-        </div>
-      ) : isError ? (
+      {deepLinkMissing && selectedGoats.length === 0 ? (
         <div className="no-print flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center text-muted-foreground">
           <p>That goat could not be found. Pick another one from the list above.</p>
         </div>
-      ) : goatLoading || eventsLoading || !goat ? (
-        <ReportSkeleton />
+      ) : selectedGoats.length === 0 ? (
+        <div className="no-print flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center text-muted-foreground">
+          <HeartPulse className="mb-3 h-10 w-10 text-muted-foreground/30" />
+          <p>Select one or more goats above to generate their health history reports.</p>
+        </div>
       ) : (
-        <HealthRecord goat={goat} events={events ?? []} weightUnit={weightUnitLabel(weightUnit)} />
+        <div className="space-y-6 print:space-y-0">
+          {selectedGoats.map((goat, i) => (
+            <GoatHealthRecordSection
+              key={goat.id}
+              goat={goat}
+              weightUnit={weightUnitLabel(weightUnit)}
+              isLast={i === selectedGoats.length - 1}
+            />
+          ))}
+        </div>
       )}
     </Layout>
   );
