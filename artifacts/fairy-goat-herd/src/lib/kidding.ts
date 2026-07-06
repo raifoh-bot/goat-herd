@@ -70,3 +70,23 @@ export function deriveKiddingHistory(
     }))
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
+
+/** Max kiddings shown on the certificate so it stays on one printed page. */
+export const KIDDING_HISTORY_LIMIT = 6;
+
+export interface CappedKiddingHistory {
+  visible: KiddingHistoryRow[];
+  hiddenCount: number;
+}
+
+/**
+ * Cap the kidding history at the most recent `limit` rows so a long-lived doe
+ * can't push the certificate onto a second page. Rows are assumed newest-first.
+ */
+export function capKiddingHistory(
+  rows: KiddingHistoryRow[],
+  limit: number = KIDDING_HISTORY_LIMIT,
+): CappedKiddingHistory {
+  if (rows.length <= limit) return { visible: rows, hiddenCount: 0 };
+  return { visible: rows.slice(0, limit), hiddenCount: rows.length - limit };
+}

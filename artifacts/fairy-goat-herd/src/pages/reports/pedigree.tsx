@@ -25,6 +25,7 @@ import { formatDate } from "@/lib/date";
 import {
   deriveKiddingRecord,
   deriveKiddingHistory,
+  capKiddingHistory,
   type KiddingRecord,
   type KiddingHistoryRow,
 } from "@/lib/kidding";
@@ -89,6 +90,8 @@ function Certificate({
   const tattoos = TATTOO_FIELDS
     .map((f) => ({ label: f.label, value: goat[f.key] as string | null | undefined }))
     .filter((t) => t.value);
+
+  const cappedHistory = kiddingHistory ? capKiddingHistory(kiddingHistory) : null;
 
   const details: { label: string; value: string }[] = [
     { label: "Breed", value: breedLabels[goat.breed] ?? goat.breed },
@@ -163,7 +166,7 @@ function Certificate({
                 </div>
               </div>
             </div>
-            {kiddingHistory && kiddingHistory.length > 0 && (
+            {cappedHistory && cappedHistory.visible.length > 0 && (
               <table className="mt-3 w-full border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-border print:border-foreground/30">
@@ -179,7 +182,7 @@ function Certificate({
                   </tr>
                 </thead>
                 <tbody>
-                  {kiddingHistory.map((row) => (
+                  {cappedHistory.visible.map((row) => (
                     <tr
                       key={row.breedingId}
                       className="border-b border-border/50 last:border-b-0 print:border-foreground/20"
@@ -203,6 +206,14 @@ function Certificate({
                   ))}
                 </tbody>
               </table>
+            )}
+            {cappedHistory && cappedHistory.hiddenCount > 0 && (
+              <p className="mt-1.5 text-[10px] italic text-muted-foreground">
+                …and {cappedHistory.hiddenCount} earlier{" "}
+                {cappedHistory.hiddenCount === 1 ? "kidding" : "kiddings"} (
+                {kiddingRecord?.timesKidded ?? cappedHistory.visible.length + cappedHistory.hiddenCount}{" "}
+                total)
+              </p>
             )}
           </div>
         )}

@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { deriveKiddingRecord, deriveKiddingHistory, summarizeKids } from "./kidding";
+import {
+  deriveKiddingRecord,
+  deriveKiddingHistory,
+  summarizeKids,
+  capKiddingHistory,
+  KIDDING_HISTORY_LIMIT,
+} from "./kidding";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 function breeding(overrides: Partial<BreedingWithDoe>): BreedingWithDoe {
@@ -141,5 +147,46 @@ describe("deriveKiddingHistory", () => {
       breeding({ id: 1, sireName: "", kids: [kid("2025-06-01")] }),
     ]);
     expect(rows[0]?.sireName).toBeNull();
+  });
+});
+
+describe("capKiddingHistory", () => {
+  function historyRows(count: number) {
+    return deriveKiddingHistory(
+      10,
+      Array.from({ length: count }, (_, i) =>
+        breeding({
+          id: i + 1,
+          kids: [kid(`20${String(10 + i)}-03-01`, { id: i + 1 })],
+        }),
+      ),
+    );
+  }
+
+  it("returns all rows and no hidden count when at or under the limit", () => {
+    const atLimit = historyRows(KIDDING_HISTORY_LIMIT);
+    expect(capKiddingHistory(atLimit)).toEqual({ visible: atLimit, hiddenCount: 0 });
+
+    const under = historyRows(2);
+    expect(capKiddingHistory(under)).toEqual({ visible: under, hiddenCount: 0 });
+
+    expect(capKiddingHistory([])).toEqual({ visible: [], hiddenCount: 0 });
+  });
+
+  it("keeps only the most recent rows and counts the rest when over the limit", () => {
+    const rows = historyRows(10);
+    const capped = capKiddingHistory(rows);
+    expect(capped.visible).toHaveLength(KIDDING_HISTORY_LIMIT);
+    expect(capped.hiddenCount).toBe(10 - KIDDING_HISTORY_LIMIT);
+    // Rows are newest-first, so the visible slice is the most recent kiddings.
+    expect(capped.visible[0]?.date).toBe("2019-03-01");
+    expect(capped.visible.at(-1)?.date).toBe("2014-03-01");
+  });
+
+  it("respects a custom limit", () => {
+    const rows = historyRows(5);
+    const capped = capKiddingHistory(rows, 3);
+    expect(capped.visible).toHaveLength(3);
+    expect(capped.hiddenCount).toBe(2);
   });
 });

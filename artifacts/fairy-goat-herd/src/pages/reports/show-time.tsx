@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReportHeader } from "@/components/report-header";
 import { formatDate } from "@/lib/date";
 import { breedLabel, BREED_CATALOG } from "@/lib/breeds";
-import { deriveKiddingRecord } from "@/pages/reports/pedigree";
+import { deriveKiddingRecord } from "@/lib/kidding";
 
 const herdStatusLabels: Record<string, string> = {
   "on-farm": "On Farm",
