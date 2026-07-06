@@ -22,6 +22,9 @@ import {
   ImportKidsBody,
   CreatePregnancyTestBody,
   CreatePregnancyTestParams,
+  UpdatePregnancyTestBody,
+  UpdatePregnancyTestParams,
+  DeletePregnancyTestParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { sendCsv } from "../lib/csv";
@@ -840,6 +843,77 @@ router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> =>
     events,
     pregnancyTests,
   });
+});
+
+// Correct a mistyped pregnancy test. Farm Hands may edit (like recording tests);
+// only the test's own fields are changed — breeding/doe status is untouched.
+router.put("/breedings/:id/pregnancy-tests/:testId", async (req, res): Promise<void> => {
+  const paramsParsed = UpdatePregnancyTestParams.safeParse({
+    id: Number(req.params.id),
+    testId: Number(req.params.testId),
+  });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const parsed = UpdatePregnancyTestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(pregnancyTestsTable)
+    .where(and(eq(pregnancyTestsTable.id, paramsParsed.data.testId), eq(pregnancyTestsTable.farmId, farmId(req))));
+
+  if (!existing || existing.breedingId !== paramsParsed.data.id) {
+    res.status(404).json({ error: "Pregnancy test not found" });
+    return;
+  }
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (parsed.data.testDate !== undefined) updateData.testDate = new Date(parsed.data.testDate);
+  if (parsed.data.method !== undefined) updateData.method = parsed.data.method;
+  if (parsed.data.result !== undefined) updateData.result = parsed.data.result;
+  if (parsed.data.testedBy !== undefined) updateData.testedBy = parsed.data.testedBy || null;
+  if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;
+
+  const [updated] = await db
+    .update(pregnancyTestsTable)
+    .set(updateData)
+    .where(and(eq(pregnancyTestsTable.id, paramsParsed.data.testId), eq(pregnancyTestsTable.farmId, farmId(req))))
+    .returning();
+
+  res.json(updated);
+});
+
+router.delete("/breedings/:id/pregnancy-tests/:testId", requireManager, async (req, res): Promise<void> => {
+  const paramsParsed = DeletePregnancyTestParams.safeParse({
+    id: Number(req.params.id),
+    testId: Number(req.params.testId),
+  });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(pregnancyTestsTable)
+    .where(and(eq(pregnancyTestsTable.id, paramsParsed.data.testId), eq(pregnancyTestsTable.farmId, farmId(req))));
+
+  if (!existing || existing.breedingId !== paramsParsed.data.id) {
+    res.status(404).json({ error: "Pregnancy test not found" });
+    return;
+  }
+
+  await db
+    .delete(pregnancyTestsTable)
+    .where(and(eq(pregnancyTestsTable.id, paramsParsed.data.testId), eq(pregnancyTestsTable.farmId, farmId(req))));
+
+  res.status(204).send();
 });
 
 router.post("/breedings/:id/events", async (req, res): Promise<void> => {

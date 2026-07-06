@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
+import { useIsManager } from "@/lib/auth";
 import {
   getGetBreedingQueryKey,
   getListBreedingsQueryKey,
@@ -25,6 +26,8 @@ import {
   useAddKids,
   useCreateBreedingEvent,
   useCreatePregnancyTest,
+  useUpdatePregnancyTest,
+  useDeletePregnancyTest,
   useUpdateBreedingEvent,
   useDeleteBreeding,
   useDeleteBreedingEvent,
@@ -678,6 +681,175 @@ const testResultConfig: Record<string, { label: string; badgeClass: string }> = 
   inconclusive: { label: "Inconclusive", badgeClass: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700" },
 };
 
+// Per-test row with edit (any recorder) and delete (managers only) controls.
+function PregnancyTestItem({ test, breedingId }: { test: PregnancyTest; breedingId: number }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isManager = useIsManager();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [testDate, setTestDate] = useState(new Date(test.testDate).toISOString().slice(0, 10));
+  const [method, setMethod] = useState<PregnancyTest["method"]>(test.method);
+  const [result, setResult] = useState<PregnancyTest["result"]>(test.result);
+  const [testedBy, setTestedBy] = useState(test.testedBy ?? "");
+  const [notes, setNotes] = useState(test.notes ?? "");
+
+  const updateTest = useUpdatePregnancyTest();
+  const deleteTest = useDeletePregnancyTest();
+
+  const openEdit = () => {
+    setTestDate(new Date(test.testDate).toISOString().slice(0, 10));
+    setMethod(test.method);
+    setResult(test.result);
+    setTestedBy(test.testedBy ?? "");
+    setNotes(test.notes ?? "");
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    updateTest.mutate(
+      {
+        id: breedingId,
+        testId: test.id,
+        data: {
+          testDate: new Date(testDate + "T12:00:00").toISOString(),
+          method,
+          result,
+          testedBy: testedBy.trim() || null,
+          notes: notes.trim() || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Pregnancy test updated" });
+          setIsEditing(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to update test", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    deleteTest.mutate(
+      { id: breedingId, testId: test.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Pregnancy test removed" });
+          setIsDeleting(false);
+          queryClient.invalidateQueries({ queryKey: getGetBreedingQueryKey(breedingId) });
+        },
+        onError: () => toast({ title: "Failed to remove test", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <li className="rounded-xl border border-border bg-card/50 p-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge className={`${testResultConfig[test.result]?.badgeClass ?? ""} text-xs px-2 py-0 border`}>
+            {testResultConfig[test.result]?.label ?? test.result}
+          </Badge>
+          <span className="text-sm font-medium text-foreground">{testMethodConfig[test.method] ?? test.method}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" /> {formatDate(test.testDate)}
+          </span>
+          <Button variant="ghost" size="sm" onClick={openEdit} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
+          {isManager && (
+            <Button variant="ghost" size="sm" onClick={() => setIsDeleting(true)} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+      {(test.testedBy || test.notes) && (
+        <div className="mt-2 text-sm text-muted-foreground space-y-1">
+          {test.testedBy && <p>Tested by {test.testedBy}</p>}
+          {test.notes && <p className="leading-relaxed">{test.notes}</p>}
+        </div>
+      )}
+
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit Pregnancy Test</DialogTitle>
+            <DialogDescription>Correct the date, method, result, or notes for this test.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Test Date</label>
+                <Input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="bg-background/50" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Method</label>
+                <Select value={method} onValueChange={(v) => setMethod(v as PregnancyTest["method"])}>
+                  <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ultrasound">Ultrasound</SelectItem>
+                    <SelectItem value="blood">Blood Test</SelectItem>
+                    <SelectItem value="palpation">Palpation</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Result</label>
+              <Select value={result} onValueChange={(v) => setResult(v as PregnancyTest["result"])}>
+                <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="positive">Positive</SelectItem>
+                  <SelectItem value="negative">Negative</SelectItem>
+                  <SelectItem value="inconclusive">Inconclusive</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Editing the result won't change the breeding or doe status.</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tested By <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <Input value={testedBy} onChange={(e) => setTestedBy(e.target.value)} placeholder="e.g. Dr. Smith" className="bg-background/50" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="bg-background/50 resize-none" placeholder="Any observations" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button type="button" onClick={handleSave} disabled={updateTest.isPending}>
+                {updateTest.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-serif">Remove Pregnancy Test?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove this {testResultConfig[test.result]?.label.toLowerCase() ?? test.result} test from {formatDate(test.testDate)}. This won't change the breeding or doe status.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteTest.isPending}>
+              {deleteTest.isPending ? "Removing..." : "Remove Test"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </li>
+  );
+}
+
 function PregnancyTestsCard({
   tests,
   breedingId,
@@ -780,25 +952,7 @@ function PregnancyTestsCard({
         ) : (
           <ul className="space-y-3">
             {tests.map((t) => (
-              <li key={t.id} className="rounded-xl border border-border bg-card/50 p-3">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge className={`${testResultConfig[t.result]?.badgeClass ?? ""} text-xs px-2 py-0 border`}>
-                      {testResultConfig[t.result]?.label ?? t.result}
-                    </Badge>
-                    <span className="text-sm font-medium text-foreground">{testMethodConfig[t.method] ?? t.method}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" /> {formatDate(t.testDate)}
-                  </span>
-                </div>
-                {(t.testedBy || t.notes) && (
-                  <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                    {t.testedBy && <p>Tested by {t.testedBy}</p>}
-                    {t.notes && <p className="leading-relaxed">{t.notes}</p>}
-                  </div>
-                )}
-              </li>
+              <PregnancyTestItem key={t.id} test={t} breedingId={breedingId} />
             ))}
           </ul>
         )}

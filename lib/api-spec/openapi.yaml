@@ -666,6 +666,61 @@ paths:
         "404":
           description: Breeding not found
 
+  /breedings/{id}/pregnancy-tests/{testId}:
+    put:
+      operationId: updatePregnancyTest
+      tags: [breedings]
+      summary: Correct a recorded pregnancy test
+      description: >-
+        Updates the date, method, result, tester, and/or notes of an existing
+        pregnancy test. Does not change the breeding or doe status.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePregnancyTestBody"
+      responses:
+        "200":
+          description: Pregnancy test updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PregnancyTest"
+        "404":
+          description: Pregnancy test not found
+    delete:
+      operationId: deletePregnancyTest
+      tags: [breedings]
+      summary: Delete a recorded pregnancy test
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Pregnancy test deleted
+        "404":
+          description: Pregnancy test not found
+
   /breedings/{id}/events:
     post:
       operationId: createBreedingEvent
@@ -2014,6 +2069,25 @@ components:
       required:
         - eventDate
         - events
+
+    UpdatePregnancyTestBody:
+      type: object
+      properties:
+        testDate:
+          type: string
+          format: date-time
+        method:
+          type: string
+          enum: [ultrasound, blood, palpation, other]
+        result:
+          type: string
+          enum: [positive, negative, inconclusive]
+        testedBy:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
 
     BreedingEvent:
       type: object

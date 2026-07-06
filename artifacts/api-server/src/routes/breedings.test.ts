@@ -732,3 +732,163 @@ describe("breeding responses resolve the doe's default photo", () => {
     expect(detailRes.body.doe.imageUrl).toBe("/api/storage/objects/a.jpg");
   });
 });
+
+// Insert a pregnancy test directly, scoped to a breeding, returning its row.
+async function createPregnancyTest(
+  breedingId: number,
+  overrides: Partial<{ method: string; result: string; testedBy: string | null; notes: string | null; testDate: Date }> = {},
+) {
+  const [test] = await db
+    .insert(pregnancyTestsTable)
+    .values({
+      farmId: testFarmId,
+      breedingId,
+      testDate: overrides.testDate ?? new Date(),
+      method: (overrides.method ?? "ultrasound") as "ultrasound" | "blood" | "palpation" | "other",
+      result: (overrides.result ?? "inconclusive") as "positive" | "negative" | "inconclusive",
+      testedBy: overrides.testedBy ?? null,
+      notes: overrides.notes ?? null,
+    })
+    .returning();
+  return test;
+}
+
+describe("PUT /api/breedings/:id/pregnancy-tests/:testId", () => {
+  it("corrects the date, method, result, tester, and notes", async () => {
+    const doe = await createDoe("serviced");
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id, { method: "ultrasound", result: "inconclusive", testedBy: "Typo" });
+
+    const newDate = new Date("2026-01-15T12:00:00.000Z");
+    const res = await agent
+      .put(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`)
+      .send({
+        testDate: newDate.toISOString(),
+        method: "blood",
+        result: "positive",
+        testedBy: "Dr. Fixed",
+        notes: "Corrected entry",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.method).toBe("blood");
+    expect(res.body.result).toBe("positive");
+    expect(res.body.testedBy).toBe("Dr. Fixed");
+    expect(res.body.notes).toBe("Corrected entry");
+    expect(new Date(res.body.testDate).toISOString()).toBe(newDate.toISOString());
+  });
+
+  it("does not change breeding or doe status even when the result is edited", async () => {
+    const doe = await createDoe("serviced");
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id, { result: "inconclusive" });
+
+    const res = await agent
+      .put(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`)
+      .send({ result: "positive" });
+
+    expect(res.status).toBe(200);
+    const [storedBreeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, breeding.id));
+    expect(storedBreeding.status).toBe("bred");
+    const storedDoe = await getDoe(doe.id);
+    expect(storedDoe.lactationStatus).toBe("serviced");
+  });
+
+  it("clears optional fields when passed null", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id, { testedBy: "Someone", notes: "old note" });
+
+    const res = await agent
+      .put(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`)
+      .send({ testedBy: null, notes: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.testedBy).toBeNull();
+    expect(res.body.notes).toBeNull();
+  });
+
+  it("returns 404 when the test does not belong to the breeding", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const otherBreeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(otherBreeding.id);
+
+    const res = await agent
+      .put(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`)
+      .send({ result: "positive" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an invalid method", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id);
+
+    const res = await agent
+      .put(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`)
+      .send({ method: "xray" });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("DELETE /api/breedings/:id/pregnancy-tests/:testId", () => {
+  it("removes the test", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id);
+
+    const res = await agent.delete(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`);
+
+    expect(res.status).toBe(204);
+    const remaining = await db.select().from(pregnancyTestsTable).where(eq(pregnancyTestsTable.id, test.id));
+    expect(remaining).toHaveLength(0);
+  });
+
+  it("returns 404 when the test does not belong to the breeding", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const otherBreeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(otherBreeding.id);
+
+    const res = await agent.delete(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`);
+
+    expect(res.status).toBe(404);
+    // The test still exists (afterEach cleans it up via otherBreeding).
+    const remaining = await db.select().from(pregnancyTestsTable).where(eq(pregnancyTestsTable.id, test.id));
+    expect(remaining).toHaveLength(1);
+  });
+
+  it("forbids a farmhand from deleting a test", async () => {
+    const doe = await createDoe();
+    const breeding = await createBreeding(doe.id, "bred");
+    const test = await createPregnancyTest(breeding.id);
+
+    const farmhandUsername = `test-farmhand-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const farmhandPassword = "farmhand-password-123";
+    const passwordHash = await bcrypt.hash(farmhandPassword, 10);
+    const [farmhand] = await db
+      .insert(usersTable)
+      .values({ farmId: testFarmId, username: farmhandUsername, passwordHash, role: "farmhand", active: true })
+      .returning();
+
+    try {
+      const farmhandAgent = request.agent(app);
+      const loginRes = await farmhandAgent
+        .post("/api/auth/login")
+        .set("X-Farm-Slug", TEST_FARM_SLUG)
+        .send({ username: farmhandUsername, password: farmhandPassword });
+      expect(loginRes.status).toBe(200);
+
+      const res = await farmhandAgent.delete(`/api/breedings/${breeding.id}/pregnancy-tests/${test.id}`);
+      expect(res.status).toBe(403);
+      // The test survives the forbidden delete.
+      const remaining = await db.select().from(pregnancyTestsTable).where(eq(pregnancyTestsTable.id, test.id));
+      expect(remaining).toHaveLength(1);
+    } finally {
+      await db.delete(usersTable).where(eq(usersTable.id, farmhand.id));
+    }
+  });
+});

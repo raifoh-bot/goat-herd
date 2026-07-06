@@ -693,6 +693,33 @@ export interface BulkHealthEventsBody {
   events: BulkHealthEventItem[];
 }
 
+export type UpdatePregnancyTestBodyMethod =
+  (typeof UpdatePregnancyTestBodyMethod)[keyof typeof UpdatePregnancyTestBodyMethod];
+
+export const UpdatePregnancyTestBodyMethod = {
+  ultrasound: "ultrasound",
+  blood: "blood",
+  palpation: "palpation",
+  other: "other",
+} as const;
+
+export type UpdatePregnancyTestBodyResult =
+  (typeof UpdatePregnancyTestBodyResult)[keyof typeof UpdatePregnancyTestBodyResult];
+
+export const UpdatePregnancyTestBodyResult = {
+  positive: "positive",
+  negative: "negative",
+  inconclusive: "inconclusive",
+} as const;
+
+export interface UpdatePregnancyTestBody {
+  testDate?: string;
+  method?: UpdatePregnancyTestBodyMethod;
+  result?: UpdatePregnancyTestBodyResult;
+  testedBy?: string | null;
+  notes?: string | null;
+}
+
 export type CreateBreedingEventBodyEventType =
   (typeof CreateBreedingEventBodyEventType)[keyof typeof CreateBreedingEventBodyEventType];
 

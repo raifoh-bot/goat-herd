@@ -2032,6 +2032,43 @@ export const CreatePregnancyTestBody = zod.object({
 });
 
 /**
+ * Updates the date, method, result, tester, and/or notes of an existing pregnancy test. Does not change the breeding or doe status.
+ * @summary Correct a recorded pregnancy test
+ */
+export const UpdatePregnancyTestParams = zod.object({
+  id: zod.coerce.number(),
+  testId: zod.coerce.number(),
+});
+
+export const UpdatePregnancyTestBody = zod.object({
+  testDate: zod.coerce.date().optional(),
+  method: zod.enum(["ultrasound", "blood", "palpation", "other"]).optional(),
+  result: zod.enum(["positive", "negative", "inconclusive"]).optional(),
+  testedBy: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdatePregnancyTestResponse = zod.object({
+  id: zod.number(),
+  breedingId: zod.number(),
+  testDate: zod.coerce.date(),
+  method: zod.enum(["ultrasound", "blood", "palpation", "other"]),
+  result: zod.enum(["positive", "negative", "inconclusive"]),
+  testedBy: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a recorded pregnancy test
+ */
+export const DeletePregnancyTestParams = zod.object({
+  id: zod.coerce.number(),
+  testId: zod.coerce.number(),
+});
+
+/**
  * @summary Log an exposure/cover/removal event for a breeding
  */
 export const CreateBreedingEventParams = zod.object({

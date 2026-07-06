@@ -15,6 +15,7 @@ export {
   CreateFarmBody,
   CreateGoatBody,
   CreatePregnancyTestBody,
+  UpdatePregnancyTestBody,
   CreateSemenStrawBody,
   CreateUserBody,
   DeleteFarmBody,

@@ -58,6 +58,7 @@ import type {
   LoginResponse,
   PlatformSummary,
   PlatformThresholds,
+  PregnancyTest,
   RegisterFarmBody,
   SemenStraw,
   SetGoatDefaultPhotoBody,
@@ -71,6 +72,7 @@ import type {
   UpdateGoatBody,
   UpdateKidBody,
   UpdatePlatformThresholdsBody,
+  UpdatePregnancyTestBody,
   UpdateSemenStrawBody,
   UpdateUserBody,
   UploadUrlRequest,
@@ -2530,6 +2532,180 @@ export const useCreatePregnancyTest = <
   TContext
 > => {
   return useMutation(getCreatePregnancyTestMutationOptions(options));
+};
+
+/**
+ * Updates the date, method, result, tester, and/or notes of an existing pregnancy test. Does not change the breeding or doe status.
+ * @summary Correct a recorded pregnancy test
+ */
+export const getUpdatePregnancyTestUrl = (id: number, testId: number) => {
+  return `/api/breedings/${id}/pregnancy-tests/${testId}`;
+};
+
+export const updatePregnancyTest = async (
+  id: number,
+  testId: number,
+  updatePregnancyTestBody: UpdatePregnancyTestBody,
+  options?: RequestInit,
+): Promise<PregnancyTest> => {
+  return customFetch<PregnancyTest>(getUpdatePregnancyTestUrl(id, testId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePregnancyTestBody),
+  });
+};
+
+export const getUpdatePregnancyTestMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePregnancyTest>>,
+    TError,
+    { id: number; testId: number; data: BodyType<UpdatePregnancyTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePregnancyTest>>,
+  TError,
+  { id: number; testId: number; data: BodyType<UpdatePregnancyTestBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePregnancyTest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePregnancyTest>>,
+    { id: number; testId: number; data: BodyType<UpdatePregnancyTestBody> }
+  > = (props) => {
+    const { id, testId, data } = props ?? {};
+
+    return updatePregnancyTest(id, testId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePregnancyTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePregnancyTest>>
+>;
+export type UpdatePregnancyTestMutationBody = BodyType<UpdatePregnancyTestBody>;
+export type UpdatePregnancyTestMutationError = ErrorType<void>;
+
+/**
+ * @summary Correct a recorded pregnancy test
+ */
+export const useUpdatePregnancyTest = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePregnancyTest>>,
+    TError,
+    { id: number; testId: number; data: BodyType<UpdatePregnancyTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePregnancyTest>>,
+  TError,
+  { id: number; testId: number; data: BodyType<UpdatePregnancyTestBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePregnancyTestMutationOptions(options));
+};
+
+/**
+ * @summary Delete a recorded pregnancy test
+ */
+export const getDeletePregnancyTestUrl = (id: number, testId: number) => {
+  return `/api/breedings/${id}/pregnancy-tests/${testId}`;
+};
+
+export const deletePregnancyTest = async (
+  id: number,
+  testId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePregnancyTestUrl(id, testId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePregnancyTestMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePregnancyTest>>,
+    TError,
+    { id: number; testId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePregnancyTest>>,
+  TError,
+  { id: number; testId: number },
+  TContext
+> => {
+  const mutationKey = ["deletePregnancyTest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePregnancyTest>>,
+    { id: number; testId: number }
+  > = (props) => {
+    const { id, testId } = props ?? {};
+
+    return deletePregnancyTest(id, testId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePregnancyTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePregnancyTest>>
+>;
+
+export type DeletePregnancyTestMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a recorded pregnancy test
+ */
+export const useDeletePregnancyTest = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePregnancyTest>>,
+    TError,
+    { id: number; testId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePregnancyTest>>,
+  TError,
+  { id: number; testId: number },
+  TContext
+> => {
+  return useMutation(getDeletePregnancyTestMutationOptions(options));
 };
 
 /**
