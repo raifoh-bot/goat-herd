@@ -25,6 +25,7 @@ import {
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { sendCsv } from "../lib/csv";
+import { withImageAlias } from "../lib/goatImage";
 
 const router: IRouter = Router();
 
@@ -108,7 +109,7 @@ router.get("/breedings", async (req, res): Promise<void> => {
 
     return {
       ...row.breedings,
-      doe: row.goats,
+      doe: row.goats ? withImageAlias(row.goats) : row.goats,
       kids: kidsByBreeding[row.breedings.id] ?? [],
       hasActiveExposure,
       exposedDays,
@@ -457,7 +458,7 @@ router.get("/breedings/:id", async (req, res): Promise<void> => {
 
   res.json({
     ...rows[0].breedings,
-    doe: rows[0].goats,
+    doe: rows[0].goats ? withImageAlias(rows[0].goats) : rows[0].goats,
     kids,
     events,
     pregnancyTests,
@@ -834,7 +835,7 @@ router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> =>
 
   res.status(201).json({
     ...rows[0].breedings,
-    doe: rows[0].goats,
+    doe: rows[0].goats ? withImageAlias(rows[0].goats) : rows[0].goats,
     kids,
     events,
     pregnancyTests,

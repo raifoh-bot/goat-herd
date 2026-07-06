@@ -205,6 +205,9 @@ export async function ensureMultiTenant(): Promise<void> {
     await pool.query(
       `UPDATE "goats" SET "image_urls" = ARRAY["image_url"] WHERE "image_url" IS NOT NULL AND "image_url" <> '' AND "image_urls" = '{}';`,
     );
+    await pool.query(
+      `ALTER TABLE "goats" ADD COLUMN IF NOT EXISTS "default_photo_index" integer;`,
+    );
   }
 
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");

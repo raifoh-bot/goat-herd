@@ -34,6 +34,7 @@ export const goatsTable = pgTable("goats", {
   description: text("description"),
   imageUrl: text("image_url"),
   imageUrls: text("image_urls").array().notNull().default([]),
+  defaultPhotoIndex: integer("default_photo_index"),
   herdStatus: text("herd_status", { enum: ["dead", "first-freshener", "leased", "on-farm", "retired", "sold"] }).default("on-farm"),
   leasedBuck: boolean("leased_buck").default(false).notNull(),
   rightEarTattoo: varchar("right_ear_tattoo", { length: 4 }),

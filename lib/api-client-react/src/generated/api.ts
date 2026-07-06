@@ -56,6 +56,7 @@ import type {
   PlatformThresholds,
   RegisterFarmBody,
   SemenStraw,
+  SetGoatDefaultPhotoBody,
   SetUserPasswordBody,
   SuperadminFarm,
   UpdateBreedingBody,
@@ -935,6 +936,94 @@ export const useAddGoatPhoto = <
   TContext
 > => {
   return useMutation(getAddGoatPhotoMutationOptions(options));
+};
+
+/**
+ * Designates which photo (by index into imageUrls) is the goat's default, shown on herd cards, the detail hero, and anywhere a single representative image is used. Manager-only (Admin/Owner).
+ * @summary Set a goat's default photo
+ */
+export const getSetGoatDefaultPhotoUrl = (id: number) => {
+  return `/api/goats/${id}/photos/default`;
+};
+
+export const setGoatDefaultPhoto = async (
+  id: number,
+  setGoatDefaultPhotoBody: SetGoatDefaultPhotoBody,
+  options?: RequestInit,
+): Promise<Goat> => {
+  return customFetch<Goat>(getSetGoatDefaultPhotoUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setGoatDefaultPhotoBody),
+  });
+};
+
+export const getSetGoatDefaultPhotoMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setGoatDefaultPhoto>>,
+    TError,
+    { id: number; data: BodyType<SetGoatDefaultPhotoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setGoatDefaultPhoto>>,
+  TError,
+  { id: number; data: BodyType<SetGoatDefaultPhotoBody> },
+  TContext
+> => {
+  const mutationKey = ["setGoatDefaultPhoto"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setGoatDefaultPhoto>>,
+    { id: number; data: BodyType<SetGoatDefaultPhotoBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setGoatDefaultPhoto(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetGoatDefaultPhotoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setGoatDefaultPhoto>>
+>;
+export type SetGoatDefaultPhotoMutationBody = BodyType<SetGoatDefaultPhotoBody>;
+export type SetGoatDefaultPhotoMutationError = ErrorType<void>;
+
+/**
+ * @summary Set a goat's default photo
+ */
+export const useSetGoatDefaultPhoto = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setGoatDefaultPhoto>>,
+    TError,
+    { id: number; data: BodyType<SetGoatDefaultPhotoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setGoatDefaultPhoto>>,
+  TError,
+  { id: number; data: BodyType<SetGoatDefaultPhotoBody> },
+  TContext
+> => {
+  return useMutation(getSetGoatDefaultPhotoMutationOptions(options));
 };
 
 /**

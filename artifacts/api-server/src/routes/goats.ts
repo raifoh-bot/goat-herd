@@ -9,23 +9,20 @@ import {
   GetGoatParams,
   ImportGoatsBody,
   ListGoatsQueryParams,
+  SetGoatDefaultPhotoBody,
+  SetGoatDefaultPhotoParams,
   UpdateGoatBody,
   UpdateGoatParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
 import { sendCsv } from "../lib/csv";
+import { withImageAlias } from "../lib/goatImage";
 
 const router: IRouter = Router();
 
 // Goats are read-only for Farm Hands; only Admin/Owner may create, edit, or delete.
 const requireManager = requireRole("admin", "owner");
-
-// Populate the deprecated `imageUrl` alias from the first entry of `imageUrls`
-// so older clients and the herd-list cards keep working without changes.
-function withImageAlias<T extends { imageUrls?: string[] | null }>(goat: T): T & { imageUrl: string | null } {
-  return { ...goat, imageUrl: goat.imageUrls?.[0] ?? null };
-}
 
 router.get("/goats", async (req, res): Promise<void> => {
   const params = ListGoatsQueryParams.safeParse(req.query);
@@ -160,7 +157,7 @@ router.get("/goats/export", async (req, res): Promise<void> => {
     g.paternalGrandsireName,
     g.milkPerDay,
     g.description,
-    g.imageUrls?.[0] ?? g.imageUrl,
+    withImageAlias(g).imageUrl,
     g.createdAt,
   ]);
 
@@ -249,6 +246,46 @@ router.post("/goats/:id/photos", async (req, res): Promise<void> => {
   const [goat] = await db
     .update(goatsTable)
     .set({ imageUrls: [...currentUrls, parsed.data.imageUrl], updatedAt: new Date() })
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
+    .returning();
+
+  res.json(withImageAlias(goat));
+});
+
+// Choose which photo is the goat's default (shown on herd cards, the detail
+// hero, and anywhere a single representative image is used). Manager-only.
+router.put("/goats/:id/photos/default", requireManager, async (req, res): Promise<void> => {
+  const params = SetGoatDefaultPhotoParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = SetGoatDefaultPhotoBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(goatsTable)
+    .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))));
+
+  if (!existing) {
+    res.status(404).json({ error: "Goat not found" });
+    return;
+  }
+
+  const currentUrls = existing.imageUrls ?? [];
+  if (parsed.data.index < 0 || parsed.data.index >= currentUrls.length) {
+    res.status(400).json({ error: "That photo index is out of range for this goat" });
+    return;
+  }
+
+  const [goat] = await db
+    .update(goatsTable)
+    .set({ defaultPhotoIndex: parsed.data.index, updatedAt: new Date() })
     .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
     .returning();
 

@@ -259,6 +259,39 @@ paths:
         "404":
           description: Goat not found
 
+  /goats/{id}/photos/default:
+    put:
+      operationId: setGoatDefaultPhoto
+      tags: [goats]
+      summary: Set a goat's default photo
+      description: >-
+        Designates which photo (by index into imageUrls) is the goat's default,
+        shown on herd cards, the detail hero, and anywhere a single
+        representative image is used. Manager-only (Admin/Owner).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetGoatDefaultPhotoBody"
+      responses:
+        "200":
+          description: Updated goat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goat"
+        "400":
+          description: Index is out of bounds of the goat's photos
+        "404":
+          description: Goat not found
+
   /goats/export:
     get:
       operationId: exportGoats
@@ -1296,12 +1329,19 @@ components:
             type: string
           maxItems: 4
           description: Ordered list of up to 4 photo URLs for this goat
+        defaultPhotoIndex:
+          type: integer
+          nullable: true
+          description: >-
+            Index into imageUrls of the photo chosen as the default. When null,
+            the newest photo (last in imageUrls) is used as the default.
         imageUrl:
           type: string
           readOnly: true
           deprecated: true
           description: >-
-            Deprecated. First entry of imageUrls, kept for backward
+            Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when
+            set, otherwise the last/newest entry), kept for backward
             compatibility with older clients.
         leasedBuck:
           type: boolean
@@ -1453,6 +1493,17 @@ components:
           description: >-
             Storage path of the uploaded photo (e.g.
             /api/storage/objects/...), appended to the goat's imageUrls.
+
+    SetGoatDefaultPhotoBody:
+      type: object
+      required: [index]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: >-
+            Zero-based index into the goat's imageUrls to use as the default
+            photo. Must be within bounds of the goat's current photo set.
 
     UpdateGoatBody:
       type: object

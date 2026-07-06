@@ -694,3 +694,41 @@ describe("pregnancy tests vs. manual status edits stay consistent", () => {
     expect(kidsAfter[0].id).toBe(kid.id);
   });
 });
+
+describe("breeding responses resolve the doe's default photo", () => {
+  it("uses the newest photo for the doe when no default is set", async () => {
+    const doe = await createDoe();
+    await db
+      .update(goatsTable)
+      .set({ imageUrls: ["/api/storage/objects/a.jpg", "/api/storage/objects/b.jpg"] })
+      .where(eq(goatsTable.id, doe.id));
+    const breeding = await createBreeding(doe.id);
+
+    const listRes = await agent.get("/api/breedings");
+    expect(listRes.status).toBe(200);
+    const listed = (listRes.body as Array<{ id: number; doe: { imageUrl: string | null } }>).find(
+      (b) => b.id === breeding.id,
+    );
+    expect(listed?.doe.imageUrl).toBe("/api/storage/objects/b.jpg");
+
+    const detailRes = await agent.get(`/api/breedings/${breeding.id}`);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.doe.imageUrl).toBe("/api/storage/objects/b.jpg");
+  });
+
+  it("uses the chosen default photo for the doe when one is set", async () => {
+    const doe = await createDoe();
+    await db
+      .update(goatsTable)
+      .set({
+        imageUrls: ["/api/storage/objects/a.jpg", "/api/storage/objects/b.jpg"],
+        defaultPhotoIndex: 0,
+      })
+      .where(eq(goatsTable.id, doe.id));
+    const breeding = await createBreeding(doe.id);
+
+    const detailRes = await agent.get(`/api/breedings/${breeding.id}`);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.doe.imageUrl).toBe("/api/storage/objects/a.jpg");
+  });
+});

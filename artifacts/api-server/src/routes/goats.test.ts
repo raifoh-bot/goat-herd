@@ -101,6 +101,77 @@ describe("PUT /api/goats/:id tattoo and EID clearing", () => {
   });
 });
 
+describe("PUT /api/goats/:id/photos/default", () => {
+  async function createGoatWithPhotos(count: number): Promise<number> {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      imageUrls: Array.from({ length: count }, (_, i) => `/api/storage/objects/photo-${i}.jpg`),
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+    return goatId;
+  }
+
+  it("defaults imageUrl to the newest photo when no default is set", async () => {
+    const goatId = await createGoatWithPhotos(3);
+    const getRes = await agent.get(`/api/goats/${goatId}`);
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.defaultPhotoIndex == null).toBe(true);
+    expect(getRes.body.imageUrl).toBe("/api/storage/objects/photo-2.jpg");
+  });
+
+  it("sets a chosen default and reflects it in imageUrl", async () => {
+    const goatId = await createGoatWithPhotos(3);
+    const setRes = await agent.put(`/api/goats/${goatId}/photos/default`).send({ index: 0 });
+    expect(setRes.status).toBe(200);
+    expect(setRes.body.defaultPhotoIndex).toBe(0);
+    expect(setRes.body.imageUrl).toBe("/api/storage/objects/photo-0.jpg");
+
+    const stored = await getGoat(goatId);
+    expect(stored.defaultPhotoIndex).toBe(0);
+  });
+
+  it("rejects an out-of-bounds index", async () => {
+    const goatId = await createGoatWithPhotos(2);
+    const setRes = await agent.put(`/api/goats/${goatId}/photos/default`).send({ index: 5 });
+    expect(setRes.status).toBe(400);
+  });
+
+  it("returns 404 for a goat that does not exist", async () => {
+    const setRes = await agent.put(`/api/goats/99999999/photos/default`).send({ index: 0 });
+    expect(setRes.status).toBe(404);
+  });
+});
+
+describe("dashboard responses resolve the default photo", () => {
+  it("recent-activity reflects the chosen default (else newest) photo", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      imageUrls: ["/api/storage/objects/x.jpg", "/api/storage/objects/y.jpg"],
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+
+    // No default set yet → newest (last) photo.
+    let res = await agent.get("/api/dashboard/recent-activity");
+    expect(res.status).toBe(200);
+    let entry = (res.body as Array<{ id: number; imageUrl: string | null }>).find((g) => g.id === goatId);
+    expect(entry?.imageUrl).toBe("/api/storage/objects/y.jpg");
+
+    // Choose the first photo as default → recent-activity follows it.
+    const setRes = await agent.put(`/api/goats/${goatId}/photos/default`).send({ index: 0 });
+    expect(setRes.status).toBe(200);
+    res = await agent.get("/api/dashboard/recent-activity");
+    expect(res.status).toBe(200);
+    entry = (res.body as Array<{ id: number; imageUrl: string | null }>).find((g) => g.id === goatId);
+    expect(entry?.imageUrl).toBe("/api/storage/objects/x.jpg");
+  });
+});
+
 describe("Center Tail tattoo length", () => {
   it("accepts an 8-character center tail tattoo and persists it intact", async () => {
     const createRes = await agent.post("/api/goats").send({

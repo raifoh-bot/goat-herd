@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, ImagePlus, Loader2, Milk, Printer, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, ImagePlus, Loader2, Milk, Printer, Star, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { ReportHeader } from "@/components/report-header";
 import { GoatForm } from "@/components/goat-form";
@@ -21,6 +21,7 @@ import {
   useDeleteGoat,
   useGetGoat,
   useListBreedings,
+  useSetGoatDefaultPhoto,
   useUpdateGoat,
 } from "@workspace/api-client-react";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -44,6 +45,27 @@ const MAX_PHOTOS = 4;
 function goatPhotoCount(goat: Goat): number {
   if (goat.imageUrls && goat.imageUrls.length > 0) return goat.imageUrls.length;
   return goat.imageUrl ? 1 : 0;
+}
+
+// The ordered list of photos shown in the gallery, falling back to the legacy
+// single imageUrl for goats that predate the imageUrls array.
+function goatImages(goat: Goat): string[] {
+  if (goat.imageUrls && goat.imageUrls.length > 0) return goat.imageUrls;
+  return goat.imageUrl ? [goat.imageUrl] : [];
+}
+
+// Whether the goat has an explicitly chosen default photo (a valid stored
+// index). When false, the newest photo is used implicitly and no badge shows.
+function hasExplicitDefault(goat: Goat): boolean {
+  const idx = goat.defaultPhotoIndex;
+  return idx != null && idx >= 0 && idx < goatImages(goat).length;
+}
+
+// Resolve which photo index is the default: the explicit choice when valid,
+// otherwise the newest photo (last in the array). Mirrors the server rule.
+function resolveDefaultPhotoIndex(goat: Goat): number {
+  if (hasExplicitDefault(goat)) return goat.defaultPhotoIndex as number;
+  return Math.max(0, goatImages(goat).length - 1);
 }
 
 /**
@@ -188,6 +210,31 @@ export default function GoatDetails() {
 
   const updateGoat = useUpdateGoat();
   const deleteGoat = useDeleteGoat();
+  const setDefaultPhoto = useSetGoatDefaultPhoto();
+
+  // Seed the hero to the resolved default photo once per goat, without
+  // overriding a thumbnail the user has since clicked to preview.
+  const didSeedPhoto = useRef<number | null>(null);
+  useEffect(() => {
+    if (!goat) return;
+    if (didSeedPhoto.current === goat.id) return;
+    didSeedPhoto.current = goat.id;
+    setActivePhoto(resolveDefaultPhotoIndex(goat));
+  }, [goat]);
+
+  const handleSetDefaultPhoto = (index: number) => {
+    setDefaultPhoto.mutate({ id, data: { index } }, {
+      onSuccess: (updatedGoat) => {
+        queryClient.setQueryData(getGetGoatQueryKey(id), updatedGoat);
+        setActivePhoto(index);
+        refreshGoatData();
+        toast({ title: "Default photo updated", description: `${updatedGoat.name}'s default photo has been set.` });
+      },
+      onError: () => {
+        toast({ title: "Update failed", description: "Could not set the default photo.", variant: "destructive" });
+      },
+    });
+  };
 
   const refreshGoatData = () => {
     queryClient.invalidateQueries({ queryKey: getListGoatsQueryKey() });
@@ -360,26 +407,53 @@ export default function GoatDetails() {
                       </div>
                     );
                   }
+                  const defaultIndex = resolveDefaultPhotoIndex(goat);
+                  const showBadge = hasExplicitDefault(goat);
                   return (
                     <div>
                       <div className="aspect-square bg-muted/30 relative">
                         <img src={activeImage!} alt={goat.name} className="w-full h-full object-cover" />
                       </div>
                       {images.length > 1 && (
-                        <div className="flex gap-2 p-3 overflow-x-auto no-print">
+                        <div className="flex gap-3 p-3 overflow-x-auto no-print">
                           {images.map((url, index) => {
                             const isActive = index === Math.min(activePhoto, images.length - 1);
+                            const isDefault = index === defaultIndex;
                             return (
-                              <button
-                                key={`${url}-${index}`}
-                                type="button"
-                                onClick={() => setActivePhoto(index)}
-                                className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
-                                  isActive ? "border-primary" : "border-transparent hover:border-border"
-                                }`}
-                              >
-                                <img src={url} alt={`${goat.name} ${index + 1}`} className="h-full w-full object-cover" />
-                              </button>
+                              <div key={`${url}-${index}`} className="flex flex-col items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setActivePhoto(index)}
+                                  className={`relative h-16 w-16 overflow-hidden rounded-md border-2 transition-colors ${
+                                    isActive ? "border-primary" : "border-transparent hover:border-border"
+                                  }`}
+                                >
+                                  <img src={url} alt={`${goat.name} ${index + 1}`} className="h-full w-full object-cover" />
+                                  {showBadge && isDefault && (
+                                    <span
+                                      title="Default photo"
+                                      className="absolute left-0.5 top-0.5 inline-flex items-center rounded-full bg-primary p-0.5 text-primary-foreground shadow-sm"
+                                    >
+                                      <Star className="h-3 w-3 fill-current" />
+                                    </span>
+                                  )}
+                                </button>
+                                {isManager && !isDefault && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetDefaultPhoto(index)}
+                                    disabled={setDefaultPhoto.isPending}
+                                    className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-primary disabled:opacity-50"
+                                  >
+                                    <Star className="h-2.5 w-2.5" /> Set default
+                                  </button>
+                                )}
+                                {showBadge && isDefault && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                                    <Star className="h-2.5 w-2.5 fill-current" /> Default
+                                  </span>
+                                )}
+                              </div>
                             );
                           })}
                         </div>

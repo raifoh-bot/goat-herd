@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { count, desc, eq } from "drizzle-orm";
 import { db, goatsTable } from "@workspace/db";
 import { farmId } from "../middlewares/tenant";
+import { withImageAlias } from "../lib/goatImage";
 
 const router: IRouter = Router();
 
@@ -47,7 +48,9 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
 
   const topProducer =
     totalGoats > 0
-      ? ownedGoats.reduce((best, g) => (g.milkPerDay > best.milkPerDay ? g : best))
+      ? withImageAlias(
+          ownedGoats.reduce((best, g) => (g.milkPerDay > best.milkPerDay ? g : best)),
+        )
       : null;
 
   res.json({
@@ -86,7 +89,7 @@ router.get("/dashboard/recent-activity", async (req, res): Promise<void> => {
     .orderBy(desc(goatsTable.updatedAt))
     .limit(5);
 
-  res.json(recent);
+  res.json(recent.map(withImageAlias));
 });
 
 export default router;

@@ -25,6 +25,7 @@ export {
   LoginBody,
   LoginResponse,
   RegisterFarmBody,
+  SetGoatDefaultPhotoBody,
   SetUserPasswordBody,
   UpdateDashboardLayoutBody,
   UpdatePlatformSettingsBody,

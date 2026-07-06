@@ -141,11 +141,17 @@ export const ListGoatsResponseItem = zod.object({
     .max(listGoatsResponseImageUrlsMax)
     .optional()
     .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
   imageUrl: zod
     .string()
     .optional()
     .describe(
-      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
     ),
   leasedBuck: zod
     .boolean()
@@ -366,11 +372,17 @@ export const GetGoatResponse = zod.object({
     .max(getGoatResponseImageUrlsMax)
     .optional()
     .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
   imageUrl: zod
     .string()
     .optional()
     .describe(
-      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
     ),
   leasedBuck: zod
     .boolean()
@@ -583,11 +595,17 @@ export const UpdateGoatResponse = zod.object({
     .max(updateGoatResponseImageUrlsMax)
     .optional()
     .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
   imageUrl: zod
     .string()
     .optional()
     .describe(
-      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
     ),
   leasedBuck: zod
     .boolean()
@@ -726,11 +744,17 @@ export const AddGoatPhotoResponse = zod.object({
     .max(addGoatPhotoResponseImageUrlsMax)
     .optional()
     .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
   imageUrl: zod
     .string()
     .optional()
     .describe(
-      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
     ),
   leasedBuck: zod
     .boolean()
@@ -761,6 +785,153 @@ export const AddGoatPhotoResponse = zod.object({
     .max(addGoatPhotoResponseCenterTailTattooMax)
     .optional(),
   eidNumber: zod.string().max(addGoatPhotoResponseEidNumberMax).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * Designates which photo (by index into imageUrls) is the goat's default, shown on herd cards, the detail hero, and anywhere a single representative image is used. Manager-only (Admin/Owner).
+ * @summary Set a goat's default photo
+ */
+export const SetGoatDefaultPhotoParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const setGoatDefaultPhotoBodyIndexMin = 0;
+
+export const SetGoatDefaultPhotoBody = zod.object({
+  index: zod
+    .number()
+    .min(setGoatDefaultPhotoBodyIndexMin)
+    .describe(
+      "Zero-based index into the goat's imageUrls to use as the default photo. Must be within bounds of the goat's current photo set.",
+    ),
+});
+
+export const setGoatDefaultPhotoResponseMilkPerDayMin = 0;
+export const setGoatDefaultPhotoResponseMilkPerDayMax = 10;
+
+export const setGoatDefaultPhotoResponseImageUrlsMax = 4;
+
+export const setGoatDefaultPhotoResponseRightEarTattooMax = 4;
+
+export const setGoatDefaultPhotoResponseLeftEarTattooMax = 4;
+
+export const setGoatDefaultPhotoResponseRightTailTattooMax = 4;
+
+export const setGoatDefaultPhotoResponseLeftTailTattooMax = 4;
+
+export const setGoatDefaultPhotoResponseCenterTailTattooMax = 8;
+
+export const setGoatDefaultPhotoResponseEidNumberMax = 50;
+
+export const SetGoatDefaultPhotoResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  registeredName: zod.string().optional(),
+  adgaId: zod.string().optional(),
+  damName: zod.string().optional(),
+  sireName: zod.string().optional(),
+  maternalGranddamName: zod.string().optional(),
+  maternalGrandsireName: zod.string().optional(),
+  paternalGranddamName: zod.string().optional(),
+  paternalGrandsireName: zod.string().optional(),
+  damRegNo: zod.string().optional(),
+  sireRegNo: zod.string().optional(),
+  maternalGranddamRegNo: zod.string().optional(),
+  maternalGrandsireRegNo: zod.string().optional(),
+  paternalGranddamRegNo: zod.string().optional(),
+  paternalGrandsireRegNo: zod.string().optional(),
+  dateOfBirth: zod.coerce.date().optional(),
+  sex: zod.enum(["doe", "buck", "wether"]).optional(),
+  breed: zod.enum([
+    "alpine",
+    "angora",
+    "boer",
+    "guernsey",
+    "kiko",
+    "lamancha",
+    "mixed",
+    "myotonic",
+    "nigerian-dwarf",
+    "nubian",
+    "oberhasli",
+    "pygmy",
+    "recorded-grade",
+    "saanen",
+    "sable",
+    "savanna",
+    "spanish",
+    "texmaster",
+    "toggenburg",
+  ]),
+  status: zod.enum(["healthy", "watch", "treatment", "dry"]),
+  milkPerDay: zod
+    .number()
+    .min(setGoatDefaultPhotoResponseMilkPerDayMin)
+    .max(setGoatDefaultPhotoResponseMilkPerDayMax),
+  lactationStatus: zod
+    .enum([
+      "milking",
+      "dry",
+      "exposed",
+      "serviced",
+      "pregnant",
+      "kid",
+      "retired",
+    ])
+    .nullish(),
+  age: zod.number().describe("Calculated age in years from dateOfBirth"),
+  description: zod.string().optional(),
+  imageUrls: zod
+    .array(zod.string())
+    .max(setGoatDefaultPhotoResponseImageUrlsMax)
+    .optional()
+    .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
+  imageUrl: zod
+    .string()
+    .optional()
+    .describe(
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
+    ),
+  leasedBuck: zod
+    .boolean()
+    .optional()
+    .describe("Buck is on a breeding lease and excluded from herd totals"),
+  herdStatus: zod
+    .enum(["dead", "first-freshener", "leased", "on-farm", "retired", "sold"])
+    .nullish()
+    .describe("Current standing of the goat in the herd"),
+  rightEarTattoo: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseRightEarTattooMax)
+    .optional(),
+  leftEarTattoo: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseLeftEarTattooMax)
+    .optional(),
+  rightTailTattoo: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseRightTailTattooMax)
+    .optional(),
+  leftTailTattoo: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseLeftTailTattooMax)
+    .optional(),
+  centerTailTattoo: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseCenterTailTattooMax)
+    .optional(),
+  eidNumber: zod
+    .string()
+    .max(setGoatDefaultPhotoResponseEidNumberMax)
+    .optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -971,11 +1142,17 @@ export const ListBreedingsResponseItem = zod
             .max(listBreedingsResponseTwoDoeImageUrlsMax)
             .optional()
             .describe("Ordered list of up to 4 photo URLs for this goat"),
+          defaultPhotoIndex: zod
+            .number()
+            .nullish()
+            .describe(
+              "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+            ),
           imageUrl: zod
             .string()
             .optional()
             .describe(
-              "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+              "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
             ),
           leasedBuck: zod
             .boolean()
@@ -1270,11 +1447,17 @@ export const GetBreedingResponse = zod
             .max(getBreedingResponseTwoDoeImageUrlsMax)
             .optional()
             .describe("Ordered list of up to 4 photo URLs for this goat"),
+          defaultPhotoIndex: zod
+            .number()
+            .nullish()
+            .describe(
+              "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+            ),
           imageUrl: zod
             .string()
             .optional()
             .describe(
-              "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+              "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
             ),
           leasedBuck: zod
             .boolean()
@@ -1808,11 +1991,17 @@ export const GetDashboardSummaryResponse = zod.object({
         .max(getDashboardSummaryResponseTopProducerImageUrlsMax)
         .optional()
         .describe("Ordered list of up to 4 photo URLs for this goat"),
+      defaultPhotoIndex: zod
+        .number()
+        .nullish()
+        .describe(
+          "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+        ),
       imageUrl: zod
         .string()
         .optional()
         .describe(
-          "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+          "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
         ),
       leasedBuck: zod
         .boolean()
@@ -1973,11 +2162,17 @@ export const GetRecentActivityResponseItem = zod.object({
     .max(getRecentActivityResponseImageUrlsMax)
     .optional()
     .describe("Ordered list of up to 4 photo URLs for this goat"),
+  defaultPhotoIndex: zod
+    .number()
+    .nullish()
+    .describe(
+      "Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default.",
+    ),
   imageUrl: zod
     .string()
     .optional()
     .describe(
-      "Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.",
+      "Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last\/newest entry), kept for backward compatibility with older clients.",
     ),
   leasedBuck: zod
     .boolean()

@@ -95,6 +95,7 @@ export * from "./pregnancyTestMethod";
 export * from "./pregnancyTestResult";
 export * from "./registerFarmBody";
 export * from "./semenStraw";
+export * from "./setGoatDefaultPhotoBody";
 export * from "./setUserPasswordBody";
 export * from "./superadminFarm";
 export * from "./superadminFarmStatus";

@@ -115,8 +115,10 @@ export interface Goat {
    * @maxItems 4
    */
   imageUrls?: string[];
+  /** Index into imageUrls of the photo chosen as the default. When null, the newest photo (last in imageUrls) is used as the default. */
+  defaultPhotoIndex?: number | null;
   /**
-   * Deprecated. First entry of imageUrls, kept for backward compatibility with older clients.
+   * Deprecated. Resolved default photo (imageUrls[defaultPhotoIndex] when set, otherwise the last/newest entry), kept for backward compatibility with older clients.
    * @deprecated
    */
   readonly imageUrl?: string;
@@ -267,6 +269,14 @@ export interface AddGoatPhotoBody {
    * @minLength 1
    */
   imageUrl: string;
+}
+
+export interface SetGoatDefaultPhotoBody {
+  /**
+   * Zero-based index into the goat's imageUrls to use as the default photo. Must be within bounds of the goat's current photo set.
+   * @minimum 0
+   */
+  index: number;
 }
 
 export type UpdateGoatBodySex =
