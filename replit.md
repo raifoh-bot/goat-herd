@@ -139,7 +139,7 @@ redirects to `/<slug>/...`.
 - `/` — Dashboard (stats, top producer, breed breakdown)
 - `/goats` — Herd list with filtering by status/breed
 - `/goats/new` — Add a new goat form
-- `/goats/:id` — Goat detail with pedigree and breeding history
+- `/goats/:id` — Goat detail with pedigree and breeding history; does with recorded kiddings also get a compact Kidding History card (date, sire, kids born per kidding; rows link to the breeding). Helpers shared with the pedigree certificate live in `src/lib/kidding.ts`.
 - `/breedings` — Breeding records list (active/past sections)
 - `/breedings/new` — Record a new breeding form (auto-calculates ~150 day kidding date)
 - `/breedings/:id` — Breeding detail with status updates and kidding recording dialog

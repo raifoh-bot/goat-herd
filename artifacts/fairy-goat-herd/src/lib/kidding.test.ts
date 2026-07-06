@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveKiddingRecord, deriveKiddingHistory, summarizeKids } from "./pedigree";
+import { deriveKiddingRecord, deriveKiddingHistory, summarizeKids } from "./kidding";
 import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/api.schemas";
 
 function breeding(overrides: Partial<BreedingWithDoe>): BreedingWithDoe {

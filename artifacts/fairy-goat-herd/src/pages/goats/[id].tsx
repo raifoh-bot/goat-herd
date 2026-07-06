@@ -31,6 +31,7 @@ import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
+import { deriveKiddingHistory } from "@/lib/kidding";
 import { HealthHistoryCard } from "@/components/health-history";
 
 const breedingStatusConfig = {
@@ -205,6 +206,7 @@ export default function GoatDetails() {
     query: { queryKey: getListBreedingsQueryKey() },
   });
   const doeBreedings = (allBreedings ?? []).filter((b) => b.doeId === id);
+  const kiddingHistory = deriveKiddingHistory(id, allBreedings ?? []);
 
   const { usesAi } = useFarmSettings();
   const isManager = useIsManager();
@@ -607,10 +609,64 @@ export default function GoatDetails() {
                 </CardContent>
               </Card>
 
+              {goat.sex === "doe" && kiddingHistory.length > 0 && (
+                <Card className="border-primary/10 shadow-md">
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">Kidding History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="py-1.5 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            Date
+                          </th>
+                          <th className="py-1.5 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            Sire
+                          </th>
+                          <th className="py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            Kids Born
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kiddingHistory.map((row) => (
+                          <tr
+                            key={row.breedingId}
+                            className="border-b border-border/50 last:border-b-0"
+                          >
+                            <td className="py-1.5 pr-3 text-foreground">
+                              <Link
+                                href={`/breedings/${row.breedingId}`}
+                                className="hover:text-primary hover:underline"
+                              >
+                                {row.date
+                                  ? formatDate(row.date, { month: "short", day: "numeric", year: "numeric" })
+                                  : "—"}
+                              </Link>
+                            </td>
+                            <td
+                              className={`py-1.5 pr-3 ${row.sireName ? "text-foreground" : "italic text-muted-foreground"}`}
+                            >
+                              {row.sireName ?? "Not recorded"}
+                            </td>
+                            <td
+                              className={`py-1.5 ${row.kidsSummary === "Not recorded" ? "italic text-muted-foreground" : "text-foreground"}`}
+                            >
+                              {row.kidsSummary}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+              )}
+
               {goat.sex === "doe" && doeBreedings.length > 0 && (
                 <Card className="border-primary/10 shadow-md">
                   <CardHeader>
-                    <CardTitle className="font-serif text-lg">Kidding Records</CardTitle>
+                    <CardTitle className="font-serif text-lg">Breeding Records</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {doeBreedings
