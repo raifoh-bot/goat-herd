@@ -76,6 +76,48 @@ describe("deriveKiddingRecord", () => {
     const record = deriveKiddingRecord(10, [breeding({ id: 1, status: "bred" })]);
     expect(record.timesKidded).toBe(0);
     expect(record.lastKiddingDate).toBeNull();
+    expect(record.totalKids).toBe(0);
+    expect(record.doeKids).toBe(0);
+    expect(record.buckKids).toBe(0);
+    expect(record.doaKids).toBe(0);
+  });
+
+  it("counts total kids born split by does and bucks, with DOA from kidStatus", () => {
+    const breedings = [
+      breeding({
+        id: 1,
+        kids: [
+          kid("2024-03-15", { id: 1, sex: "doe", kidStatus: "alive" }),
+          kid("2024-03-15", { id: 2, sex: "buck" }),
+          kid("2024-03-15", { id: 3, sex: "buck", kidStatus: "doa" }),
+        ],
+      }),
+      breeding({
+        id: 2,
+        kids: [
+          kid("2026-02-20", { id: 4, sex: "doe", kidStatus: "sold" }),
+          kid("2026-02-20", { id: 5, sex: "doe" }),
+        ],
+      }),
+    ];
+    const record = deriveKiddingRecord(10, breedings);
+    expect(record.totalKids).toBe(5);
+    expect(record.doeKids).toBe(3);
+    expect(record.buckKids).toBe(2);
+    expect(record.doaKids).toBe(1);
+  });
+
+  it("excludes kids from other does and non-kidded breedings from the counts", () => {
+    const breedings = [
+      breeding({ id: 1, doeId: 10, status: "kidded", kids: [kid("2025-06-01", { id: 1, sex: "buck" })] }),
+      breeding({ id: 2, doeId: 10, status: "bred", kids: [kid("2025-06-01", { id: 2, sex: "doe", kidStatus: "doa" })] }),
+      breeding({ id: 3, doeId: 99, status: "kidded", kids: [kid("2025-07-01", { id: 3, sex: "doe", kidStatus: "doa" })] }),
+    ];
+    const record = deriveKiddingRecord(10, breedings);
+    expect(record.totalKids).toBe(1);
+    expect(record.doeKids).toBe(0);
+    expect(record.buckKids).toBe(1);
+    expect(record.doaKids).toBe(0);
   });
 });
 

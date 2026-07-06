@@ -165,6 +165,21 @@ function Certificate({
                     : "None recorded"}
                 </div>
               </div>
+              <div className="rounded-lg border border-border bg-muted/30 px-4 py-2 text-center print:rounded-none print:border-foreground/30 print:bg-transparent">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  Total Kids Born
+                </div>
+                <div className="font-semibold text-foreground">
+                  {kiddingRecord.totalKids}
+                  {kiddingRecord.totalKids > 0 && (
+                    <span className="ml-1.5 font-normal text-sm text-muted-foreground">
+                      ({kiddingRecord.doeKids} {kiddingRecord.doeKids === 1 ? "doe" : "does"},{" "}
+                      {kiddingRecord.buckKids} {kiddingRecord.buckKids === 1 ? "buck" : "bucks"}
+                      {kiddingRecord.doaKids > 0 ? `, incl. ${kiddingRecord.doaKids} DOA` : ""})
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             {cappedHistory && cappedHistory.visible.length > 0 && (
               <table className="mt-3 w-full border-collapse text-xs">

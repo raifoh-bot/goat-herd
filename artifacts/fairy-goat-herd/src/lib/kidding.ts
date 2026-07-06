@@ -3,6 +3,10 @@ import type { BreedingWithDoe } from "@workspace/api-client-react/src/generated/
 export interface KiddingRecord {
   timesKidded: number;
   lastKiddingDate: string | null;
+  totalKids: number;
+  doeKids: number;
+  buckKids: number;
+  doaKids: number;
 }
 
 /** Derive a doe's kidding record from the farm's breeding records. */
@@ -10,6 +14,9 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
   const kiddings = breedings.filter((b) => b.doeId === goatId && b.status === "kidded");
 
   let lastKiddingDate: string | null = null;
+  let doeKids = 0;
+  let buckKids = 0;
+  let doaKids = 0;
   for (const b of kiddings) {
     // Prefer the actual kid birth dates; fall back to the expected kidding
     // date, then the breeding date, so every kidding contributes a date.
@@ -17,9 +24,23 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
     if (candidate && (!lastKiddingDate || candidate > lastKiddingDate)) {
       lastKiddingDate = candidate;
     }
+    for (const kid of b.kids ?? []) {
+      // Kid sex is only doe|buck; DOA is tracked separately in kidStatus, so a
+      // DOA kid still counts toward its doe/buck total and the DOA subset.
+      if (kid.sex === "doe") doeKids += 1;
+      else if (kid.sex === "buck") buckKids += 1;
+      if (kid.kidStatus === "doa") doaKids += 1;
+    }
   }
 
-  return { timesKidded: kiddings.length, lastKiddingDate };
+  return {
+    timesKidded: kiddings.length,
+    lastKiddingDate,
+    totalKids: doeKids + buckKids,
+    doeKids,
+    buckKids,
+    doaKids,
+  };
 }
 
 export interface KiddingHistoryRow {
