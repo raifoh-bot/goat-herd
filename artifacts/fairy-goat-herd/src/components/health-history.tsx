@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListGoatHealthEventsQueryKey,
@@ -10,7 +10,7 @@ import type {
   HealthEvent,
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
-import { AlertTriangle, Bug, Droplets, Eye, Footprints, HeartPulse, Loader2, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
+import { AlertTriangle, Bug, ChevronDown, ChevronUp, Droplets, Eye, Footprints, HeartPulse, Loader2, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -291,6 +291,8 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
   );
 }
 
+const COLLAPSED_EVENT_COUNT = 4;
+
 /** The Health History card on the goat detail page. */
 export function HealthHistoryCard({ goatId, goatName }: { goatId: number; goatName: string }) {
   const { weightUnit } = useFarmSettings();
@@ -298,8 +300,15 @@ export function HealthHistoryCard({ goatId, goatName }: { goatId: number; goatNa
     query: { queryKey: getListGoatHealthEventsQueryKey(goatId) },
   });
   const [addOpen, setAddOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [goatId]);
 
   const sorted = useMemo(() => events ?? [], [events]);
+  const hasMore = sorted.length > COLLAPSED_EVENT_COUNT;
+  const visible = expanded ? sorted : sorted.slice(0, COLLAPSED_EVENT_COUNT);
 
   return (
     <Card className="border-primary/10 shadow-md">
@@ -323,11 +332,31 @@ export function HealthHistoryCard({ goatId, goatName }: { goatId: number; goatNa
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : sorted.length > 0 ? (
-          <div className="divide-y divide-border/60">
-            {sorted.map((event) => (
-              <EventRow key={event.id} event={event} goatId={goatId} weightUnit={weightUnit} />
-            ))}
-          </div>
+          <>
+            <div className="divide-y divide-border/60">
+              {visible.map((event) => (
+                <EventRow key={event.id} event={event} goatId={goatId} weightUnit={weightUnit} />
+              ))}
+            </div>
+            {hasMore && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setExpanded((e) => !e)}
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="h-3.5 w-3.5 mr-1" /> Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3.5 w-3.5 mr-1" /> Show all {sorted.length} events
+                  </>
+                )}
+              </Button>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
             <Footprints className="h-8 w-8 text-muted-foreground/30 mb-3" />
