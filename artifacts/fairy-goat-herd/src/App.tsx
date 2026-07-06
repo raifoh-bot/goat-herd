@@ -24,6 +24,7 @@ import Reports from "@/pages/reports/index";
 import LineageReports from "@/pages/reports/lineage";
 import BarnWorksheet from "@/pages/reports/barn-worksheet";
 import PedigreeCertificate from "@/pages/reports/pedigree";
+import ShowTime from "@/pages/reports/show-time";
 import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ function AuthenticatedRoutes() {
         <Route path="/reports/lineage" component={LineageReports} />
         <Route path="/reports/barn-worksheet" component={BarnWorksheet} />
         <Route path="/reports/pedigree" component={PedigreeCertificate} />
+        <Route path="/reports/show-time" component={ShowTime} />
         <Route path="/lineage">
           <Redirect to="/reports/lineage" replace />
         </Route>
