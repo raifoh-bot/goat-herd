@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, farmSettingsTable } from "@workspace/db";
+import { db, farmSettingsTable, DEFAULT_ENABLED_BREEDS, type FarmSettings } from "@workspace/db";
 import { UpdateSettingsBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
@@ -12,6 +12,29 @@ const router: IRouter = Router();
 // Only Admin/Owner may change farm settings; reads are allowed for any
 // authenticated user (the whole router sits behind requireAuth).
 const requireManager = requireRole("admin", "owner");
+
+/**
+ * In-memory settings defaults, mirroring the `farm_settings` column defaults.
+ * Used only to answer a read for a farm whose settings row is somehow missing
+ * WITHOUT writing — critical for the superadmin "view as farm" read-only mode.
+ */
+function defaultFarmSettings(fid: number): FarmSettings {
+  return {
+    id: 0,
+    farmId: fid,
+    usesAi: true,
+    farmName: "MyGoatHerd",
+    adgaNumber: null,
+    logoUrl: null,
+    weightUnit: "lb",
+    gestationDays: 150,
+    enabledBreeds: [...DEFAULT_ENABLED_BREEDS],
+    dashboardLayout: null,
+    famachaThreshold: 3,
+    healthScheduleIntervals: null,
+    updatedAt: new Date(),
+  };
+}
 
 /**
  * Returns the current farm's settings row, creating it if it somehow does not
@@ -33,7 +56,21 @@ async function getOrCreateSettings(fid: number) {
 }
 
 router.get("/settings", async (req, res): Promise<void> => {
-  const settings = await getOrCreateSettings(farmId(req));
+  const fid = farmId(req);
+  // A superadmin viewing a farm must never cause a write. If the settings row is
+  // missing, return in-memory defaults instead of auto-creating it. Regular farm
+  // members keep the self-healing get-or-create behavior.
+  let settings: FarmSettings;
+  if (req.authUser?.role === "superadmin") {
+    const [existing] = await db
+      .select()
+      .from(farmSettingsTable)
+      .where(eq(farmSettingsTable.farmId, fid))
+      .limit(1);
+    settings = existing ?? defaultFarmSettings(fid);
+  } else {
+    settings = await getOrCreateSettings(fid);
+  }
   res.json({
     ...settings,
     dashboardLayout: normalizeDashboardLayout(settings.dashboardLayout),

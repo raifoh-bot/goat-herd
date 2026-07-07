@@ -79,6 +79,7 @@ import type {
   UploadUrlRequest,
   UploadUrlResponse,
   User,
+  ViewFarm200,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -4662,6 +4663,90 @@ export const useUpdateFarm = <
   TContext
 > => {
   return useMutation(getUpdateFarmMutationOptions(options));
+};
+
+/**
+ * @summary Begin a read-only view of a farm's data (superadmin only); records an audit log entry
+ */
+export const getViewFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/view`;
+};
+
+export const viewFarm = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ViewFarm200> => {
+  return customFetch<ViewFarm200>(getViewFarmUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getViewFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof viewFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof viewFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["viewFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof viewFarm>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return viewFarm(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ViewFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof viewFarm>>
+>;
+
+export type ViewFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Begin a read-only view of a farm's data (superadmin only); records an audit log entry
+ */
+export const useViewFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof viewFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof viewFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getViewFarmMutationOptions(options));
 };
 
 /**

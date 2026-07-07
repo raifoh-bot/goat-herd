@@ -289,6 +289,92 @@ describe("super-admin farm management: rejected creations", () => {
   });
 });
 
+describe("super-admin view-as-farm: audit endpoint", () => {
+  it("returns the farm slug and logs the view for an existing farm", async () => {
+    const agent = await loginSuperadmin();
+    const created = await agent
+      .post("/api/superadmin/farms")
+      .send(newFarmBody({ slug: uniqueSlug("view") }));
+    expect(created.status).toBe(201);
+    createdFarmIds.push(created.body.id);
+
+    const res = await agent.post(`/api/superadmin/farms/${created.body.id}/view`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ slug: created.body.slug });
+    expect(typeof res.body.name).toBe("string");
+  });
+
+  it("returns 404 when viewing an unknown farm", async () => {
+    const agent = await loginSuperadmin();
+    const res = await agent.post("/api/superadmin/farms/99999999/view");
+    expect(res.status).toBe(404);
+  });
+
+  it("forbids a farm admin from calling the view endpoint with 403", async () => {
+    const agent = await loginFarmUser(FARM_ADMIN);
+    const res = await agent.post(`/api/superadmin/farms/${existingFarmId}/view`);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("super-admin view-as-farm: read-only enforcement", () => {
+  it("lets a superadmin read a farm's goats via X-Farm-Slug", async () => {
+    const agent = await loginSuperadmin();
+    const res = await agent
+      .get("/api/goats")
+      .set("X-Farm-Slug", EXISTING_FARM_SLUG);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it("blocks a superadmin from creating a goat in a viewed farm with 403", async () => {
+    const agent = await loginSuperadmin();
+    const res = await agent
+      .post("/api/goats")
+      .set("X-Farm-Slug", EXISTING_FARM_SLUG)
+      .send({ name: `SA Goat ${suffix}`, sex: "doe", breed: "alpine" });
+    expect(res.status).toBe(403);
+
+    // Nothing was written to the viewed farm.
+    const rows = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.username, `SA Goat ${suffix}`));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("blocks a superadmin from deleting a goat in a viewed farm with 403", async () => {
+    const agent = await loginSuperadmin();
+    const res = await agent
+      .delete("/api/goats/1")
+      .set("X-Farm-Slug", EXISTING_FARM_SLUG);
+    expect(res.status).toBe(403);
+  });
+
+  it("does not create a settings row when a superadmin reads a farm missing one", async () => {
+    const agent = await loginSuperadmin();
+    const body = newFarmBody({ slug: uniqueSlug("nosettings") });
+    const created = await agent.post("/api/superadmin/farms").send(body);
+    expect(created.status).toBe(201);
+    createdFarmIds.push(created.body.id);
+
+    // Simulate a farm whose settings row is somehow missing.
+    await db.delete(farmSettingsTable).where(eq(farmSettingsTable.farmId, created.body.id));
+
+    // GET /settings has a self-healing insert for regular members; a superadmin
+    // viewing the farm must instead receive in-memory defaults with no write.
+    const res = await agent.get("/api/settings").set("X-Farm-Slug", body.slug);
+    expect(res.status).toBe(200);
+    expect(res.body.farmName).toBe("MyGoatHerd");
+
+    const rows = await db
+      .select()
+      .from(farmSettingsTable)
+      .where(eq(farmSettingsTable.farmId, created.body.id));
+    expect(rows).toHaveLength(0);
+  });
+});
+
 describe("super-admin farm management: suspension blocks login", () => {
   it("prevents a suspended farm's members from logging in", async () => {
     const agent = await loginSuperadmin();

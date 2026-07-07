@@ -84,6 +84,31 @@ export const requireTenant: RequestHandler = (req, res, next) => {
 };
 
 /**
+ * Enforces read-only access for a platform superadmin who is viewing a tenant's
+ * data (the "view as farm" support flow). A superadmin has no farm of their own
+ * but can resolve any farm via `X-Farm-Slug` to inspect its records; this guard
+ * guarantees that inspection can never mutate the farm's data. Only safe methods
+ * (GET/HEAD/OPTIONS) are allowed through for superadmins.
+ *
+ * Must run after `requireAuth` and `requireTenant`, ahead of the tenant routers.
+ * Regular farm users are unaffected — their write permissions are governed by
+ * `requireRole` as usual.
+ */
+export const superadminReadOnly: RequestHandler = (req, res, next) => {
+  if (req.authUser?.role === "superadmin") {
+    const method = req.method.toUpperCase();
+    const isSafe = method === "GET" || method === "HEAD" || method === "OPTIONS";
+    if (!isSafe) {
+      res.status(403).json({
+        error: "Platform admins have read-only access when viewing a farm.",
+      });
+      return;
+    }
+  }
+  next();
+};
+
+/**
  * Returns the resolved farm id for the request. Throws if called without a
  * tenant context — every caller sits behind `requireTenant`, so this only fires
  * on a programming error.

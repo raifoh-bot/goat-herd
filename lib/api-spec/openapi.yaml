@@ -1214,6 +1214,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /superadmin/farms/{id}/view:
+    post:
+      operationId: viewFarm
+      tags: [superadmin]
+      summary: Begin a read-only view of a farm's data (superadmin only); records an audit log entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The farm to view
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [slug, name]
+                properties:
+                  slug:
+                    type: string
+                  name:
+                    type: string
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /superadmin/farms/{id}/delete:
     post:
       operationId: deleteFarm

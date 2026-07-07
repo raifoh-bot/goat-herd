@@ -9,6 +9,7 @@ import {
   useCreateFarm,
   useUpdateFarm,
   useDeleteFarm,
+  useViewFarm,
   useLogout,
   getListFarmsQueryKey,
   getGetPlatformSummaryQueryKey,
@@ -17,7 +18,7 @@ import {
   type SuperadminFarm,
   type PlatformThresholds,
 } from "@workspace/api-client-react";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Settings2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, Link2, Settings2 } from "lucide-react";
 import { GoatIcon } from "@/components/goat-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -656,6 +657,65 @@ function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
   );
 }
 
+function ShareLoginDialog({ farm }: { farm: SuperadminFarm }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const loginUrl = `${window.location.origin}${farmUrl(farm.slug, "/login")}`;
+
+  const copy = () => {
+    void navigator.clipboard.writeText(loginUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setCopied(false);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Link2 className="mr-1.5 h-4 w-4" />
+          Login link
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Login link for {farm.name}</DialogTitle>
+          <DialogDescription>
+            Share this link with a member of this farm to take them straight to
+            their sign-in page.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-4">
+          <Label htmlFor={`loginLink-${farm.id}`}>Farm login link</Label>
+          <div className="flex gap-2">
+            <Input
+              id={`loginLink-${farm.id}`}
+              readOnly
+              value={loginUrl}
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <Button type="button" variant="outline" onClick={copy}>
+              {copied ? "Copied!" : "Copy link"}
+            </Button>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" onClick={() => setOpen(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function FarmRow({
   farm,
   thresholds,
@@ -666,9 +726,31 @@ function FarmRow({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateFarm = useUpdateFarm();
+  const viewFarm = useViewFarm();
 
   const suspended = farm.status === "suspended";
   const abandoned = isAbandoned(farm, thresholds);
+
+  const handleView = () => {
+    viewFarm.mutate(
+      { id: farm.id },
+      {
+        onSuccess: (data) => {
+          // Full-page navigation so the app re-mounts under the farm's `/<slug>`
+          // prefix, which scopes every API call to that tenant. The superadmin's
+          // access there is read-only (enforced server-side).
+          window.location.href = farmUrl(data.slug, "/");
+        },
+        onError: () => {
+          toast({
+            title: "Could not open farm",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
 
   const toggleStatus = () => {
     updateFarm.mutate(
@@ -727,6 +809,18 @@ function FarmRow({
       <TableCell>{formatDate(farm.createdAt)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
+          {!suspended && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleView}
+              disabled={viewFarm.isPending}
+            >
+              <Eye className="mr-1.5 h-4 w-4" />
+              {viewFarm.isPending ? "Opening…" : "View"}
+            </Button>
+          )}
+          <ShareLoginDialog farm={farm} />
           <Button
             variant={suspended ? "default" : "outline"}
             size="sm"

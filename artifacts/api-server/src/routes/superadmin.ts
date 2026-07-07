@@ -240,6 +240,36 @@ router.put("/superadmin/farms/:id", async (req, res): Promise<void> => {
   res.json(farm);
 });
 
+router.post("/superadmin/farms/:id/view", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  // Only live (non-deleted) farms can be viewed. Suspended farms are still
+  // viewable for support, but resolveTenant blocks tenant reads for them, so the
+  // client only offers "view" for active farms.
+  const [farm] = await db
+    .select()
+    .from(farmsTable)
+    .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)));
+
+  if (!farm) {
+    res.status(404).json({ error: "Farm not found" });
+    return;
+  }
+
+  // Audit trail: record that a platform admin opened this farm's data. The
+  // access itself is read-only (enforced by superadminReadOnly middleware).
+  req.log.info(
+    { farmId: farm.id, farmSlug: farm.slug, superadmin: req.authUser?.username },
+    "superadmin viewing farm data",
+  );
+
+  res.json({ slug: farm.slug, name: farm.name });
+});
+
 router.post("/superadmin/farms/:id/delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {

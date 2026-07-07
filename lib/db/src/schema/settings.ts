@@ -24,6 +24,33 @@ export type SchedulableEventType = "hoof_trim" | "cdt_shot" | "copper_bolus" | "
 /** Per-event-type routine interval in days. Absent types have no schedule. */
 export type HealthScheduleIntervals = Partial<Record<SchedulableEventType, number>>;
 
+/**
+ * Breeds a farm has enabled by default. Single source of truth: used both as the
+ * column default below and to synthesize in-memory defaults for read-only callers
+ * (e.g. a superadmin viewing a farm) so they never trigger a write.
+ */
+export const DEFAULT_ENABLED_BREEDS: string[] = [
+  "alpine",
+  "angora",
+  "boer",
+  "guernsey",
+  "kiko",
+  "lamancha",
+  "mixed",
+  "myotonic",
+  "nigerian-dwarf",
+  "nubian",
+  "oberhasli",
+  "pygmy",
+  "recorded-grade",
+  "saanen",
+  "sable",
+  "savanna",
+  "spanish",
+  "texmaster",
+  "toggenburg",
+];
+
 export const farmSettingsTable = pgTable("farm_settings", {
   id: serial("id").primaryKey(),
   farmId: integer("farm_id").notNull().references(() => farmsTable.id).unique(),
@@ -36,27 +63,7 @@ export const farmSettingsTable = pgTable("farm_settings", {
   enabledBreeds: text("enabled_breeds")
     .array()
     .notNull()
-    .default([
-      "alpine",
-      "angora",
-      "boer",
-      "guernsey",
-      "kiko",
-      "lamancha",
-      "mixed",
-      "myotonic",
-      "nigerian-dwarf",
-      "nubian",
-      "oberhasli",
-      "pygmy",
-      "recorded-grade",
-      "saanen",
-      "sable",
-      "savanna",
-      "spanish",
-      "texmaster",
-      "toggenburg",
-    ]),
+    .default(DEFAULT_ENABLED_BREEDS),
   dashboardLayout: jsonb("dashboard_layout").$type<DashboardWidgetLayout[]>(),
   famachaThreshold: integer("famacha_threshold").notNull().default(3),
   healthScheduleIntervals: jsonb("health_schedule_intervals").$type<HealthScheduleIntervals>(),

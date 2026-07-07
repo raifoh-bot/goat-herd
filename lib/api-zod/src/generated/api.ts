@@ -3126,6 +3126,18 @@ export const UpdateFarmResponse = zod.object({
 });
 
 /**
+ * @summary Begin a read-only view of a farm's data (superadmin only); records an audit log entry
+ */
+export const ViewFarmParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ViewFarmResponse = zod.object({
+  slug: zod.string(),
+  name: zod.string(),
+});
+
+/**
  * @summary Soft-delete a farm with a recorded reason (superadmin only)
  */
 export const DeleteFarmParams = zod.object({

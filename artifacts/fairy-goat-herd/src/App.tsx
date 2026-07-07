@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import SuperadminFarms from "@/pages/superadmin/farms";
+import { SuperadminViewBanner } from "@/components/superadmin-view-banner";
 import Dashboard from "@/pages/dashboard";
 import GoatsList from "@/pages/goats/index";
 import GoatNew from "@/pages/goats/new";
@@ -73,6 +74,7 @@ export function RootLanding() {
 function AuthenticatedRoutes() {
   return (
     <AuthGuard>
+      <SuperadminViewBanner />
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/goats" component={GoatsList} />

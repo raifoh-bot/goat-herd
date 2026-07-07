@@ -12,7 +12,7 @@ import usersRouter from "./users";
 import settingsRouter from "./settings";
 import superadminRouter from "./superadmin";
 import { requireAuth } from "../middlewares/auth";
-import { resolveTenant, requireTenant } from "../middlewares/tenant";
+import { resolveTenant, requireTenant, superadminReadOnly } from "../middlewares/tenant";
 
 const router: IRouter = Router();
 
@@ -38,6 +38,10 @@ router.use(storageRouter);
 
 // Everything below requires a resolved tenant.
 router.use(requireTenant);
+
+// A superadmin resolving a farm is in read-only "view as farm" mode: allow
+// reads, block every mutation regardless of the individual route's role check.
+router.use(superadminReadOnly);
 
 router.use(goatsRouter);
 router.use(dashboardRouter);

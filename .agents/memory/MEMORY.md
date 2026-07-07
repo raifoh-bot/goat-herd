@@ -20,4 +20,5 @@
 - [Verifying auth-protected pages headlessly](authenticated-page-verification.md) — nix chromium + puppeteer-core recipe; bearer token for curl seeding; avoid networkidle0 with Vite HMR.
 - [@types/react dedup web+Expo](types-react-dedup.md) — Expo mobile pins 19.1 types; leaks into web tsc via shared lib → "two different types" errors; pin one version via pnpm overrides.
 - [Storage cleanup IDOR guard](storage-cleanup-idor.md) — deleting objects from user-controllable URL fields needs a strict path pattern + "unreferenced by any row" ownership check, or it's a cross-tenant destructive IDOR.
+- [Superadmin read-only & side-effecting GETs](superadmin-readonly-side-effecting-gets.md) — method-based read-only guard misses GETs that upsert (e.g. get-or-create settings); branch to in-memory defaults for the read-only role.
 - [react-grid-layout v1 vs v2](react-grid-layout-v1-vs-v2.md) — pin v1 (^1.5); v2 is an incompatible rewrite with no WidthProvider and a different Layout type.

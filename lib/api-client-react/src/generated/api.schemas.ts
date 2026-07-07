@@ -1710,3 +1710,8 @@ export type CreateHealthEventsBulk201 = {
   /** Number of health events created */
   created: number;
 };
+
+export type ViewFarm200 = {
+  slug: string;
+  name: string;
+};
