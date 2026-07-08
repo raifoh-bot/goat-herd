@@ -15,11 +15,19 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
   return {
     id: user.id,
     username: user.username,
+    email: user.email ?? null,
     role: user.role,
     active: user.active,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+}
+
+/** Normalizes an optional email from a request body: trimmed, or null if blank. */
+function normalizeEmail(email: string | null | undefined): string | null {
+  if (email == null) return null;
+  const trimmed = email.trim();
+  return trimmed ? trimmed : null;
 }
 
 router.get("/users", async (req, res): Promise<void> => {
@@ -57,7 +65,13 @@ router.post("/users", async (req, res): Promise<void> => {
 
   const [user] = await db
     .insert(usersTable)
-    .values({ username, passwordHash, role: parsed.data.role, farmId: farmId(req) })
+    .values({
+      username,
+      email: normalizeEmail(parsed.data.email),
+      passwordHash,
+      role: parsed.data.role,
+      farmId: farmId(req),
+    })
     .returning();
 
   res.status(201).json(toPublicUser(user));
@@ -79,6 +93,7 @@ router.put("/users/:id", async (req, res): Promise<void> => {
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.role !== undefined) updateData.role = parsed.data.role;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
+  if (parsed.data.email !== undefined) updateData.email = normalizeEmail(parsed.data.email);
 
   // Prevent an admin/owner from deactivating or demoting their own account,
   // which could lock the herd out of all administrative access.

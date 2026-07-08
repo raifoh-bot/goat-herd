@@ -10,6 +10,7 @@ import type { UserRole } from "./userRole";
 export interface User {
   id: number;
   username: string;
+  email: string | null;
   role: UserRole;
   active: boolean;
   createdAt: Date;

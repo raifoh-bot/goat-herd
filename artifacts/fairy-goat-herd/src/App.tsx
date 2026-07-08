@@ -7,6 +7,8 @@ import { AuthGuard, useAuth } from "@/lib/auth";
 import { basePath, getUrlFarmSlug, farmUrl } from "@/lib/farm";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Register from "@/pages/register";
 import SuperadminFarms from "@/pages/superadmin/farms";
 import { SuperadminViewBanner } from "@/components/superadmin-view-banner";
@@ -112,6 +114,8 @@ function FarmRouter() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={AuthenticatedRoutes} />
     </Switch>
   );

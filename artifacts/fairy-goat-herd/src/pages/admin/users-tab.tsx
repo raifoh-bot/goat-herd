@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { KeyRound, UserPlus } from "lucide-react";
+import { KeyRound, Mail, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListUsers,
@@ -111,10 +111,14 @@ export function UsersTab() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>(UserRole.farmhand);
 
   const [resetTarget, setResetTarget] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+
+  const [emailTarget, setEmailTarget] = useState<User | null>(null);
+  const [emailValue, setEmailValue] = useState("");
   const [sort, setSort] = useSessionState<UserSort>("users-sort", "username-asc");
 
   const { data: users, isLoading } = useListUsers({
@@ -145,6 +149,7 @@ export function UsersTab() {
         data: {
           username: username.trim(),
           password,
+          email: email.trim() || null,
           role: role as (typeof UserRole)[keyof typeof UserRole],
         },
       },
@@ -153,6 +158,7 @@ export function UsersTab() {
           toast({ title: "User created", description: `${created.username} can now sign in.` });
           setUsername("");
           setPassword("");
+          setEmail("");
           setRole(UserRole.farmhand);
           invalidate();
         },
@@ -172,6 +178,31 @@ export function UsersTab() {
       { id: target.id, data: { role: newRole as UpdateUserBodyRole } },
       {
         onSuccess: () => invalidate(),
+        onError: () =>
+          toast({
+            title: "Update failed",
+            description: "That change could not be saved.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const handleEmailSave = (e: FormEvent) => {
+    e.preventDefault();
+    if (!emailTarget) return;
+    updateUser.mutate(
+      { id: emailTarget.id, data: { email: emailValue.trim() || null } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Email updated",
+            description: `Contact email saved for ${emailTarget.username}.`,
+          });
+          setEmailTarget(null);
+          setEmailValue("");
+          invalidate();
+        },
         onError: () =>
           toast({
             title: "Update failed",
@@ -262,6 +293,17 @@ export function UsersTab() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="new-email">Email (optional)</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+                placeholder="For password resets"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="new-role">Role</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger id="new-role">
@@ -301,6 +343,7 @@ export function UsersTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -314,6 +357,13 @@ export function UsersTab() {
                       <TableCell className="font-medium">
                         {u.username}
                         {isSelf && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {u.email ? (
+                          u.email
+                        ) : (
+                          <span className="italic text-muted-foreground/70">No email</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Select
@@ -342,6 +392,17 @@ export function UsersTab() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEmailTarget(u);
+                              setEmailValue(u.email ?? "");
+                            }}
+                          >
+                            <Mail className="mr-1.5 h-3.5 w-3.5" />
+                            Email
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -417,6 +478,57 @@ export function UsersTab() {
               </Button>
               <Button type="submit" disabled={setUserPassword.isPending}>
                 {setUserPassword.isPending ? "Saving…" : "Set Password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={emailTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEmailTarget(null);
+            setEmailValue("");
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleEmailSave}>
+            <DialogHeader>
+              <DialogTitle className="font-serif flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" /> Contact Email
+              </DialogTitle>
+              <DialogDescription>
+                Set the email for{" "}
+                <span className="font-medium text-foreground">{emailTarget?.username}</span>. It's
+                used to send password reset links. Leave blank to remove it.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-4">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+                autoComplete="off"
+                placeholder="name@example.com"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEmailTarget(null);
+                  setEmailValue("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateUser.isPending}>
+                {updateUser.isPending ? "Saving…" : "Save Email"}
               </Button>
             </DialogFooter>
           </form>

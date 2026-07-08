@@ -74,6 +74,8 @@ export async function ensureMultiTenant(): Promise<void> {
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "farm_id" integer;`);
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "last_login_at" timestamp;`);
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dashboard_layout" jsonb;`);
+    // Optional contact email, used by the self-service forgot-password flow.
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email" text;`);
   }
   const presentTenantTables: string[] = [];
   for (const table of TENANT_TABLES) {
@@ -221,6 +223,26 @@ export async function ensureMultiTenant(): Promise<void> {
     );
     await pool.query(
       `CREATE INDEX IF NOT EXISTS "health_events_goat_id_idx" ON "health_events" ("goat_id");`,
+    );
+  }
+
+  // 8c. Password reset tokens (self-service forgot-password flow). Single-use,
+  //     time-limited tokens keyed to a user. Created directly — there is no
+  //     legacy data to backfill — with a FK to users, a unique token, and
+  //     lookup indexes on token and user_id.
+  if (usersPresent) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
+        "id" serial PRIMARY KEY,
+        "user_id" integer NOT NULL REFERENCES "users"("id"),
+        "token" text NOT NULL UNIQUE,
+        "expires_at" timestamp NOT NULL,
+        "used_at" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "password_reset_tokens_user_id_idx" ON "password_reset_tokens" ("user_id");`,
     );
   }
 

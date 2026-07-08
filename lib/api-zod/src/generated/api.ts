@@ -2874,6 +2874,34 @@ export const LoginResponse = zod.object({
 });
 
 /**
+ * Public. Looks up an account in the resolved farm by username or email and, if found, emails a time-limited reset link. Always returns 200 with a neutral message to avoid revealing whether an account exists.
+ * @summary Request a password reset link by username or email
+ */
+
+export const ForgotPasswordBody = zod.object({
+  identifier: zod
+    .string()
+    .min(1)
+    .describe("The account's username or email address."),
+});
+
+export const ForgotPasswordResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * Public. Validates the reset token (exists, not expired, not used), sets the new password, and invalidates the token.
+ * @summary Set a new password using a reset token
+ */
+
+export const resetPasswordBodyNewPasswordMin = 8;
+
+export const ResetPasswordBody = zod.object({
+  token: zod.string().min(1),
+  newPassword: zod.string().min(resetPasswordBodyNewPasswordMin),
+});
+
+/**
  * @summary Get the currently authenticated user
  */
 export const getCurrentUserResponseDashboardLayoutItemXMin = 0;
@@ -3190,6 +3218,7 @@ export const DeleteFarmResponse = zod.object({
 export const ListUsersResponseItem = zod.object({
   id: zod.number(),
   username: zod.string(),
+  email: zod.string().nullable(),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -3206,6 +3235,10 @@ export const createUserBodyPasswordMin = 8;
 export const CreateUserBody = zod.object({
   username: zod.string().min(1),
   password: zod.string().min(createUserBodyPasswordMin),
+  email: zod
+    .string()
+    .nullish()
+    .describe("Optional contact email, used for the forgot-password flow."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
 });
 
@@ -3219,11 +3252,16 @@ export const UpdateUserParams = zod.object({
 export const UpdateUserBody = zod.object({
   role: zod.enum(["admin", "owner", "farmhand"]).optional(),
   active: zod.boolean().optional(),
+  email: zod
+    .string()
+    .nullish()
+    .describe("Optional contact email, used for the forgot-password flow."),
 });
 
 export const UpdateUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
+  email: zod.string().nullable(),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),

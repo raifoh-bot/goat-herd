@@ -170,6 +170,13 @@ export default function Login() {
               {login.isPending ? "Signing in…" : "Sign In"}
             </Button>
           </form>
+          {isFarmContext && (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              <Link href="/forgot-password" className="font-medium text-primary hover:underline">
+                Forgot your password?
+              </Link>
+            </p>
+          )}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             New here?{" "}
             {isFarmContext ? (

@@ -10,4 +10,6 @@ import type { UpdateUserBodyRole } from "./updateUserBodyRole";
 export interface UpdateUserBody {
   role?: UpdateUserBodyRole;
   active?: boolean;
+  /** Optional contact email, used for the forgot-password flow. */
+  email?: string | null;
 }

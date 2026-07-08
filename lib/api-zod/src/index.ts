@@ -19,6 +19,8 @@ export {
   CreateSemenStrawBody,
   CreateUserBody,
   DeleteFarmBody,
+  ForgotPasswordBody,
+  ResetPasswordBody,
   ImportBreedingsBody,
   ImportGoatsBody,
   ImportKidsBody,

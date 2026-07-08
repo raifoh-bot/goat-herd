@@ -14,6 +14,10 @@ export const usersTable = pgTable("users", {
   // null farmId and are unique across the whole platform.
   farmId: integer("farm_id").references(() => farmsTable.id),
   username: text("username").notNull(),
+  // Optional contact email. Used by the self-service forgot-password flow to
+  // look up an account and deliver the reset link. Nullable (not every account
+  // has an email on file) and not enforced unique.
+  email: text("email"),
   passwordHash: text("password_hash").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("farmhand"),
   active: boolean("active").notNull().default(true),
@@ -35,3 +39,22 @@ export const insertUserSchema = createInsertSchema(usersTable).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof usersTable.$inferSelect;
+
+/**
+ * Time-limited, single-use tokens backing the self-service forgot-password flow.
+ * A row is created when a user requests a reset; `token` is a random hex string
+ * embedded in the emailed link, `expiresAt` bounds its validity (1 hour), and
+ * `usedAt` is stamped the moment it is consumed so a link can never be replayed.
+ */
+export const passwordResetTokensTable = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => usersTable.id),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokensTable.$inferSelect;

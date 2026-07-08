@@ -1266,6 +1266,7 @@ export const UserRole = {
 export interface User {
   id: number;
   username: string;
+  email: string | null;
   role: UserRole;
   active: boolean;
   createdAt: string;
@@ -1294,6 +1295,8 @@ export interface CreateUserBody {
   username: string;
   /** @minLength 8 */
   password: string;
+  /** Optional contact email, used for the forgot-password flow. */
+  email?: string | null;
   role: CreateUserBodyRole;
 }
 
@@ -1309,6 +1312,27 @@ export const UpdateUserBodyRole = {
 export interface UpdateUserBody {
   role?: UpdateUserBodyRole;
   active?: boolean;
+  /** Optional contact email, used for the forgot-password flow. */
+  email?: string | null;
+}
+
+export interface ForgotPasswordBody {
+  /**
+   * The account's username or email address.
+   * @minLength 1
+   */
+  identifier: string;
+}
+
+export interface ResetPasswordBody {
+  /** @minLength 1 */
+  token: string;
+  /** @minLength 8 */
+  newPassword: string;
+}
+
+export interface MessageResponse {
+  message: string;
 }
 
 export interface SetUserPasswordBody {

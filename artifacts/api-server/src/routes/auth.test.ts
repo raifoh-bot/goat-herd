@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request, { type Agent } from "supertest";
 import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { db, usersTable, goatsTable, farmsTable } from "@workspace/db";
+import { db, usersTable, goatsTable, farmsTable, passwordResetTokensTable } from "@workspace/db";
 import app from "../app";
 import { ensureSessionTable } from "../lib/ensureSessionTable";
 
@@ -62,6 +62,9 @@ afterAll(async () => {
     await db.delete(goatsTable).where(inArray(goatsTable.id, createdGoatIds));
   }
   if (createdUserIds.length > 0) {
+    await db
+      .delete(passwordResetTokensTable)
+      .where(inArray(passwordResetTokensTable.userId, createdUserIds));
     await db.delete(usersTable).where(inArray(usersTable.id, createdUserIds));
   }
   const { pool } = await import("@workspace/db");
@@ -216,6 +219,135 @@ describe("admin password reset", () => {
       .put(`/api/users/${target.id}/password`)
       .send({ password: "brand-new-password-2" });
     expect(res.status).toBe(403);
+  });
+});
+
+describe("forgot / reset password", () => {
+  async function latestTokenFor(userId: number): Promise<string> {
+    const rows = await db
+      .select()
+      .from(passwordResetTokensTable)
+      .where(eq(passwordResetTokensTable.userId, userId));
+    expect(rows.length).toBeGreaterThan(0);
+    return rows[rows.length - 1].token;
+  }
+
+  it("returns a neutral 200 for an unknown identifier without issuing a token", async () => {
+    const res = await request(app)
+      .post("/api/auth/forgot-password")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ identifier: `does-not-exist-${suffix}` });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/if an account matches/i);
+  });
+
+  it("issues a token for a user with an email, and completes the reset", async () => {
+    const username = `auth-forgot-${suffix}`;
+    const user = await seedUser(username, "old-password-1", "farmhand");
+    await db
+      .update(usersTable)
+      .set({ email: `${username}@example.com` })
+      .where(eq(usersTable.id, user.id));
+
+    const res = await request(app)
+      .post("/api/auth/forgot-password")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ identifier: `${username}@example.com` });
+    expect(res.status).toBe(200);
+
+    const token = await latestTokenFor(user.id);
+
+    const reset = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, newPassword: "fresh-password-2" });
+    expect(reset.status).toBe(204);
+
+    // New password works; old one doesn't.
+    const oldLogin = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ username, password: "old-password-1" });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ username, password: "fresh-password-2" });
+    expect(newLogin.status).toBe(200);
+  });
+
+  it("does not issue a token for a user without an email on file", async () => {
+    const username = `auth-forgot-noemail-${suffix}`;
+    const user = await seedUser(username, "old-password-1", "farmhand");
+
+    const res = await request(app)
+      .post("/api/auth/forgot-password")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ identifier: username });
+    expect(res.status).toBe(200);
+
+    const rows = await db
+      .select()
+      .from(passwordResetTokensTable)
+      .where(eq(passwordResetTokensTable.userId, user.id));
+    expect(rows.length).toBe(0);
+  });
+
+  it("rejects reuse of a consumed token", async () => {
+    const username = `auth-forgot-reuse-${suffix}`;
+    const user = await seedUser(username, "old-password-1", "farmhand");
+    await db
+      .update(usersTable)
+      .set({ email: `${username}@example.com` })
+      .where(eq(usersTable.id, user.id));
+
+    await request(app)
+      .post("/api/auth/forgot-password")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ identifier: username });
+    const token = await latestTokenFor(user.id);
+
+    const first = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, newPassword: "fresh-password-2" });
+    expect(first.status).toBe(204);
+
+    const second = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, newPassword: "another-password-3" });
+    expect(second.status).toBe(400);
+  });
+
+  it("rejects an expired token", async () => {
+    const username = `auth-forgot-expired-${suffix}`;
+    const user = await seedUser(username, "old-password-1", "farmhand");
+    const [row] = await db
+      .insert(passwordResetTokensTable)
+      .values({
+        userId: user.id,
+        token: `expired-token-${suffix}`,
+        expiresAt: new Date(Date.now() - 1000),
+      })
+      .returning();
+
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: row.token, newPassword: "fresh-password-2" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an invalid token", async () => {
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: "not-a-real-token", newPassword: "fresh-password-2" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a new password shorter than 8 characters", async () => {
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: "whatever", newPassword: "short" });
+    expect(res.status).toBe(400);
   });
 });
 
