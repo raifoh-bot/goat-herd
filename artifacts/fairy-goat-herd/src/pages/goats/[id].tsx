@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { AlertTriangle, ArrowLeft, Award, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, HeartPulse, ImagePlus, Loader2, Milk, Printer, Star, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Award, Baby, Calendar, Camera, CheckCircle2, Edit3, Heart, HeartPulse, ImagePlus, Loader2, Milk, MoreHorizontal, Printer, Star, Tag, Trash2, User, XCircle, Zap } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { ReportHeader } from "@/components/report-header";
 import { GoatForm } from "@/components/goat-form";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -343,46 +344,93 @@ export default function GoatDetails() {
           <div className="flex items-center gap-2">
             {!isEditing && (
               <>
-                <Button variant="outline" onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" /> Print / Export
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href={`/reports/pedigree?goat=${goat.id}`}>
-                    <Award className="mr-2 h-4 w-4" /> Pedigree Certificate
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href={`/reports/health-history?goat=${goat.id}`}>
-                    <HeartPulse className="mr-2 h-4 w-4" /> Health History Report
-                  </Link>
-                </Button>
-                {isManager && (
-                  <>
+                {/* Desktop: full action row */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Button variant="outline" onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Print / Export
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href={`/reports/pedigree?goat=${goat.id}`}>
+                      <Award className="mr-2 h-4 w-4" /> Pedigree Certificate
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href={`/reports/health-history?goat=${goat.id}`}>
+                      <HeartPulse className="mr-2 h-4 w-4" /> Health History Report
+                    </Link>
+                  </Button>
+                  {isManager && (
                     <Button variant="outline" onClick={() => setIsEditing(true)}>
                       <Edit3 className="mr-2 h-4 w-4" /> Edit Record
                     </Button>
-                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive" size="icon" className="shadow-sm">
-                          <Trash2 className="h-4 w-4" />
+                  )}
+                </div>
+
+                {/* Mobile: primary Edit + overflow menu */}
+                <div className="flex md:hidden items-center gap-2 w-full">
+                  {isManager && (
+                    <Button variant="outline" className="flex-1" onClick={() => setIsEditing(true)}>
+                      <Edit3 className="mr-2 h-4 w-4" /> Edit
+                    </Button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" aria-label="More actions">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onSelect={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" /> Print / Export
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/reports/pedigree?goat=${goat.id}`}>
+                          <Award className="mr-2 h-4 w-4" /> Pedigree Certificate
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/reports/health-history?goat=${goat.id}`}>
+                          <HeartPulse className="mr-2 h-4 w-4" /> Health History Report
+                        </Link>
+                      </DropdownMenuItem>
+                      {isManager && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() => setIsDeleteDialogOpen(true)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Remove Goat
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Delete button (desktop) + shared confirmation dialog */}
+                {isManager && (
+                  <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="destructive" size="icon" className="hidden md:inline-flex shadow-sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle className="font-serif">Confirm Removal</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to remove {goat.name} from the herd records? This action cannot be undone.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="mt-6">
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={deleteGoat.isPending}>
+                          {deleteGoat.isPending ? "Removing..." : "Remove Goat"}
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle className="font-serif">Confirm Removal</DialogTitle>
-                          <DialogDescription>
-                            Are you sure you want to remove {goat.name} from the herd records? This action cannot be undone.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="mt-6">
-                          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                          <Button variant="destructive" onClick={handleDelete} disabled={deleteGoat.isPending}>
-                            {deleteGoat.isPending ? "Removing..." : "Remove Goat"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </>
             )}

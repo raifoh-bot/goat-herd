@@ -18,22 +18,24 @@ export function SuperadminViewBanner() {
   }
 
   return (
-    <div className="no-print sticky top-0 z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 shadow-md">
-      <span className="flex items-center gap-2">
+    <div className="no-print sticky top-0 z-50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-amber-500 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-amber-950 shadow-md">
+      <span className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <Eye className="h-4 w-4 flex-shrink-0" />
-        Viewing{" "}
-        <span className="font-mono font-semibold">{slug}</span> as platform admin
-        — read-only
+        <span className="truncate">
+          Viewing <span className="font-mono font-semibold">{slug}</span>
+          <span className="hidden sm:inline"> as platform admin</span> — read-only
+        </span>
       </span>
       <Button
         size="sm"
         variant="outline"
-        className="border-amber-950/30 bg-amber-100 text-amber-950 hover:bg-amber-50"
+        className="h-7 sm:h-8 border-amber-950/30 bg-amber-100 text-amber-950 hover:bg-amber-50"
         onClick={() => {
           window.location.href = rootUrl("/superadmin/farms");
         }}
       >
-        Exit to platform admin
+        <span className="sm:hidden">Exit</span>
+        <span className="hidden sm:inline">Exit to platform admin</span>
       </Button>
     </div>
   );

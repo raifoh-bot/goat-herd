@@ -285,7 +285,7 @@ export default function WorksheetResults() {
                 {allGoats.length === 0 ? "No active goats in the herd." : "No goats match those filters."}
               </p>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6">
+              <div className="hidden md:block overflow-x-auto -mx-6 px-6">
                 <table className="w-full text-sm border-collapse min-w-[900px]">
                   <thead>
                     <tr className="border-b border-border text-left">
@@ -425,6 +425,145 @@ export default function WorksheetResults() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {!isLoading && filteredGoats.length > 0 && (
+              <div className="md:hidden space-y-3">
+                {filteredGoats.map((goat) => {
+                  const row = rowOf(goat.id);
+                  const flagged = isFlagged(goat);
+                  return (
+                    <div
+                      key={goat.id}
+                      className={`rounded-xl border p-4 space-y-3 ${flagged ? "border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20" : "border-border bg-card"}`}
+                    >
+                      <div>
+                        <p className="font-medium text-foreground">{goat.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {breedLabel(goat.breed)} · {sexLabel(goat.sex)}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">FAMACHA</Label>
+                          <Select
+                            value={row.famacha || "none"}
+                            onValueChange={(v) => updateRow(goat.id, { famacha: v === "none" ? "" : v })}
+                          >
+                            <SelectTrigger className="h-9" aria-label={`FAMACHA score for ${goat.name}`}>
+                              <SelectValue placeholder="—" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">—</SelectItem>
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Weight {weightUnitLabel(weightUnit)}</Label>
+                          <Input
+                            className="h-9"
+                            type="number"
+                            min={0}
+                            step="0.1"
+                            value={row.weight}
+                            onChange={(e) => updateRow(goat.id, { weight: e.target.value })}
+                            aria-label={`Weight for ${goat.name}`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <Checkbox
+                            checked={row.deworm}
+                            onCheckedChange={(c) => updateRow(goat.id, { deworm: c === true })}
+                            aria-label={`Dewormed ${goat.name}`}
+                          />
+                          Dewormed
+                        </label>
+                        {row.deworm && (
+                          <div className="grid grid-cols-1 gap-2 pl-6">
+                            <Input
+                              className="h-9"
+                              placeholder="Product (e.g. Cydectin)"
+                              value={row.dewormProduct}
+                              onChange={(e) => updateRow(goat.id, { dewormProduct: e.target.value })}
+                              aria-label={`Dewormer product for ${goat.name}`}
+                            />
+                            <Input
+                              className="h-9"
+                              type="number"
+                              min={0}
+                              step="0.1"
+                              placeholder="Dose mL"
+                              value={row.dewormDose}
+                              onChange={(e) => updateRow(goat.id, { dewormDose: e.target.value })}
+                              aria-label={`Dewormer dose for ${goat.name}`}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2">
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <Checkbox
+                            checked={row.hoofTrim}
+                            onCheckedChange={(c) => updateRow(goat.id, { hoofTrim: c === true })}
+                            aria-label={`Hoof trim ${goat.name}`}
+                          />
+                          Hoof Trim
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <Checkbox
+                            checked={row.cdt}
+                            onCheckedChange={(c) => updateRow(goat.id, { cdt: c === true })}
+                            aria-label={`CDT shot ${goat.name}`}
+                          />
+                          CDT
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <Checkbox
+                            checked={row.copperBolus}
+                            onCheckedChange={(c) => updateRow(goat.id, { copperBolus: c === true })}
+                            aria-label={`Copper bolus ${goat.name}`}
+                          />
+                          Copper Bolus
+                        </label>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Notes</Label>
+                        <Input
+                          className="h-9"
+                          placeholder="Notes"
+                          value={row.notes}
+                          onChange={(e) => updateRow(goat.id, { notes: e.target.value })}
+                          aria-label={`Notes for ${goat.name}`}
+                        />
+                      </div>
+
+                      {flagged && (
+                        <label className="flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300 cursor-pointer pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={!row.dewormOptOut}
+                            onCheckedChange={(c) => updateRow(goat.id, { dewormOptOut: c !== true })}
+                          />
+                          <span>
+                            FAMACHA {row.famacha} is at/above your threshold ({famachaThreshold}+) — also log a
+                            deworming for {goat.name}.
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 

@@ -785,7 +785,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
           )}
         />
 
-        <div className="flex justify-end pt-4">
+        <div className="sticky bottom-16 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur flex justify-end md:static md:bottom-auto md:mx-0 md:border-0 md:bg-transparent md:px-0 md:pt-4 md:backdrop-blur-none">
           <Button type="submit" disabled={isSubmitting} size="lg" className="w-full sm:w-auto min-w-[200px] shadow-md">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {defaultValues ? "Update Record" : "Add to Herd"}

@@ -222,7 +222,7 @@ export default function GoatsList() {
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">The Herd</h2>
             <p className="text-muted-foreground">Manage your goats, production records, and health status.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="shadow-sm">
@@ -241,14 +241,14 @@ export default function GoatsList() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link href="/health-events/new">
-              <Button variant="outline" className="shadow-sm">
+            <Link href="/health-events/new" className="flex-1 sm:flex-none">
+              <Button variant="outline" className="w-full shadow-sm">
                 <HeartPulse className="mr-2 h-4 w-4" />
                 Log Herd Work Day
               </Button>
             </Link>
-            <Link href="/goats/new">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+            <Link href="/goats/new" className="flex-1 sm:flex-none">
+              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Goat
               </Button>

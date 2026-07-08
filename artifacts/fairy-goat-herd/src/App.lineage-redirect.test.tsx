@@ -60,12 +60,12 @@ function openBookmark(pathname: string) {
 
 /** The "Reports" item in the sidebar nav. */
 function reportsNavLink() {
-  const nav = screen.getByRole("navigation");
+  const nav = screen.getByRole("navigation", { name: "Main" });
   return within(nav).getByRole("link", { name: "Reports" });
 }
 
 function dashboardNavLink() {
-  const nav = screen.getByRole("navigation");
+  const nav = screen.getByRole("navigation", { name: "Main" });
   return within(nav).getByRole("link", { name: "Dashboard" });
 }
 
