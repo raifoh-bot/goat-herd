@@ -29,6 +29,7 @@ import { useAuth, useIsManager } from "@/lib/auth";
 import {
   resolveDashboardLayout,
   getWidgetGridItem,
+  getWidgetGridItemMd,
   type DashboardWidgetId,
 } from "@/lib/dashboard-widgets";
 import { CustomizeDashboard } from "@/components/customize-dashboard";
@@ -61,12 +62,16 @@ const LACTATION_COLORS: Record<string, string> = {
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 /**
- * Breakpoints for the dashboard grid. Below Tailwind's `md` (768px) the grid
- * collapses to a single stacked column; at/above it we use the full 12-column
- * snap grid.
+ * Breakpoints for the dashboard grid. Three responsive states:
+ *  - `xs` (<768px, phones): a single stacked column.
+ *  - `md` (768–995px, tablets / narrow laptops): a balanced 6-column grid so
+ *    the dashboard doesn't feel long and empty.
+ *  - `lg` (≥996px, desktop): the full 12-column snap grid, the only layout that
+ *    supports drag/resize persistence.
  */
-const GRID_BREAKPOINTS = { lg: 768, xs: 0 };
-const GRID_COLS = { lg: 12, xs: 1 };
+const GRID_BREAKPOINTS = { lg: 996, md: 768, xs: 0 };
+const GRID_COLS = { lg: 12, md: 6, xs: 1 };
+type GridBreakpoint = keyof typeof GRID_COLS;
 const GRID_ROW_HEIGHT = 40;
 const GRID_MARGIN: [number, number] = [16, 16];
 
@@ -83,7 +88,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [currentBreakpoint, setCurrentBreakpoint] = useState<"lg" | "xs">("lg");
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<GridBreakpoint>("lg");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const updatePersonal = useUpdateDashboardLayout();
@@ -166,6 +171,20 @@ export default function Dashboard() {
         minH: gi?.minH ?? 2,
       };
     });
+    // On the intermediate 6-column tablet grid, widgets use their md default
+    // placements (never persisted; drag/resize only applies to `lg`).
+    const md: GridLayoutItem[] = renderedWidgets.map((w) => {
+      const gi = getWidgetGridItemMd(w.id);
+      return {
+        i: w.id,
+        x: gi?.x ?? 0,
+        y: gi?.y ?? 0,
+        w: gi?.w ?? 3,
+        h: gi?.h ?? 3,
+        minW: gi?.minW ?? 2,
+        minH: gi?.minH ?? 2,
+      };
+    });
     // On the single-column mobile stack, widgets keep their saved order but span
     // the full width; positions here are never persisted.
     const xs: GridLayoutItem[] = renderedWidgets.map((w, idx) => {
@@ -180,7 +199,7 @@ export default function Dashboard() {
         minH: gi?.minH ?? 2,
       };
     });
-    return { lg, xs };
+    return { lg, md, xs };
   }, [renderedWidgets]);
 
   const persistLayout = (next: DashboardWidget[]) => {
@@ -347,7 +366,9 @@ export default function Dashboard() {
             isDraggable={editMode && currentBreakpoint === "lg"}
             isResizable={editMode && currentBreakpoint === "lg"}
             draggableHandle=".widget-drag-handle"
-            onBreakpointChange={(bp) => setCurrentBreakpoint(bp === "lg" ? "lg" : "xs")}
+            onBreakpointChange={(bp) =>
+              setCurrentBreakpoint(bp === "lg" ? "lg" : bp === "md" ? "md" : "xs")
+            }
             onDragStop={handleGridChange}
             onResizeStop={handleGridChange}
             compactType="vertical"

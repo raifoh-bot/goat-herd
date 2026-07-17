@@ -41,6 +41,13 @@ export interface DashboardWidgetDef {
    * user can resize the widget down to (so it never collapses to illegible).
    */
   defaultGridItem: GridItem;
+  /**
+   * Default position + size on the intermediate 6-column ("md") tablet grid.
+   * This layout is never persisted (drag/resize only applies to the 12-column
+   * desktop grid); it just gives tablet-width screens a balanced multi-column
+   * arrangement instead of one tall stack.
+   */
+  defaultGridItemMd: GridItem;
 }
 
 /**
@@ -59,60 +66,70 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
     label: "Total Goats",
     description: "Herd totals split by does, bucks, and wethers.",
     defaultGridItem: { x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+    defaultGridItemMd: { x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
   },
   {
     id: "health-status",
     label: "Healthy",
     description: "Count of goats with no current health concerns.",
     defaultGridItem: { x: 3, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+    defaultGridItemMd: { x: 3, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
   },
   {
     id: "milking-status",
     label: "Milking",
     description: "Count of does currently in milk.",
     defaultGridItem: { x: 6, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+    defaultGridItemMd: { x: 0, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
   },
   {
     id: "avg-milk",
     label: "Average Milk/Day",
     description: "Average daily milk production across the herd.",
     defaultGridItem: { x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+    defaultGridItemMd: { x: 3, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
   },
   {
     id: "does-breakdown",
     label: "Does Breakdown",
     description: "Lactation status breakdown chart for does.",
     defaultGridItem: { x: 0, y: 3, w: 6, h: 6, minW: 3, minH: 4 },
+    defaultGridItemMd: { x: 0, y: 6, w: 3, h: 6, minW: 3, minH: 4 },
   },
   {
     id: "upcoming-kiddings",
     label: "Upcoming Kiddings",
     description: "Does due to kid soon, sorted by date.",
     defaultGridItem: { x: 6, y: 3, w: 6, h: 6, minW: 3, minH: 3 },
+    defaultGridItemMd: { x: 3, y: 6, w: 3, h: 6, minW: 3, minH: 3 },
   },
   {
     id: "breed-breakdown",
     label: "Breed Breakdown",
     description: "Goat counts grouped by breed.",
     defaultGridItem: { x: 0, y: 9, w: 6, h: 6, minW: 3, minH: 3 },
+    defaultGridItemMd: { x: 0, y: 12, w: 3, h: 6, minW: 3, minH: 3 },
   },
   {
     id: "recent-activity",
     label: "Recent Herd Updates",
     description: "Recently updated goats in your herd.",
     defaultGridItem: { x: 6, y: 9, w: 6, h: 6, minW: 3, minH: 3 },
+    defaultGridItemMd: { x: 3, y: 12, w: 3, h: 6, minW: 3, minH: 3 },
   },
   {
     id: "breeding-calendar",
     label: "Breeding Calendar",
     description: "Month-grid calendar of expected kidding dates with Google, Outlook, and .ics export.",
     defaultGridItem: { x: 0, y: 15, w: 6, h: 7, minW: 4, minH: 5 },
+    defaultGridItemMd: { x: 0, y: 18, w: 6, h: 7, minW: 4, minH: 5 },
   },
   {
     id: "health-due",
     label: "Health Work Due",
     description: "Goats overdue or coming due for routine health work, based on your schedule.",
     defaultGridItem: { x: 6, y: 15, w: 6, h: 5, minW: 3, minH: 3 },
+    defaultGridItemMd: { x: 0, y: 25, w: 3, h: 5, minW: 3, minH: 3 },
   },
 ];
 
@@ -141,6 +158,14 @@ export function getWidgetDef(id: string): DashboardWidgetDef | undefined {
 /** Returns the default grid placement + minimum size for a widget id. */
 export function getWidgetGridItem(id: string): GridItem | undefined {
   return WIDGET_BY_ID.get(id as DashboardWidgetId)?.defaultGridItem;
+}
+
+/**
+ * Returns the default placement + minimum size for a widget id on the
+ * intermediate 6-column ("md") tablet grid.
+ */
+export function getWidgetGridItemMd(id: string): GridItem | undefined {
+  return WIDGET_BY_ID.get(id as DashboardWidgetId)?.defaultGridItemMd;
 }
 
 /**
