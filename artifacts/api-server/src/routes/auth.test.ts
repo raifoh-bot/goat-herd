@@ -107,6 +107,33 @@ describe("authentication", () => {
     const after = await agent.get("/api/auth/me");
     expect(after.status).toBe(401);
   });
+
+  it("logs in a superadmin even when a farm context is present", async () => {
+    const SA = { username: `auth-sa-${suffix}`, password: "superadmin-pass-123" };
+    const passwordHash = await bcrypt.hash(SA.password, 10);
+    const [sa] = await db
+      .insert(usersTable)
+      .values({ farmId: null, username: SA.username, passwordHash, role: "superadmin", active: true })
+      .returning();
+    createdUserIds.push(sa.id);
+
+    // A stale farm slug (stored client-side or on the session) must not lock
+    // the global superadmin out; the login falls back to the no-farm account.
+    const res = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send(SA);
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe("superadmin");
+    expect(res.body.farmSlug).toBeNull();
+
+    // Wrong password must still be rejected via the fallback path.
+    const bad = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ username: SA.username, password: "wrong-password" });
+    expect(bad.status).toBe(401);
+  });
 });
 
 describe("role enforcement", () => {

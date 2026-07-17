@@ -48,7 +48,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   // Usernames are unique per-farm, so the lookup must be scoped. When a tenant
   // is resolved, log in against that farm. With no tenant (the apex/no-farm
   // context) only platform superadmins may authenticate.
-  const [user] = req.farm
+  let [user] = req.farm
     ? await db
         .select()
         .from(usersTable)
@@ -63,6 +63,28 @@ router.post("/auth/login", async (req, res): Promise<void> => {
             isNull(usersTable.farmId),
           ),
         );
+
+  // The superadmin is global (no farm), but a stale farm context (persisted
+  // slug or session) can accompany their login attempt. If the farm-scoped
+  // lookup found nobody, fall back to the global superadmin account and log
+  // them in without a farm rather than rejecting valid platform credentials.
+  let loginFarm = req.farm ?? null;
+  if (!user && req.farm) {
+    const [superadmin] = await db
+      .select()
+      .from(usersTable)
+      .where(
+        and(
+          eq(usersTable.username, username),
+          eq(usersTable.role, "superadmin"),
+          isNull(usersTable.farmId),
+        ),
+      );
+    if (superadmin) {
+      user = superadmin;
+      loginFarm = null;
+    }
+  }
 
   // Always run a comparison to avoid leaking whether the username exists.
   const hash = user?.passwordHash ?? "$2b$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinv";
@@ -94,8 +116,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   req.session.userId = user.id;
   // Persist the farm slug so subsequent same-session requests resolve the tenant
   // without re-sending the X-Farm-Slug header. Superadmins carry no farm.
-  if (req.farm) {
-    req.session.farmSlug = req.farm.slug;
+  if (loginFarm) {
+    req.session.farmSlug = loginFarm.slug;
   } else {
     req.session.farmSlug = undefined;
   }
@@ -124,7 +146,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     id: user.id,
     username: user.username,
     role: user.role,
-    farmSlug: req.farm?.slug ?? null,
+    farmSlug: loginFarm?.slug ?? null,
     firstLogin,
     // The session id doubles as a bearer token for clients whose session cookie
     // is blocked (the cross-site Replit preview iframe). Only issued when the
