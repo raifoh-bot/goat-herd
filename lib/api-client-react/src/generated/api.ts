@@ -4927,6 +4927,185 @@ export const useViewFarm = <
 };
 
 /**
+ * @summary List a farm's user accounts (superadmin only)
+ */
+export const getListFarmUsersUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/users`;
+};
+
+export const listFarmUsers = async (
+  id: number,
+  options?: RequestInit,
+): Promise<User[]> => {
+  return customFetch<User[]>(getListFarmUsersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFarmUsersQueryKey = (id: number) => {
+  return [`/api/superadmin/farms/${id}/users`] as const;
+};
+
+export const getListFarmUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFarmUsers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFarmUsers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFarmUsersQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listFarmUsers>>> = ({
+    signal,
+  }) => listFarmUsers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFarmUsers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFarmUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFarmUsers>>
+>;
+export type ListFarmUsersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary List a farm's user accounts (superadmin only)
+ */
+
+export function useListFarmUsers<
+  TData = Awaited<ReturnType<typeof listFarmUsers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFarmUsers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFarmUsersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Reset a farm user's password (superadmin only)
+ */
+export const getSuperadminResetUserPasswordUrl = (
+  id: number,
+  userId: number,
+) => {
+  return `/api/superadmin/farms/${id}/users/${userId}/reset-password`;
+};
+
+export const superadminResetUserPassword = async (
+  id: number,
+  userId: number,
+  setUserPasswordBody: SetUserPasswordBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getSuperadminResetUserPasswordUrl(id, userId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setUserPasswordBody),
+  });
+};
+
+export const getSuperadminResetUserPasswordMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminResetUserPassword>>,
+    TError,
+    { id: number; userId: number; data: BodyType<SetUserPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof superadminResetUserPassword>>,
+  TError,
+  { id: number; userId: number; data: BodyType<SetUserPasswordBody> },
+  TContext
+> => {
+  const mutationKey = ["superadminResetUserPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof superadminResetUserPassword>>,
+    { id: number; userId: number; data: BodyType<SetUserPasswordBody> }
+  > = (props) => {
+    const { id, userId, data } = props ?? {};
+
+    return superadminResetUserPassword(id, userId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuperadminResetUserPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof superadminResetUserPassword>>
+>;
+export type SuperadminResetUserPasswordMutationBody =
+  BodyType<SetUserPasswordBody>;
+export type SuperadminResetUserPasswordMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reset a farm user's password (superadmin only)
+ */
+export const useSuperadminResetUserPassword = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminResetUserPassword>>,
+    TError,
+    { id: number; userId: number; data: BodyType<SetUserPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof superadminResetUserPassword>>,
+  TError,
+  { id: number; userId: number; data: BodyType<SetUserPasswordBody> },
+  TContext
+> => {
+  return useMutation(getSuperadminResetUserPasswordMutationOptions(options));
+};
+
+/**
  * @summary Soft-delete a farm with a recorded reason (superadmin only)
  */
 export const getDeleteFarmUrl = (id: number) => {

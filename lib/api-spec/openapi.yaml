@@ -1298,6 +1298,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /superadmin/farms/{id}/users:
+    get:
+      operationId: listFarmUsers
+      tags: [superadmin]
+      summary: List a farm's user accounts (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The farm's users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms/{id}/users/{userId}/reset-password:
+    post:
+      operationId: superadminResetUserPassword
+      tags: [superadmin]
+      summary: Reset a farm user's password (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetUserPasswordBody"
+      responses:
+        "204":
+          description: Password updated
+        "400":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: User not found in this farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /superadmin/farms/{id}/delete:
     post:
       operationId: deleteFarm

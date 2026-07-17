@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import bcrypt from "bcrypt";
 import {
   db,
   pool,
@@ -13,6 +14,7 @@ import {
   CreateFarmBody,
   UpdateFarmBody,
   DeleteFarmBody,
+  SetUserPasswordBody,
   UpdatePlatformSettingsBody,
   GetPlatformSummaryResponse,
   GetPlatformSettingsResponse,
@@ -269,6 +271,83 @@ router.post("/superadmin/farms/:id/view", async (req, res): Promise<void> => {
 
   res.json({ slug: farm.slug, name: farm.name });
 });
+
+/** Public user shape — mirrors toPublicUser in routes/users.ts (no password hash). */
+function toPublicUser(user: typeof usersTable.$inferSelect) {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email ?? null,
+    role: user.role,
+    active: user.active,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+router.get("/superadmin/farms/:id/users", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const [farm] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+  if (!farm) {
+    res.status(404).json({ error: "Farm not found" });
+    return;
+  }
+
+  // Superadmins have no farmId, so they can never appear in this list.
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.farmId, id))
+    .orderBy(desc(usersTable.createdAt));
+
+  res.json(users.map(toPublicUser));
+});
+
+router.post(
+  "/superadmin/farms/:id/users/:userId/reset-password",
+  async (req, res): Promise<void> => {
+    const id = Number(req.params.id);
+    const userId = Number(req.params.userId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({ error: "Invalid ID" });
+      return;
+    }
+
+    const parsed = SetUserPasswordBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+
+    // Scoping the update to (id = userId AND farm_id = :id) guarantees both
+    // that the user belongs to the farm in the URL and that a superadmin
+    // (farm_id NULL) can never be targeted through this endpoint.
+    const [user] = await db
+      .update(usersTable)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(and(eq(usersTable.id, userId), eq(usersTable.farmId, id)))
+      .returning();
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    req.log.info(
+      { farmId: id, targetUserId: userId, targetUsername: user.username, superadmin: req.authUser?.username },
+      "superadmin reset a farm user's password",
+    );
+
+    res.sendStatus(204);
+  },
+);
 
 router.post("/superadmin/farms/:id/delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);

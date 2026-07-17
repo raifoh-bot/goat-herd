@@ -11,14 +11,27 @@ import {
   useDeleteFarm,
   useViewFarm,
   useLogout,
+  useListFarmUsers,
+  useSuperadminResetUserPassword,
+  getListFarmUsersQueryKey,
   getListFarmsQueryKey,
   getGetPlatformSummaryQueryKey,
   getGetPlatformSettingsQueryKey,
   getGetCurrentUserQueryKey,
   type SuperadminFarm,
   type PlatformThresholds,
+  type User,
 } from "@workspace/api-client-react";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, Link2, Settings2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Eye,
+  KeyRound,
+  Link2,
+  Settings2,
+  Users,
+} from "lucide-react";
 import { GoatIcon } from "@/components/goat-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -716,6 +729,198 @@ function ShareLoginDialog({ farm }: { farm: SuperadminFarm }) {
   );
 }
 
+function ResetPasswordDialog({
+  farmId,
+  user,
+}: {
+  farmId: number;
+  user: User;
+}) {
+  const { toast } = useToast();
+  const resetPassword = useSuperadminResetUserPassword();
+
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  const reset = () => {
+    setPassword("");
+    setConfirm("");
+  };
+
+  const mismatch = confirm.length > 0 && password !== confirm;
+  const canSubmit = password.length >= 8 && password === confirm;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    resetPassword.mutate(
+      { id: farmId, userId: user.id, data: { password } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Password reset",
+            description: `${user.username} can now sign in with the new password.`,
+          });
+          setOpen(false);
+          reset();
+        },
+        onError: () => {
+          toast({
+            title: "Could not reset password",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <KeyRound className="mr-1.5 h-4 w-4" />
+          Reset Password
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Reset password for {user.username}</DialogTitle>
+            <DialogDescription>
+              The new password takes effect immediately. Share it with the user
+              so they can sign in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor={`newPassword-${user.id}`}>New password</Label>
+              <Input
+                id={`newPassword-${user.id}`}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                At least 8 characters.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`confirmPassword-${user.id}`}>
+                Confirm new password
+              </Label>
+              <Input
+                id={`confirmPassword-${user.id}`}
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+              {mismatch && (
+                <p className="text-xs text-destructive">
+                  Passwords do not match.
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={resetPassword.isPending || !canSubmit}>
+              {resetPassword.isPending ? "Resetting…" : "Reset password"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FarmUsersDialog({ farm }: { farm: SuperadminFarm }) {
+  const [open, setOpen] = useState(false);
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useListFarmUsers(farm.id, {
+    query: {
+      queryKey: getListFarmUsersQueryKey(farm.id),
+      enabled: open,
+      retry: false,
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Users className="mr-1.5 h-4 w-4" />
+          Users
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Users of {farm.name}</DialogTitle>
+          <DialogDescription>
+            Reset a user's password if they are locked out of their account.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Loading users…
+          </p>
+        ) : error ? (
+          <p className="py-8 text-center text-sm text-destructive">
+            Could not load this farm's users.
+          </p>
+        ) : !users || users.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            This farm has no users.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell className="capitalize">{user.role}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.active ? "secondary" : "destructive"}>
+                      {user.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ResetPasswordDialog farmId={farm.id} user={user} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function FarmRow({
   farm,
   thresholds,
@@ -820,6 +1025,7 @@ function FarmRow({
               {viewFarm.isPending ? "Opening…" : "View"}
             </Button>
           )}
+          <FarmUsersDialog farm={farm} />
           <ShareLoginDialog farm={farm} />
           <Button
             variant={suspended ? "default" : "outline"}

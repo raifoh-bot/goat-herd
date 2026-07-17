@@ -3166,6 +3166,38 @@ export const ViewFarmResponse = zod.object({
 });
 
 /**
+ * @summary List a farm's user accounts (superadmin only)
+ */
+export const ListFarmUsersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListFarmUsersResponseItem = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  email: zod.string().nullable(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListFarmUsersResponse = zod.array(ListFarmUsersResponseItem);
+
+/**
+ * @summary Reset a farm user's password (superadmin only)
+ */
+export const SuperadminResetUserPasswordParams = zod.object({
+  id: zod.coerce.number(),
+  userId: zod.coerce.number(),
+});
+
+export const superadminResetUserPasswordBodyPasswordMin = 8;
+
+export const SuperadminResetUserPasswordBody = zod.object({
+  password: zod.string().min(superadminResetUserPasswordBodyPasswordMin),
+});
+
+/**
  * @summary Soft-delete a farm with a recorded reason (superadmin only)
  */
 export const DeleteFarmParams = zod.object({
