@@ -135,10 +135,11 @@ export function UsersTab() {
 
   const handleCreate = (e: FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || password.length < 8) {
+    if (!username.trim() || password.length < 8 || !email.trim()) {
       toast({
         title: "Check the form",
-        description: "Username is required and the password must be at least 8 characters.",
+        description:
+          "Username and email are required, and the password must be at least 8 characters.",
         variant: "destructive",
       });
       return;
@@ -149,7 +150,7 @@ export function UsersTab() {
         data: {
           username: username.trim(),
           password,
-          email: email.trim() || null,
+          email: email.trim(),
           role: role as (typeof UserRole)[keyof typeof UserRole],
         },
       },
@@ -191,8 +192,16 @@ export function UsersTab() {
   const handleEmailSave = (e: FormEvent) => {
     e.preventDefault();
     if (!emailTarget) return;
+    if (!emailValue.trim()) {
+      toast({
+        title: "Email required",
+        description: "Enter an email address before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
     updateUser.mutate(
-      { id: emailTarget.id, data: { email: emailValue.trim() || null } },
+      { id: emailTarget.id, data: { email: emailValue.trim() } },
       {
         onSuccess: () => {
           toast({
@@ -293,7 +302,7 @@ export function UsersTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-email">Email (optional)</Label>
+              <Label htmlFor="new-email">Email</Label>
               <Input
                 id="new-email"
                 type="email"
@@ -301,6 +310,7 @@ export function UsersTab() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
                 placeholder="For password resets"
+                required
               />
             </div>
             <div className="space-y-2">
@@ -502,7 +512,7 @@ export function UsersTab() {
               <DialogDescription>
                 Set the email for{" "}
                 <span className="font-medium text-foreground">{emailTarget?.username}</span>. It's
-                used to send password reset links. Leave blank to remove it.
+                used to send password reset links.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2 py-4">
@@ -514,6 +524,7 @@ export function UsersTab() {
                 onChange={(e) => setEmailValue(e.target.value)}
                 autoComplete="off"
                 placeholder="name@example.com"
+                required
               />
             </div>
             <DialogFooter>

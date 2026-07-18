@@ -27,6 +27,7 @@ export default function Register() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
 
   const register = useRegisterFarm();
 
@@ -40,7 +41,13 @@ export default function Register() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmedSlug = slug.trim();
-    if (!farmName.trim() || !trimmedSlug || !username.trim() || password.length < 8) {
+    if (
+      !farmName.trim() ||
+      !trimmedSlug ||
+      !username.trim() ||
+      password.length < 8 ||
+      !email.trim()
+    ) {
       return;
     }
 
@@ -62,6 +69,7 @@ export default function Register() {
           slug: trimmedSlug,
           username: username.trim(),
           password,
+          email: email.trim(),
         },
       },
       {
@@ -157,6 +165,21 @@ export default function Register() {
               {passwordTooShort && (
                 <p className="text-xs text-destructive">Use at least 8 characters.</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="name@example.com"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Used to send you password reset links.
+              </p>
             </div>
             <Button type="submit" className="w-full" disabled={register.isPending}>
               {register.isPending ? "Creating your farm…" : "Create farm"}

@@ -23,7 +23,7 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
   };
 }
 
-/** Normalizes an optional email from a request body: trimmed, or null if blank. */
+/** Trims an email from a request body; returns null when it is blank. */
 function normalizeEmail(email: string | null | undefined): string | null {
   if (email == null) return null;
   const trimmed = email.trim();
@@ -52,6 +52,12 @@ router.post("/users", async (req, res): Promise<void> => {
     return;
   }
 
+  const email = normalizeEmail(parsed.data.email);
+  if (!email) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
   const [existing] = await db
     .select()
     .from(usersTable)
@@ -67,7 +73,7 @@ router.post("/users", async (req, res): Promise<void> => {
     .insert(usersTable)
     .values({
       username,
-      email: normalizeEmail(parsed.data.email),
+      email,
       passwordHash,
       role: parsed.data.role,
       farmId: farmId(req),
@@ -93,7 +99,14 @@ router.put("/users/:id", async (req, res): Promise<void> => {
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.role !== undefined) updateData.role = parsed.data.role;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
-  if (parsed.data.email !== undefined) updateData.email = normalizeEmail(parsed.data.email);
+  if (parsed.data.email !== undefined) {
+    const email = normalizeEmail(parsed.data.email);
+    if (!email) {
+      res.status(400).json({ error: "Email cannot be blank" });
+      return;
+    }
+    updateData.email = email;
+  }
 
   // Prevent an admin/owner from deactivating or demoting their own account,
   // which could lock the herd out of all administrative access.

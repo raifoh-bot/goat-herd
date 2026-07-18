@@ -1320,8 +1320,11 @@ export interface CreateUserBody {
   username: string;
   /** @minLength 8 */
   password: string;
-  /** Optional contact email, used for the forgot-password flow. */
-  email?: string | null;
+  /**
+   * Contact email, required for the forgot-password flow.
+   * @minLength 1
+   */
+  email: string;
   role: CreateUserBodyRole;
 }
 
@@ -1337,8 +1340,11 @@ export const UpdateUserBodyRole = {
 export interface UpdateUserBody {
   role?: UpdateUserBodyRole;
   active?: boolean;
-  /** Optional contact email, used for the forgot-password flow. */
-  email?: string | null;
+  /**
+   * Contact email, used for the forgot-password flow. When provided it must be non-blank; omit the field to leave the email unchanged.
+   * @minLength 1
+   */
+  email?: string;
 }
 
 export interface ForgotPasswordBody {
@@ -1487,6 +1493,11 @@ export interface RegisterFarmBody {
   username: string;
   /** @minLength 8 */
   password: string;
+  /**
+   * Contact email for the first admin user, required for the forgot-password flow.
+   * @minLength 1
+   */
+  email: string;
 }
 
 export interface CreateFarmBody {

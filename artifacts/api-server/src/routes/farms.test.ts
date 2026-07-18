@@ -33,6 +33,7 @@ function validBody(overrides: Partial<Record<string, unknown>> = {}) {
     farmName: "Test Farm",
     username: "farm-admin",
     password: "super-secret-1",
+    email: "farm-admin@example.com",
     ...overrides,
   };
 }

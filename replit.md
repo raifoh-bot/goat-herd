@@ -58,7 +58,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - `GET /api/dashboard/recent-activity` — recently updated goats
 
 ### Farm Registration & Super-Admin
-- `POST /api/farms/register` — public self-registration (body: slug, farmName, username, password). Creates the farm + its settings + the first admin user in one transaction.
+- `POST /api/farms/register` — public self-registration (body: slug, farmName, username, password, email). Creates the farm + its settings + the first admin user (with contact email) in one transaction.
 - `GET /api/superadmin/farms` — list all farms (superadmin only)
 - `POST /api/superadmin/farms` — create a farm (superadmin only)
 - `PUT /api/superadmin/farms/:id` — update a farm's name/status (superadmin only)
@@ -68,7 +68,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - `POST /api/auth/logout` — destroy the current session
 - `GET /api/auth/me` — get the currently authenticated user
 - `GET /api/users` — list users (Admin/Owner only)
-- `POST /api/users` — create a user (Admin/Owner only)
+- `POST /api/users` — create a user (Admin/Owner only; email is required — used by the forgot-password flow)
 - `PUT /api/users/:id` — update a user's role or active status (Admin/Owner only)
 
 ## Authentication & Roles

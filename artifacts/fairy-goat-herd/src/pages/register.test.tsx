@@ -80,6 +80,7 @@ async function fillForm(overrides: { slug?: string } = {}) {
   await user.type(slugInput, overrides.slug ?? "smithfarm");
   await user.type(screen.getByLabelText("Admin username"), "owner");
   await user.type(screen.getByLabelText("Password"), "secret123");
+  await user.type(screen.getByLabelText("Email"), "owner@example.com");
   await user.click(screen.getByRole("button", { name: "Create farm" }));
 }
 

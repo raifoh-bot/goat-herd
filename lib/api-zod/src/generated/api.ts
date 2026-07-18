@@ -2851,6 +2851,12 @@ export const RegisterFarmBody = zod.object({
   slug: zod.string().min(registerFarmBodySlugMin).max(registerFarmBodySlugMax),
   username: zod.string().min(1),
   password: zod.string().min(registerFarmBodyPasswordMin),
+  email: zod
+    .string()
+    .min(1)
+    .describe(
+      "Contact email for the first admin user, required for the forgot-password flow.",
+    ),
 });
 
 /**
@@ -3143,8 +3149,8 @@ export const CreateUserBody = zod.object({
   password: zod.string().min(createUserBodyPasswordMin),
   email: zod
     .string()
-    .nullish()
-    .describe("Optional contact email, used for the forgot-password flow."),
+    .min(1)
+    .describe("Contact email, required for the forgot-password flow."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
 });
 
@@ -3160,8 +3166,11 @@ export const UpdateUserBody = zod.object({
   active: zod.boolean().optional(),
   email: zod
     .string()
-    .nullish()
-    .describe("Optional contact email, used for the forgot-password flow."),
+    .min(1)
+    .optional()
+    .describe(
+      "Contact email, used for the forgot-password flow. When provided it must be non-blank; omit the field to leave the email unchanged.",
+    ),
 });
 
 export const UpdateUserResponse = zod.object({

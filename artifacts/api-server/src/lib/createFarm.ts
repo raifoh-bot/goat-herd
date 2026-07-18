@@ -40,6 +40,8 @@ export type CreateFarmInput = {
   name: string;
   adminUsername: string;
   adminPassword: string;
+  /** Contact email for the first admin user (required for self-registration). */
+  adminEmail?: string;
   status?: FarmStatus;
 };
 
@@ -68,6 +70,10 @@ export async function createFarm(input: CreateFarmInput): Promise<CreateFarmResu
   if (!username) {
     return { ok: false, status: 400, error: "Admin username is required." };
   }
+
+  // Trimmed contact email for the first admin; stored as null when not given
+  // (superadmin-created farms may omit it).
+  const adminEmail = input.adminEmail?.trim() || null;
   if (input.adminPassword.length < 8) {
     return { ok: false, status: 400, error: "Password must be at least 8 characters." };
   }
@@ -96,9 +102,14 @@ export async function createFarm(input: CreateFarmInput): Promise<CreateFarmResu
         throw new Error("DUPLICATE_USER");
       }
 
-      await tx
-        .insert(usersTable)
-        .values({ farmId: farm.id, username, passwordHash, role: "admin", active: true });
+      await tx.insert(usersTable).values({
+        farmId: farm.id,
+        username,
+        email: adminEmail,
+        passwordHash,
+        role: "admin",
+        active: true,
+      });
 
       return { ok: true as const, farm };
     });

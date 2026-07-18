@@ -12,7 +12,10 @@ export interface CreateUserBody {
   username: string;
   /** @minLength 8 */
   password: string;
-  /** Optional contact email, used for the forgot-password flow. */
-  email?: string | null;
+  /**
+   * Contact email, required for the forgot-password flow.
+   * @minLength 1
+   */
+  email: string;
   role: CreateUserBodyRole;
 }

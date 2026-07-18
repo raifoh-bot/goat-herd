@@ -18,4 +18,9 @@ export interface RegisterFarmBody {
   username: string;
   /** @minLength 8 */
   password: string;
+  /**
+   * Contact email for the first admin user, required for the forgot-password flow.
+   * @minLength 1
+   */
+  email: string;
 }

@@ -16,11 +16,18 @@ router.post("/farms/register", async (req, res): Promise<void> => {
     return;
   }
 
+  const email = parsed.data.email.trim();
+  if (!email) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
   const result = await createFarm({
     slug: parsed.data.slug,
     name: parsed.data.farmName,
     adminUsername: parsed.data.username,
     adminPassword: parsed.data.password,
+    adminEmail: email,
   });
 
   if (!result.ok) {

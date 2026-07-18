@@ -3053,14 +3053,15 @@ components:
           minLength: 8
         email:
           type: string
-          nullable: true
-          description: Optional contact email, used for the forgot-password flow.
+          minLength: 1
+          description: Contact email, required for the forgot-password flow.
         role:
           type: string
           enum: [admin, owner, farmhand, superadmin]
       required:
         - username
         - password
+        - email
         - role
 
     UpdateUserBody:
@@ -3073,8 +3074,10 @@ components:
           type: boolean
         email:
           type: string
-          nullable: true
-          description: Optional contact email, used for the forgot-password flow.
+          minLength: 1
+          description: >-
+            Contact email, used for the forgot-password flow. When provided it
+            must be non-blank; omit the field to leave the email unchanged.
 
     ForgotPasswordBody:
       type: object
@@ -3297,11 +3300,16 @@ components:
         password:
           type: string
           minLength: 8
+        email:
+          type: string
+          minLength: 1
+          description: Contact email for the first admin user, required for the forgot-password flow.
       required:
         - farmName
         - slug
         - username
         - password
+        - email
 
     CreateFarmBody:
       type: object
