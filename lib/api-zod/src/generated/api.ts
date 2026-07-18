@@ -2526,7 +2526,15 @@ export const ListSemenStrawsResponseItem = zod.object({
   tankLocation: zod
     .string()
     .nullish()
-    .describe("Location in the storage tank (e.g. canister\/cane)"),
+    .describe("Legacy free-text location (deprecated; use tankId)"),
+  tankId: zod
+    .number()
+    .nullish()
+    .describe("The nitrogen tank this entry is stored in"),
+  tankName: zod
+    .string()
+    .nullish()
+    .describe("Name of the assigned tank (joined for display)"),
   sireDamName: zod
     .string()
     .nullish()
@@ -2558,6 +2566,7 @@ export const CreateSemenStrawBody = zod.object({
   supplier: zod.string().optional(),
   count: zod.number(),
   tankLocation: zod.string().optional(),
+  tankId: zod.number().nullish(),
   sireDamName: zod.string().optional(),
   sireSireName: zod.string().optional(),
   sirePatGranddamName: zod.string().optional(),
@@ -2578,6 +2587,7 @@ export const UpdateSemenStrawBody = zod.object({
   supplier: zod.string().optional(),
   count: zod.number().optional(),
   tankLocation: zod.string().optional(),
+  tankId: zod.number().nullish(),
   sireDamName: zod.string().optional(),
   sireSireName: zod.string().optional(),
   sirePatGranddamName: zod.string().optional(),
@@ -2597,7 +2607,15 @@ export const UpdateSemenStrawResponse = zod.object({
   tankLocation: zod
     .string()
     .nullish()
-    .describe("Location in the storage tank (e.g. canister\/cane)"),
+    .describe("Legacy free-text location (deprecated; use tankId)"),
+  tankId: zod
+    .number()
+    .nullish()
+    .describe("The nitrogen tank this entry is stored in"),
+  tankName: zod
+    .string()
+    .nullish()
+    .describe("Name of the assigned tank (joined for display)"),
   sireDamName: zod
     .string()
     .nullish()
@@ -2647,6 +2665,71 @@ export const ImportSemenStrawsBody = zod.object({
       notes: zod.string().optional(),
     }),
   ),
+});
+
+/**
+ * @summary List the farm's nitrogen tanks
+ */
+export const ListSemenTanksResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  lastServiceDate: zod.coerce
+    .date()
+    .nullish()
+    .describe("When the tank was last serviced (nitrogen topped off)"),
+  notes: zod.string().nullish(),
+  strawEntryCount: zod
+    .number()
+    .describe("Number of straw inventory entries assigned to this tank"),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSemenTanksResponse = zod.array(ListSemenTanksResponseItem);
+
+/**
+ * @summary Add a nitrogen tank (Admin/Owner only)
+ */
+
+export const CreateSemenTankBody = zod.object({
+  name: zod.string().min(1),
+  lastServiceDate: zod.coerce.date().nullish(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a nitrogen tank (Admin/Owner only)
+ */
+export const UpdateSemenTankParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateSemenTankBody = zod.object({
+  name: zod.string().min(1).optional(),
+  lastServiceDate: zod.coerce.date().nullish(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateSemenTankResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  lastServiceDate: zod.coerce
+    .date()
+    .nullish()
+    .describe("When the tank was last serviced (nitrogen topped off)"),
+  notes: zod.string().nullish(),
+  strawEntryCount: zod
+    .number()
+    .describe("Number of straw inventory entries assigned to this tank"),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * Deleting a tank that still has straw entries assigned is blocked with a 409 — reassign or clear those straws first.
+ * @summary Delete a nitrogen tank (Admin/Owner only)
+ */
+export const DeleteSemenTankParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

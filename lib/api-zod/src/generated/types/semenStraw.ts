@@ -14,8 +14,12 @@ export interface SemenStraw {
   supplier?: string | null;
   /** Number of straws remaining on hand */
   count: number;
-  /** Location in the storage tank (e.g. canister/cane) */
+  /** Legacy free-text location (deprecated; use tankId) */
   tankLocation?: string | null;
+  /** The nitrogen tank this entry is stored in */
+  tankId?: number | null;
+  /** Name of the assigned tank (joined for display) */
+  tankName?: string | null;
   /** The sire's dam (kid's paternal granddam) */
   sireDamName?: string | null;
   /** The sire's sire (kid's paternal grandsire) */

@@ -310,6 +310,30 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 12b. Named nitrogen tanks for the AI semen inventory. Created directly
+  //      with farm_id NOT NULL — no legacy data to backfill — plus a nullable
+  //      tank_id FK on semen_straws (the legacy free-text tank_location column
+  //      is preserved).
+  if (presentTenantTables.includes("semen_straws")) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "semen_tanks" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "name" text NOT NULL,
+        "last_service_date" timestamp,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "semen_tanks_farm_id_idx" ON "semen_tanks" ("farm_id");`,
+    );
+    await pool.query(
+      `ALTER TABLE "semen_straws" ADD COLUMN IF NOT EXISTS "tank_id" integer REFERENCES "semen_tanks"("id");`,
+    );
+  }
+
   // 13. Livestock show results. Shows are per-farm; each show carries many
   //     per-goat result rows (judge, class, placement, award). Created
   //     directly with farm_id NOT NULL — no legacy data to backfill.

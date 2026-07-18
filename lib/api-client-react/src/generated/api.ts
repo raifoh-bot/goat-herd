@@ -35,6 +35,7 @@ import type {
   CreateHealthEventsBulk201,
   CreatePregnancyTestBody,
   CreateSemenStrawBody,
+  CreateSemenTankBody,
   CreateShowBody,
   CreateShowResultsBody,
   CreateUserBody,
@@ -68,6 +69,7 @@ import type {
   RegisterFarmBody,
   ResetPasswordBody,
   SemenStraw,
+  SemenTank,
   SetGoatDefaultPhotoBody,
   SetUserPasswordBody,
   Show,
@@ -85,6 +87,7 @@ import type {
   UpdatePlatformThresholdsBody,
   UpdatePregnancyTestBody,
   UpdateSemenStrawBody,
+  UpdateSemenTankBody,
   UpdateShowBody,
   UpdateShowResultBody,
   UpdateUserBody,
@@ -4394,6 +4397,339 @@ export const useImportSemenStraws = <
   TContext
 > => {
   return useMutation(getImportSemenStrawsMutationOptions(options));
+};
+
+/**
+ * @summary List the farm's nitrogen tanks
+ */
+export const getListSemenTanksUrl = () => {
+  return `/api/semen-tanks`;
+};
+
+export const listSemenTanks = async (
+  options?: RequestInit,
+): Promise<SemenTank[]> => {
+  return customFetch<SemenTank[]>(getListSemenTanksUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSemenTanksQueryKey = () => {
+  return [`/api/semen-tanks`] as const;
+};
+
+export const getListSemenTanksQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSemenTanks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenTanks>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSemenTanksQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSemenTanks>>> = ({
+    signal,
+  }) => listSemenTanks({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenTanks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSemenTanksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSemenTanks>>
+>;
+export type ListSemenTanksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the farm's nitrogen tanks
+ */
+
+export function useListSemenTanks<
+  TData = Awaited<ReturnType<typeof listSemenTanks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSemenTanks>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSemenTanksQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a nitrogen tank (Admin/Owner only)
+ */
+export const getCreateSemenTankUrl = () => {
+  return `/api/semen-tanks`;
+};
+
+export const createSemenTank = async (
+  createSemenTankBody: CreateSemenTankBody,
+  options?: RequestInit,
+): Promise<SemenTank> => {
+  return customFetch<SemenTank>(getCreateSemenTankUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSemenTankBody),
+  });
+};
+
+export const getCreateSemenTankMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSemenTank>>,
+    TError,
+    { data: BodyType<CreateSemenTankBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSemenTank>>,
+  TError,
+  { data: BodyType<CreateSemenTankBody> },
+  TContext
+> => {
+  const mutationKey = ["createSemenTank"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSemenTank>>,
+    { data: BodyType<CreateSemenTankBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSemenTank(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSemenTankMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSemenTank>>
+>;
+export type CreateSemenTankMutationBody = BodyType<CreateSemenTankBody>;
+export type CreateSemenTankMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a nitrogen tank (Admin/Owner only)
+ */
+export const useCreateSemenTank = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSemenTank>>,
+    TError,
+    { data: BodyType<CreateSemenTankBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSemenTank>>,
+  TError,
+  { data: BodyType<CreateSemenTankBody> },
+  TContext
+> => {
+  return useMutation(getCreateSemenTankMutationOptions(options));
+};
+
+/**
+ * @summary Update a nitrogen tank (Admin/Owner only)
+ */
+export const getUpdateSemenTankUrl = (id: number) => {
+  return `/api/semen-tanks/${id}`;
+};
+
+export const updateSemenTank = async (
+  id: number,
+  updateSemenTankBody: UpdateSemenTankBody,
+  options?: RequestInit,
+): Promise<SemenTank> => {
+  return customFetch<SemenTank>(getUpdateSemenTankUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSemenTankBody),
+  });
+};
+
+export const getUpdateSemenTankMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSemenTank>>,
+    TError,
+    { id: number; data: BodyType<UpdateSemenTankBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSemenTank>>,
+  TError,
+  { id: number; data: BodyType<UpdateSemenTankBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSemenTank"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSemenTank>>,
+    { id: number; data: BodyType<UpdateSemenTankBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSemenTank(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSemenTankMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSemenTank>>
+>;
+export type UpdateSemenTankMutationBody = BodyType<UpdateSemenTankBody>;
+export type UpdateSemenTankMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a nitrogen tank (Admin/Owner only)
+ */
+export const useUpdateSemenTank = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSemenTank>>,
+    TError,
+    { id: number; data: BodyType<UpdateSemenTankBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSemenTank>>,
+  TError,
+  { id: number; data: BodyType<UpdateSemenTankBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSemenTankMutationOptions(options));
+};
+
+/**
+ * Deleting a tank that still has straw entries assigned is blocked with a 409 — reassign or clear those straws first.
+ * @summary Delete a nitrogen tank (Admin/Owner only)
+ */
+export const getDeleteSemenTankUrl = (id: number) => {
+  return `/api/semen-tanks/${id}`;
+};
+
+export const deleteSemenTank = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteSemenTankUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteSemenTankMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSemenTank>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSemenTank>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteSemenTank"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSemenTank>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteSemenTank(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteSemenTankMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSemenTank>>
+>;
+
+export type DeleteSemenTankMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a nitrogen tank (Admin/Owner only)
+ */
+export const useDeleteSemenTank = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSemenTank>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteSemenTank>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteSemenTankMutationOptions(options));
 };
 
 /**

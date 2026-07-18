@@ -7,7 +7,9 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListSemenStrawsQueryKey,
+  getListSemenTanksQueryKey,
   useListSemenStraws,
+  useListSemenTanks,
   useCreateSemenStraw,
   useUpdateSemenStraw,
   useDeleteSemenStraw,
@@ -29,12 +31,20 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useFarmSettings } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
 import { useSessionState } from "@/hooks/use-session-state";
 import { SortSelect, type SortOption } from "@/components/sort-select";
 import { ImportStrawsDialog } from "./import-dialog";
+import { TanksCard } from "./tanks-card";
 
 type StrawSort =
   | "sire-asc"
@@ -51,8 +61,8 @@ const STRAW_SORT_OPTIONS: SortOption<StrawSort>[] = [
   { value: "sire-desc", label: "Sire Name (Z–A)" },
   { value: "count-desc", label: "Straws (High–Low)" },
   { value: "count-asc", label: "Straws (Low–High)" },
-  { value: "location-asc", label: "Tank Location (A–Z)" },
-  { value: "location-desc", label: "Tank Location (Z–A)" },
+  { value: "location-asc", label: "Tank (A–Z)" },
+  { value: "location-desc", label: "Tank (Z–A)" },
   { value: "supplier-asc", label: "Supplier (A–Z)" },
   { value: "supplier-desc", label: "Supplier (Z–A)" },
 ];
@@ -69,9 +79,9 @@ function sortStraws(list: SemenStraw[], sort: StrawSort): SemenStraw[] {
       case "count-asc":
         return a.count - b.count;
       case "location-asc":
-        return (a.tankLocation ?? "").localeCompare(b.tankLocation ?? "");
+        return (a.tankName ?? a.tankLocation ?? "").localeCompare(b.tankName ?? b.tankLocation ?? "");
       case "location-desc":
-        return (b.tankLocation ?? "").localeCompare(a.tankLocation ?? "");
+        return (b.tankName ?? b.tankLocation ?? "").localeCompare(a.tankName ?? a.tankLocation ?? "");
       case "supplier-asc":
         return (a.supplier ?? "").localeCompare(b.supplier ?? "");
       case "supplier-desc":
@@ -87,7 +97,7 @@ const strawSchema = z.object({
   strawId: z.string().optional(),
   supplier: z.string().optional(),
   count: z.coerce.number().int().min(0, "Count cannot be negative"),
-  tankLocation: z.string().optional(),
+  tankId: z.string(),
   sireDamName: z.string().optional(),
   sireSireName: z.string().optional(),
   sirePatGranddamName: z.string().optional(),
@@ -112,6 +122,9 @@ export default function InventoryList() {
   const { data: straws, isLoading } = useListSemenStraws({
     query: { queryKey: getListSemenStrawsQueryKey() },
   });
+  const { data: tanks } = useListSemenTanks({
+    query: { queryKey: getListSemenTanksQueryKey() },
+  });
 
   const createStraw = useCreateSemenStraw();
   const updateStraw = useUpdateSemenStraw();
@@ -124,7 +137,7 @@ export default function InventoryList() {
       strawId: "",
       supplier: "",
       count: 0,
-      tankLocation: "",
+      tankId: "none",
       sireDamName: "",
       sireSireName: "",
       sirePatGranddamName: "",
@@ -141,7 +154,10 @@ export default function InventoryList() {
     }
   }, [settingsLoading, usesAi, setLocation]);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSemenStrawsQueryKey() });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListSemenStrawsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListSemenTanksQueryKey() });
+  };
 
   const totalStraws = useMemo(
     () => (straws ?? []).reduce((sum, s) => sum + s.count, 0),
@@ -168,7 +184,7 @@ export default function InventoryList() {
       strawId: "",
       supplier: "",
       count: 0,
-      tankLocation: "",
+      tankId: "none",
       sireDamName: "",
       sireSireName: "",
       sirePatGranddamName: "",
@@ -185,7 +201,7 @@ export default function InventoryList() {
       strawId: straw.strawId ?? "",
       supplier: straw.supplier ?? "",
       count: straw.count,
-      tankLocation: straw.tankLocation ?? "",
+      tankId: straw.tankId != null ? String(straw.tankId) : "none",
       sireDamName: straw.sireDamName ?? "",
       sireSireName: straw.sireSireName ?? "",
       sirePatGranddamName: straw.sirePatGranddamName ?? "",
@@ -201,7 +217,7 @@ export default function InventoryList() {
       strawId: data.strawId || undefined,
       supplier: data.supplier || undefined,
       count: data.count,
-      tankLocation: data.tankLocation || undefined,
+      tankId: data.tankId === "none" ? null : Number(data.tankId),
       sireDamName: data.sireDamName || undefined,
       sireSireName: data.sireSireName || undefined,
       sirePatGranddamName: data.sirePatGranddamName || undefined,
@@ -277,6 +293,9 @@ export default function InventoryList() {
             </Button>
           </div>
         </div>
+
+        {/* Nitrogen tanks */}
+        <TanksCard isManager={isManager} onTanksChanged={invalidate} />
 
         {/* Remaining straws per sire */}
         {!isLoading && perSire.length > 0 && (
@@ -355,9 +374,11 @@ export default function InventoryList() {
                     {straw.supplier && (
                       <p><span className="text-foreground/70 font-medium">Supplier:</span> {straw.supplier}</p>
                     )}
-                    {straw.tankLocation && (
+                    {straw.tankName ? (
+                      <p><span className="text-foreground/70 font-medium">Tank:</span> {straw.tankName}</p>
+                    ) : straw.tankLocation ? (
                       <p><span className="text-foreground/70 font-medium">Location:</span> {straw.tankLocation}</p>
-                    )}
+                    ) : null}
                     {straw.notes && <p className="line-clamp-2 italic">{straw.notes}</p>}
                   </div>
 
@@ -438,15 +459,40 @@ export default function InventoryList() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="tankLocation" render={({ field }) => (
+                <FormField control={form.control} name="tankId" render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Tank Location (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Canister / cane / goblet" {...field} className="bg-background/50" />
-                    </FormControl>
+                    <FormLabel>Tank (Optional)</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue placeholder="Choose a tank" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
+                        {(tanks ?? []).map((tank) => (
+                          <SelectItem key={tank.id} value={String(tank.id)}>
+                            {tank.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {(tanks ?? []).length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        No tanks defined yet — add one in the Tanks section above.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                {editing && editing.tankLocation && editing.tankId == null && (
+                  <div className="sm:col-span-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                    This straw has a legacy location{" "}
+                    <span className="font-medium">"{editing.tankLocation}"</span> — assign it to a tank
+                    above to keep it. The legacy text stays on the record until you do.
+                  </div>
+                )}
               </div>
 
               <div className="rounded-lg border border-primary/15 bg-primary/5 p-4 space-y-4">

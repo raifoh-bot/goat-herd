@@ -925,8 +925,12 @@ export interface SemenStraw {
   supplier?: string | null;
   /** Number of straws remaining on hand */
   count: number;
-  /** Location in the storage tank (e.g. canister/cane) */
+  /** Legacy free-text location (deprecated; use tankId) */
   tankLocation?: string | null;
+  /** The nitrogen tank this entry is stored in */
+  tankId?: number | null;
+  /** Name of the assigned tank (joined for display) */
+  tankName?: string | null;
   /** The sire's dam (kid's paternal granddam) */
   sireDamName?: string | null;
   /** The sire's sire (kid's paternal grandsire) */
@@ -946,6 +950,7 @@ export interface CreateSemenStrawBody {
   supplier?: string;
   count: number;
   tankLocation?: string;
+  tankId?: number | null;
   sireDamName?: string;
   sireSireName?: string;
   sirePatGranddamName?: string;
@@ -959,6 +964,7 @@ export interface UpdateSemenStrawBody {
   supplier?: string;
   count?: number;
   tankLocation?: string;
+  tankId?: number | null;
   sireDamName?: string;
   sireSireName?: string;
   sirePatGranddamName?: string;
@@ -978,6 +984,32 @@ export interface ImportSemenStrawRow {
   sireSireName?: string;
   sirePatGranddamName?: string;
   sirePatGrandsireName?: string;
+  notes?: string;
+}
+
+export interface SemenTank {
+  id: number;
+  name: string;
+  /** When the tank was last serviced (nitrogen topped off) */
+  lastServiceDate?: string | null;
+  notes?: string | null;
+  /** Number of straw inventory entries assigned to this tank */
+  strawEntryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSemenTankBody {
+  /** @minLength 1 */
+  name: string;
+  lastServiceDate?: string | null;
+  notes?: string;
+}
+
+export interface UpdateSemenTankBody {
+  /** @minLength 1 */
+  name?: string;
+  lastServiceDate?: string | null;
   notes?: string;
 }
 

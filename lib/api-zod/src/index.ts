@@ -17,6 +17,8 @@ export {
   CreatePregnancyTestBody,
   UpdatePregnancyTestBody,
   CreateSemenStrawBody,
+  CreateSemenTankBody,
+  UpdateSemenTankBody,
   CreateShowBody,
   CreateShowResultsBody,
   CreateUserBody,

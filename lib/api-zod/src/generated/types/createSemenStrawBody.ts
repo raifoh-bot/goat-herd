@@ -12,6 +12,7 @@ export interface CreateSemenStrawBody {
   supplier?: string;
   count: number;
   tankLocation?: string;
+  tankId?: number | null;
   sireDamName?: string;
   sireSireName?: string;
   sirePatGranddamName?: string;

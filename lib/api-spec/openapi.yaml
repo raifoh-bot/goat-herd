@@ -1165,6 +1165,85 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportSemenStrawsResult"
 
+  /semen-tanks:
+    get:
+      operationId: listSemenTanks
+      tags: [semen]
+      summary: List the farm's nitrogen tanks
+      responses:
+        "200":
+          description: List of semen storage tanks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SemenTank"
+    post:
+      operationId: createSemenTank
+      tags: [semen]
+      summary: Add a nitrogen tank (Admin/Owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSemenTankBody"
+      responses:
+        "201":
+          description: Created tank
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemenTank"
+
+  /semen-tanks/{id}:
+    put:
+      operationId: updateSemenTank
+      tags: [semen]
+      summary: Update a nitrogen tank (Admin/Owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSemenTankBody"
+      responses:
+        "200":
+          description: Updated tank
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemenTank"
+        "404":
+          description: Tank not found
+    delete:
+      operationId: deleteSemenTank
+      tags: [semen]
+      summary: Delete a nitrogen tank (Admin/Owner only)
+      description: >-
+        Deleting a tank that still has straw entries assigned is blocked with
+        a 409 — reassign or clear those straws first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Tank deleted
+        "404":
+          description: Tank not found
+        "409":
+          description: Tank still has straw entries assigned to it
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -2830,7 +2909,15 @@ components:
         tankLocation:
           type: string
           nullable: true
-          description: Location in the storage tank (e.g. canister/cane)
+          description: Legacy free-text location (deprecated; use tankId)
+        tankId:
+          type: integer
+          nullable: true
+          description: The nitrogen tank this entry is stored in
+        tankName:
+          type: string
+          nullable: true
+          description: Name of the assigned tank (joined for display)
         sireDamName:
           type: string
           nullable: true
@@ -2876,6 +2963,9 @@ components:
           type: integer
         tankLocation:
           type: string
+        tankId:
+          type: integer
+          nullable: true
         sireDamName:
           type: string
         sireSireName:
@@ -2903,6 +2993,9 @@ components:
           type: integer
         tankLocation:
           type: string
+        tankId:
+          type: integer
+          nullable: true
         sireDamName:
           type: string
         sireSireName:
@@ -2942,6 +3035,65 @@ components:
       required:
         - sireName
         - count
+
+    SemenTank:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lastServiceDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the tank was last serviced (nitrogen topped off)
+        notes:
+          type: string
+          nullable: true
+        strawEntryCount:
+          type: integer
+          description: Number of straw inventory entries assigned to this tank
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - strawEntryCount
+        - createdAt
+        - updatedAt
+
+    CreateSemenTankBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        lastServiceDate:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+      required:
+        - name
+
+    UpdateSemenTankBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        lastServiceDate:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
 
     ImportSemenStrawsBody:
       type: object

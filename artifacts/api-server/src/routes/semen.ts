@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import { db, semenStrawsTable } from "@workspace/db";
+import { db, semenStrawsTable, semenTanksTable } from "@workspace/db";
 import { CreateSemenStrawBody, UpdateSemenStrawBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { farmId } from "../middlewares/tenant";
@@ -29,10 +29,24 @@ const importStrawRowSchema = z.object({
   notes: z.string().optional(),
 });
 
+/** Verify a tankId belongs to this farm; returns true when valid (or null). */
+async function tankBelongsToFarm(req: Parameters<typeof farmId>[0], tankId: number | null | undefined): Promise<boolean> {
+  if (tankId == null) return true;
+  const [tank] = await db
+    .select({ id: semenTanksTable.id })
+    .from(semenTanksTable)
+    .where(and(eq(semenTanksTable.id, tankId), eq(semenTanksTable.farmId, farmId(req))));
+  return Boolean(tank);
+}
+
 router.get("/semen-straws", async (req, res): Promise<void> => {
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(semenStrawsTable),
+      tankName: semenTanksTable.name,
+    })
     .from(semenStrawsTable)
+    .leftJoin(semenTanksTable, eq(semenStrawsTable.tankId, semenTanksTable.id))
     .where(eq(semenStrawsTable.farmId, farmId(req)))
     .orderBy(desc(semenStrawsTable.createdAt));
   res.json(rows);
@@ -45,6 +59,11 @@ router.post("/semen-straws", requireManager, async (req, res): Promise<void> => 
     return;
   }
 
+  if (!(await tankBelongsToFarm(req, parsed.data.tankId))) {
+    res.status(400).json({ error: "Tank not found" });
+    return;
+  }
+
   const [straw] = await db
     .insert(semenStrawsTable)
     .values({
@@ -54,6 +73,7 @@ router.post("/semen-straws", requireManager, async (req, res): Promise<void> => 
       supplier: parsed.data.supplier,
       count: parsed.data.count,
       tankLocation: parsed.data.tankLocation,
+      tankId: parsed.data.tankId ?? null,
       sireDamName: parsed.data.sireDamName,
       sireSireName: parsed.data.sireSireName,
       sirePatGranddamName: parsed.data.sirePatGranddamName,
@@ -133,8 +153,14 @@ router.put("/semen-straws/:id", requireManager, async (req, res): Promise<void> 
     return;
   }
 
+  if (parsed.data.tankId !== undefined && !(await tankBelongsToFarm(req, parsed.data.tankId))) {
+    res.status(400).json({ error: "Tank not found" });
+    return;
+  }
+
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.sireName !== undefined) updateData.sireName = parsed.data.sireName;
+  if (parsed.data.tankId !== undefined) updateData.tankId = parsed.data.tankId;
   if (parsed.data.strawId !== undefined) updateData.strawId = parsed.data.strawId || null;
   if (parsed.data.supplier !== undefined) updateData.supplier = parsed.data.supplier || null;
   if (parsed.data.count !== undefined) updateData.count = parsed.data.count;
