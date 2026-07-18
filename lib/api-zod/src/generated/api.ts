@@ -2853,6 +2853,7 @@ export const RegisterFarmBody = zod.object({
   password: zod.string().min(registerFarmBodyPasswordMin),
   email: zod
     .string()
+    .email()
     .min(1)
     .describe(
       "Contact email for the first admin user, required for the forgot-password flow.",
@@ -3149,6 +3150,7 @@ export const CreateUserBody = zod.object({
   password: zod.string().min(createUserBodyPasswordMin),
   email: zod
     .string()
+    .email()
     .min(1)
     .describe("Contact email, required for the forgot-password flow."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
@@ -3166,6 +3168,7 @@ export const UpdateUserBody = zod.object({
   active: zod.boolean().optional(),
   email: zod
     .string()
+    .email()
     .min(1)
     .optional()
     .describe(

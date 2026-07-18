@@ -172,6 +172,15 @@ describe("POST /api/farms/register", () => {
     await trackFarm(slug); // defensive: track if one somehow leaked, for teardown
   });
 
+  it("rejects a malformed email with 400 and creates nothing", async () => {
+    const slug = uniqueSlug("bademail");
+    const res = await request(app)
+      .post("/api/farms/register")
+      .send(validBody({ slug, email: "notanemail" }));
+    expect(res.status).toBe(400);
+    expect(await farmBySlug(slug)).toBeUndefined();
+  });
+
   it("rejects a missing farm name with 400", async () => {
     const slug = uniqueSlug("noname");
     const res = await request(app)

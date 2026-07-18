@@ -185,6 +185,30 @@ describe("role enforcement", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
+
+  it("rejects creating a user with a malformed email", async () => {
+    const agent = await login(ADMIN);
+    const res = await agent.post("/api/users").send({
+      username: `auth-bademail-${suffix}`,
+      password: "long-enough-pass-1",
+      email: "notanemail",
+      role: "farmhand",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects updating a user with a malformed email", async () => {
+    const target = await seedUser(
+      `auth-bademail-upd-${suffix}`,
+      "original-password-1",
+      "farmhand",
+    );
+    const agent = await login(ADMIN);
+    const res = await agent
+      .put(`/api/users/${target.id}`)
+      .send({ email: "still-not-an-email" });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("admin password reset", () => {

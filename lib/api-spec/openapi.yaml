@@ -3053,6 +3053,7 @@ components:
           minLength: 8
         email:
           type: string
+          format: email
           minLength: 1
           description: Contact email, required for the forgot-password flow.
         role:
@@ -3074,6 +3075,7 @@ components:
           type: boolean
         email:
           type: string
+          format: email
           minLength: 1
           description: >-
             Contact email, used for the forgot-password flow. When provided it
@@ -3302,6 +3304,7 @@ components:
           minLength: 8
         email:
           type: string
+          format: email
           minLength: 1
           description: Contact email for the first admin user, required for the forgot-password flow.
       required:
