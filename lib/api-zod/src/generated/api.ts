@@ -3674,6 +3674,7 @@ export const ChangeOwnPasswordBody = zod.object({
 export const UpdateOwnEmailBody = zod.object({
   email: zod
     .string()
+    .email()
     .min(1)
     .describe(
       "The new contact email for the current user, used by the forgot-password flow. Must be non-blank.",

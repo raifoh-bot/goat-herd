@@ -474,6 +474,16 @@ describe("self-service email update", () => {
     expect(row.email).toBe("farmhand@example.com");
   });
 
+  it("rejects a malformed email on self-service update", async () => {
+    const username = `auth-email-bad-${suffix}`;
+    await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+    const res = await agent
+      .put("/api/auth/email")
+      .send({ email: "not-an-email" });
+    expect(res.status).toBe(400);
+  });
+
   it("rejects a blank email", async () => {
     const username = `auth-email-blank-${suffix}`;
     await seedUser(username, "first-password-1", "farmhand");

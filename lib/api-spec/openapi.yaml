@@ -3126,6 +3126,7 @@ components:
       properties:
         email:
           type: string
+          format: email
           minLength: 1
           description: >-
             The new contact email for the current user, used by the

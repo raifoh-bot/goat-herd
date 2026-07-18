@@ -297,17 +297,18 @@ router.put("/auth/dashboard-layout", requireAuth, async (req, res): Promise<void
  * own email; admin management of other users' emails lives in /users/:id.
  */
 router.put("/auth/email", requireAuth, async (req, res): Promise<void> => {
-  const parsed = UpdateOwnEmailBody.safeParse(req.body);
+  // Trim before validating so padded-but-valid emails pass the format check.
+  const body =
+    req.body && typeof req.body.email === "string"
+      ? { ...req.body, email: req.body.email.trim() }
+      : req.body;
+  const parsed = UpdateOwnEmailBody.safeParse(body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: "Enter a valid email address" });
     return;
   }
 
-  const email = parsed.data.email.trim();
-  if (!email) {
-    res.status(400).json({ error: "Email cannot be blank" });
-    return;
-  }
+  const email = parsed.data.email;
 
   await db
     .update(usersTable)
