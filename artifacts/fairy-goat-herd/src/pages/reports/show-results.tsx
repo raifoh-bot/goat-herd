@@ -34,8 +34,9 @@ import {
   useListGoats,
   useListShows,
   useUpdateShow,
+  useUpdateShowResult,
 } from "@workspace/api-client-react";
-import type { Goat, ShowWithResults } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Goat, ShowResult, ShowWithResults } from "@workspace/api-client-react/src/generated/api.schemas";
 import { formatDate } from "@/lib/date";
 import { useIsManager } from "@/lib/auth";
 
@@ -65,6 +66,15 @@ function toDateInputValue(iso: string | null | undefined): string {
 interface DraftResult {
   key: number;
   goatId: number;
+  judgeName: string;
+  classDivision: string;
+  placement: string;
+  awardRibbon: string;
+  notes: string;
+}
+
+interface EditResultState {
+  resultId: number;
   judgeName: string;
   classDivision: string;
   placement: string;
@@ -171,6 +181,7 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
   const [nextKey, setNextKey] = useState(1);
   const [isEditingHeader, setIsEditingHeader] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingResult, setEditingResult] = useState<EditResultState | null>(null);
 
   const { data: show, isLoading } = useGetShow(showId, {
     query: { queryKey: getGetShowQueryKey(showId) },
@@ -189,6 +200,7 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
   const deleteShow = useDeleteShow();
   const createResults = useCreateShowResults();
   const deleteResult = useDeleteShowResult();
+  const updateResult = useUpdateShowResult();
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: getGetShowQueryKey(showId) });
@@ -230,6 +242,48 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
         },
         onError: () => {
           toast({ title: "Save failed", description: "The results could not be saved. Please try again.", variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const startEditResult = (r: ShowResult) => {
+    setEditingResult({
+      resultId: r.id,
+      judgeName: r.judgeName ?? "",
+      classDivision: r.classDivision ?? "",
+      placement: r.placement ?? "",
+      awardRibbon: r.awardRibbon ?? "",
+      notes: r.notes ?? "",
+    });
+  };
+
+  const updateEditing = (patch: Partial<EditResultState>) => {
+    setEditingResult((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const saveEditResult = () => {
+    if (!editingResult) return;
+    updateResult.mutate(
+      {
+        id: showId,
+        resultId: editingResult.resultId,
+        data: {
+          judgeName: editingResult.judgeName.trim() || null,
+          classDivision: editingResult.classDivision.trim() || null,
+          placement: editingResult.placement.trim() || null,
+          awardRibbon: editingResult.awardRibbon.trim() || null,
+          notes: editingResult.notes.trim() || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          setEditingResult(null);
+          refresh();
+          toast({ title: "Result updated" });
+        },
+        onError: () => {
+          toast({ title: "Update failed", description: "The result could not be updated. Please try again.", variant: "destructive" });
         },
       },
     );
@@ -344,28 +398,88 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
 
           {show.results.length > 0 && (
             <div className="space-y-2">
-              {show.results.map((r) => (
-                <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border/60 px-3 py-2 text-sm">
-                  <span className="font-medium">{r.goatName}</span>
-                  {r.placement && <Badge variant="secondary">{r.placement}</Badge>}
-                  {r.classDivision && <span className="text-muted-foreground">{r.classDivision}</span>}
-                  {r.judgeName && <span className="text-muted-foreground">Judge: {r.judgeName}</span>}
-                  {r.awardRibbon && <span className="text-muted-foreground">Award: {r.awardRibbon}</span>}
-                  {r.notes && <span className="text-muted-foreground italic">{r.notes}</span>}
-                  {isManager && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="ml-auto h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDeleteResult(r.id)}
-                      disabled={deleteResult.isPending}
-                      aria-label="Delete result"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+              {show.results.map((r) =>
+                editingResult && editingResult.resultId === r.id ? (
+                  <div key={r.id} className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                    <span className="font-medium text-sm">{r.goatName}</span>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Judge Name</Label>
+                        <Input value={editingResult.judgeName} onChange={(e) => updateEditing({ judgeName: e.target.value })} placeholder="Judge" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Class / Division</Label>
+                        <Input value={editingResult.classDivision} onChange={(e) => updateEditing({ classDivision: e.target.value })} placeholder="e.g. Senior Doe" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Placement</Label>
+                        <Select value={editingResult.placement || undefined} onValueChange={(v) => updateEditing({ placement: v })}>
+                          <SelectTrigger><SelectValue placeholder="Pick placement" /></SelectTrigger>
+                          <SelectContent>
+                            {(PLACEMENTS.includes(editingResult.placement) || !editingResult.placement
+                              ? PLACEMENTS
+                              : [editingResult.placement, ...PLACEMENTS]
+                            ).map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Award / Ribbon</Label>
+                        <Input value={editingResult.awardRibbon} onChange={(e) => updateEditing({ awardRibbon: e.target.value })} placeholder="e.g. Blue ribbon" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Notes (optional)</Label>
+                      <Input value={editingResult.notes} onChange={(e) => updateEditing({ notes: e.target.value })} placeholder="Notes" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={saveEditResult} disabled={updateResult.isPending}>
+                        {updateResult.isPending ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+                        ) : (
+                          <><Check className="mr-2 h-4 w-4" /> Save Changes</>
+                        )}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingResult(null)} disabled={updateResult.isPending}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border/60 px-3 py-2 text-sm">
+                    <span className="font-medium">{r.goatName}</span>
+                    {r.placement && <Badge variant="secondary">{r.placement}</Badge>}
+                    {r.classDivision && <span className="text-muted-foreground">{r.classDivision}</span>}
+                    {r.judgeName && <span className="text-muted-foreground">Judge: {r.judgeName}</span>}
+                    {r.awardRibbon && <span className="text-muted-foreground">Award: {r.awardRibbon}</span>}
+                    {r.notes && <span className="text-muted-foreground italic">{r.notes}</span>}
+                    {isManager && (
+                      <span className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => startEditResult(r)}
+                          disabled={updateResult.isPending}
+                          aria-label="Edit result"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDeleteResult(r.id)}
+                          disabled={deleteResult.isPending}
+                          aria-label="Delete result"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </span>
+                    )}
+                  </div>
+                ),
+              )}
             </div>
           )}
 
