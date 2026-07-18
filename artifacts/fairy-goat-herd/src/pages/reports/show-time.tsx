@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportHeader } from "@/components/report-header";
 import { formatDate } from "@/lib/date";
+import { formatAge } from "@/lib/age";
 import { breedLabel, BREED_CATALOG } from "@/lib/breeds";
 import { deriveKiddingRecord } from "@/lib/kidding";
 
@@ -31,15 +32,6 @@ function sexLabel(sex: string | null | undefined) {
   if (sex === "wether") return "Wether";
   return "—";
 }
-
-/** Tattoo columns shown on the sheet — same fields as the pedigree certificate. */
-const TATTOO_COLUMNS: { key: keyof Goat; label: string }[] = [
-  { key: "rightEarTattoo", label: "RE Tattoo" },
-  { key: "leftEarTattoo", label: "LE Tattoo" },
-  { key: "rightTailTattoo", label: "RT Tattoo" },
-  { key: "leftTailTattoo", label: "LT Tattoo" },
-  { key: "centerTailTattoo", label: "CT Tattoo" },
-];
 
 function shortDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -111,8 +103,8 @@ export default function ShowTime() {
 
   return (
     <Layout>
-      {/* Landscape orientation so all identity + tattoo + kidding columns fit. */}
-      <style>{`@media print { @page { size: letter landscape; margin: 0.5in; } }`}</style>
+      {/* Six columns fit comfortably in portrait. */}
+      <style>{`@media print { @page { size: letter portrait; margin: 0.5in; } }`}</style>
 
       <ReportHeader title="Show Time" />
 
@@ -120,8 +112,8 @@ export default function ShowTime() {
         <div>
           <h1 className="font-serif text-3xl font-bold text-foreground mb-1">Show Time</h1>
           <p className="text-muted-foreground text-sm">
-            Print-ready check-in sheet for shows: one row per goat with the tattoo IDs used for
-            verification at the table, plus each doe's kidding record (times kidded and last kidding date).
+            Print-ready check-in sheet for shows: one row per goat with barn name, registered name,
+            breed, and age, plus each doe's kidding record (times kidded and last kidding date).
           </p>
         </div>
         <Button
@@ -235,15 +227,10 @@ export default function ShowTime() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr>
-                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Goat</th>
+                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Barn Name</th>
+                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Registered Name</th>
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Breed</th>
-                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Sex</th>
-                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Date of Birth</th>
-                  {TATTOO_COLUMNS.map((col) => (
-                    <th key={col.label} className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">
-                      {col.label}
-                    </th>
-                  ))}
+                  <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Age</th>
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Times Kidded</th>
                   <th className="border border-foreground/30 bg-muted/60 px-2 py-2 text-left font-semibold text-foreground whitespace-nowrap">Last Kidding</th>
                 </tr>
@@ -254,17 +241,9 @@ export default function ShowTime() {
                   return (
                     <tr key={goat.id} className={`break-inside-avoid ${i % 2 === 1 ? "bg-muted/30" : ""}`}>
                       <td className="border border-foreground/30 px-2 py-1.5 font-medium text-foreground whitespace-nowrap">{goat.name}</td>
+                      <td className="border border-foreground/30 px-2 py-1.5 text-muted-foreground print:text-foreground whitespace-nowrap">{goat.registeredName || "—"}</td>
                       <td className="border border-foreground/30 px-2 py-1.5 text-muted-foreground print:text-foreground whitespace-nowrap">{breedLabel(goat.breed)}</td>
-                      <td className="border border-foreground/30 px-2 py-1.5 text-muted-foreground print:text-foreground whitespace-nowrap">{sexLabel(goat.sex)}</td>
-                      <td className="border border-foreground/30 px-2 py-1.5 text-muted-foreground print:text-foreground whitespace-nowrap">{shortDate(goat.dateOfBirth)}</td>
-                      {TATTOO_COLUMNS.map((col) => {
-                        const value = goat[col.key];
-                        return (
-                          <td key={col.label} className="border border-foreground/30 px-2 py-1.5 font-mono uppercase text-foreground whitespace-nowrap">
-                            {typeof value === "string" && value ? value : "—"}
-                          </td>
-                        );
-                      })}
+                      <td className="border border-foreground/30 px-2 py-1.5 text-muted-foreground print:text-foreground whitespace-nowrap">{goat.dateOfBirth ? formatAge(goat.dateOfBirth) : "—"}</td>
                       <td className="border border-foreground/30 px-2 py-1.5 text-foreground whitespace-nowrap">
                         {goat.sex === "doe" ? (kidding?.timesKidded ?? 0) : "—"}
                       </td>
