@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateGoatBodyBreed } from "./updateGoatBodyBreed";
+import type { UpdateGoatBodyBreedingStatus } from "./updateGoatBodyBreedingStatus";
 import type { UpdateGoatBodyHerdStatus } from "./updateGoatBodyHerdStatus";
 import type { UpdateGoatBodyLactationStatus } from "./updateGoatBodyLactationStatus";
 import type { UpdateGoatBodySex } from "./updateGoatBodySex";
@@ -37,6 +38,7 @@ export interface UpdateGoatBody {
    */
   milkPerDay?: number;
   lactationStatus?: UpdateGoatBodyLactationStatus;
+  breedingStatus?: UpdateGoatBodyBreedingStatus;
   /** Calculated age in years from dateOfBirth */
   age?: number;
   description?: string;

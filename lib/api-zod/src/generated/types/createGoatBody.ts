@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateGoatBodyBreed } from "./createGoatBodyBreed";
+import type { CreateGoatBodyBreedingStatus } from "./createGoatBodyBreedingStatus";
 import type { CreateGoatBodyHerdStatus } from "./createGoatBodyHerdStatus";
 import type { CreateGoatBodyLactationStatus } from "./createGoatBodyLactationStatus";
 import type { CreateGoatBodySex } from "./createGoatBodySex";
@@ -37,6 +38,7 @@ export interface CreateGoatBody {
    */
   milkPerDay?: number;
   lactationStatus?: CreateGoatBodyLactationStatus;
+  breedingStatus?: CreateGoatBodyBreedingStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;

@@ -108,6 +108,44 @@ describe("PUT /api/goats/:id tattoo and EID clearing", () => {
   });
 });
 
+describe("breedingStatus is doe-only", () => {
+  it("forces breedingStatus to null for bucks on create and update", async () => {
+    // A buck created with a breedingStatus must not persist it.
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Buck ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      sex: "buck",
+      breedingStatus: "exposed",
+    });
+    expect(createRes.status).toBe(201);
+    const buckId = createRes.body.id as number;
+    createdGoatIds.push(buckId);
+    expect((await getGoat(buckId)).breedingStatus).toBeNull();
+
+    // Updating the buck with a breedingStatus is also ignored.
+    const updateRes = await agent.put(`/api/goats/${buckId}`).send({ breedingStatus: "pregnant" });
+    expect(updateRes.status).toBe(200);
+    expect((await getGoat(buckId)).breedingStatus).toBeNull();
+  });
+
+  it("clears breedingStatus when a doe is changed to a wether", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Doe ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      sex: "doe",
+      breedingStatus: "serviced",
+    });
+    expect(createRes.status).toBe(201);
+    const goatId = createRes.body.id as number;
+    createdGoatIds.push(goatId);
+    expect((await getGoat(goatId)).breedingStatus).toBe("serviced");
+
+    const updateRes = await agent.put(`/api/goats/${goatId}`).send({ sex: "wether" });
+    expect(updateRes.status).toBe(200);
+    expect((await getGoat(goatId)).breedingStatus).toBeNull();
+  });
+});
+
 describe("PUT /api/goats/:id/photos/default", () => {
   async function createGoatWithPhotos(count: number): Promise<number> {
     const createRes = await agent.post("/api/goats").send({

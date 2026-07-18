@@ -13,9 +13,6 @@ export type GoatLactationStatus =
 export const GoatLactationStatus = {
   milking: "milking",
   dry: "dry",
-  exposed: "exposed",
-  serviced: "serviced",
-  pregnant: "pregnant",
   kid: "kid",
   retired: "retired",
 } as const;

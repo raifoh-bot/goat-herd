@@ -571,11 +571,20 @@ export default function GoatDetails() {
                         <span className="font-medium text-foreground">
                           {goat.lactationStatus === "milking" ? "Milking"
                             : goat.lactationStatus === "dry" ? "Dry"
-                            : goat.lactationStatus === "exposed" ? "Exposed"
-                            : goat.lactationStatus === "serviced" ? "Serviced"
-                            : goat.lactationStatus === "pregnant" ? "Pregnant"
                             : goat.lactationStatus === "kid" ? "Kid"
                             : goat.lactationStatus === "retired" ? "Retired"
+                            : "—"}
+                        </span>
+                      </div>
+                    )}
+
+                    {goat.breedingStatus && (
+                      <div className="flex justify-between items-center pb-3 border-b border-border">
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm"><Heart className="h-4 w-4" /> Breeding Status</span>
+                        <span className="font-medium text-foreground">
+                          {goat.breedingStatus === "exposed" ? "Exposed"
+                            : goat.breedingStatus === "serviced" ? "Serviced"
+                            : goat.breedingStatus === "pregnant" ? "Pregnant"
                             : "—"}
                         </span>
                       </div>

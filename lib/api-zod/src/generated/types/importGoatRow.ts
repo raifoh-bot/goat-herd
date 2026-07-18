@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ImportGoatRowBreed } from "./importGoatRowBreed";
+import type { ImportGoatRowBreedingStatus } from "./importGoatRowBreedingStatus";
 import type { ImportGoatRowLactationStatus } from "./importGoatRowLactationStatus";
 import type { ImportGoatRowSex } from "./importGoatRowSex";
 
@@ -35,4 +36,5 @@ export interface ImportGoatRow {
   /** @maxLength 50 */
   eidNumber?: string;
   lactationStatus?: ImportGoatRowLactationStatus;
+  breedingStatus?: ImportGoatRowBreedingStatus;
 }

@@ -105,10 +105,13 @@ router.post("/goats", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  const [goat] = await db
-    .insert(goatsTable)
-    .values({ ...parsed.data, farmId: farmId(req) })
-    .returning();
+  // Breeding status only applies to does; bucks and wethers never carry one.
+  const createData = { ...parsed.data, farmId: farmId(req) };
+  if (createData.sex === "buck" || createData.sex === "wether") {
+    createData.breedingStatus = null;
+  }
+
+  const [goat] = await db.insert(goatsTable).values(createData).returning();
   res.status(201).json(withImageAlias(goat));
 });
 
@@ -146,6 +149,8 @@ router.post("/goats/import", requireManager, async (req, res): Promise<void> => 
         centerTailTattoo: row.centerTailTattoo ? row.centerTailTattoo.slice(0, 8) : null,
         eidNumber: row.eidNumber ?? null,
         lactationStatus: row.lactationStatus ?? null,
+        breedingStatus:
+          row.sex === "buck" || row.sex === "wether" ? null : (row.breedingStatus ?? null),
       });
       imported++;
     } catch (err) {
@@ -175,6 +180,7 @@ router.get("/goats/export", async (req, res): Promise<void> => {
     "status",
     "herdStatus",
     "lactationStatus",
+    "breedingStatus",
     "dateOfBirth",
     "damName",
     "sireName",
@@ -198,6 +204,7 @@ router.get("/goats/export", async (req, res): Promise<void> => {
     g.status,
     g.herdStatus,
     g.lactationStatus,
+    g.breedingStatus,
     g.dateOfBirth,
     g.damName,
     g.sireName,
@@ -257,9 +264,16 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
+  // Breeding status only applies to does; bucks and wethers never carry one.
+  const updateData = { ...parsed.data };
+  const effectiveSex = updateData.sex !== undefined ? updateData.sex : existing.sex;
+  if (effectiveSex === "buck" || effectiveSex === "wether") {
+    updateData.breedingStatus = null;
+  }
+
   const [goat] = await db
     .update(goatsTable)
-    .set({ ...parsed.data, updatedAt: new Date() })
+    .set({ ...updateData, updatedAt: new Date() })
     .where(and(eq(goatsTable.id, params.data.id), eq(goatsTable.farmId, farmId(req))))
     .returning();
 

@@ -260,7 +260,7 @@ router.post("/breedings", async (req, res): Promise<void> => {
   // the breeding date is the insemination, so the doe is already serviced.
   await db
     .update(goatsTable)
-    .set({ lactationStatus: breedingMethod === "ai" ? "serviced" : "exposed", updatedAt: new Date() })
+    .set({ breedingStatus: breedingMethod === "ai" ? "serviced" : "exposed", updatedAt: new Date() })
     .where(and(eq(goatsTable.id, parsed.data.doeId), eq(goatsTable.farmId, farmId(req))));
 
   // Decrement the drawn straw from inventory (one straw per insemination).
@@ -323,16 +323,26 @@ router.post("/breedings/import", async (req, res): Promise<void> => {
         status,
       });
 
-      // Keep the doe's lactation status consistent with the create/kidding flows.
-      let lactationStatus: "exposed" | "serviced" | "pregnant" | "milking" | null = null;
-      if (status === "bred") lactationStatus = breedingMethod === "ai" ? "serviced" : "exposed";
-      else if (status === "confirmed-pregnant") lactationStatus = "pregnant";
-      else if (status === "kidded") lactationStatus = "milking";
-
-      if (lactationStatus) {
+      // Keep the doe's breeding/lactation status consistent with the
+      // create/kidding flows: active breedings drive breedingStatus, a
+      // completed kidding drives lactation and clears breedingStatus.
+      if (status === "bred") {
         await db
           .update(goatsTable)
-          .set({ lactationStatus, updatedAt: new Date() })
+          .set({
+            breedingStatus: breedingMethod === "ai" ? "serviced" : "exposed",
+            updatedAt: new Date(),
+          })
+          .where(and(eq(goatsTable.id, doe.id), eq(goatsTable.farmId, farmId(req))));
+      } else if (status === "confirmed-pregnant") {
+        await db
+          .update(goatsTable)
+          .set({ breedingStatus: "pregnant", updatedAt: new Date() })
+          .where(and(eq(goatsTable.id, doe.id), eq(goatsTable.farmId, farmId(req))));
+      } else if (status === "kidded") {
+        await db
+          .update(goatsTable)
+          .set({ lactationStatus: "milking", breedingStatus: null, updatedAt: new Date() })
           .where(and(eq(goatsTable.id, doe.id), eq(goatsTable.farmId, farmId(req))));
       }
 
@@ -514,22 +524,18 @@ router.put("/breedings/:id", async (req, res): Promise<void> => {
   }
 
   if (parsed.data.status === "open") {
-    const doe = await db
-      .select()
-      .from(goatsTable)
+    // The breeding didn't take: there is no breeding information anymore,
+    // so the doe's breeding status goes back to blank.
+    await db
+      .update(goatsTable)
+      .set({ breedingStatus: null, updatedAt: new Date() })
       .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
-    if (doe.length && doe[0].lactationStatus === "pregnant") {
-      await db
-        .update(goatsTable)
-        .set({ lactationStatus: "dry", updatedAt: new Date() })
-        .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
-    }
   }
 
   if (parsed.data.status === "confirmed-pregnant" && existing.status !== "confirmed-pregnant") {
     await db
       .update(goatsTable)
-      .set({ lactationStatus: "pregnant", updatedAt: new Date() })
+      .set({ breedingStatus: "pregnant", updatedAt: new Date() })
       .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
   }
 
@@ -640,7 +646,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
 
   await db
     .update(goatsTable)
-    .set({ lactationStatus: "milking", updatedAt: new Date() })
+    .set({ lactationStatus: "milking", breedingStatus: null, updatedAt: new Date() })
     .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
 
   // Return kids with goatId populated
@@ -734,8 +740,8 @@ router.delete("/breedings/:id/kids/:kidId", requireManager, async (req, res): Pr
 // Record a pregnancy test against a breeding. Farm Hands may log tests (like
 // breedings/kiddings/events). In a single transaction the test is inserted and,
 // depending on the flags, the breeding + doe are transitioned:
-//  - confirmPregnancy: breeding -> confirmed-pregnant, doe -> pregnant
-//  - markOpen: breeding -> open, doe -> dry
+//  - confirmPregnancy: breeding -> confirmed-pregnant, doe breedingStatus -> pregnant
+//  - markOpen: breeding -> open, doe breedingStatus -> null (blank)
 //  - addCoverEvent: a final "cover" breeding event is logged before closing out
 // Returns the updated breeding detail (with doe, kids, events, and all tests).
 router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> => {
@@ -794,11 +800,11 @@ router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> =>
         .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
       await tx
         .update(goatsTable)
-        .set({ lactationStatus: "pregnant", updatedAt: new Date() })
+        .set({ breedingStatus: "pregnant", updatedAt: new Date() })
         .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
     }
 
-    // Negative result: mark the doe open and dry (removes her from active list).
+    // Negative result: mark the doe open (breeding status back to blank).
     if (data.markOpen) {
       await tx
         .update(breedingsTable)
@@ -806,7 +812,7 @@ router.post("/breedings/:id/pregnancy-tests", async (req, res): Promise<void> =>
         .where(and(eq(breedingsTable.id, breedingId), eq(breedingsTable.farmId, farmId(req))));
       await tx
         .update(goatsTable)
-        .set({ lactationStatus: "dry", updatedAt: new Date() })
+        .set({ breedingStatus: null, updatedAt: new Date() })
         .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
     }
   });
@@ -969,7 +975,7 @@ router.post("/breedings/:id/events", async (req, res): Promise<void> => {
 
     await db
       .update(goatsTable)
-      .set({ lactationStatus: "serviced", updatedAt: new Date() })
+      .set({ breedingStatus: "serviced", updatedAt: new Date() })
       .where(and(eq(goatsTable.id, breeding.doeId), eq(goatsTable.farmId, farmId(req))));
   }
 

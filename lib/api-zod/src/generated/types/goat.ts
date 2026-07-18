@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GoatBreed } from "./goatBreed";
+import type { GoatBreedingStatus } from "./goatBreedingStatus";
 import type { GoatHerdStatus } from "./goatHerdStatus";
 import type { GoatLactationStatus } from "./goatLactationStatus";
 import type { GoatSex } from "./goatSex";
@@ -38,6 +39,7 @@ export interface Goat {
    */
   milkPerDay: number;
   lactationStatus?: GoatLactationStatus;
+  breedingStatus?: GoatBreedingStatus;
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;

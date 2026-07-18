@@ -14,7 +14,7 @@ import { getBreedOptions } from "@/lib/breeds";
 import { useFarmSettings } from "@/lib/settings";
 
 const SEX_OPTIONS = ["doe", "buck", "wether"] as const;
-const LACTATION_OPTIONS = ["milking", "dry", "exposed", "serviced", "pregnant", "kid", "retired"] as const;
+const LACTATION_OPTIONS = ["milking", "dry", "kid", "retired"] as const;
 
 const GOAT_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: "name", label: "Barn Name", required: true },

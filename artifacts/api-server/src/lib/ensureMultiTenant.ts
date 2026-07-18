@@ -279,5 +279,21 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 11. Breeding status was split out of lactation status. Add the column and
+  //     move the breeding-related values (exposed/serviced/pregnant) across
+  //     exactly once, blanking the old lactation value for those rows. Bucks
+  //     and wethers never carry a breeding status.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(`ALTER TABLE "goats" ADD COLUMN IF NOT EXISTS "breeding_status" text;`);
+    await pool.query(
+      `UPDATE "goats" SET "breeding_status" = "lactation_status", "lactation_status" = NULL
+       WHERE "lactation_status" IN ('exposed', 'serviced', 'pregnant');`,
+    );
+    await pool.query(
+      `UPDATE "goats" SET "breeding_status" = NULL
+       WHERE "breeding_status" IS NOT NULL AND "sex" IN ('buck', 'wether');`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }

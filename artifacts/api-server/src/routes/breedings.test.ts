@@ -22,7 +22,9 @@ let testUserId: number;
 let testFarmId: number;
 let agent: Agent;
 
-async function createDoe(lactationStatus: "exposed" | "serviced" | "pregnant" | "dry" | "milking" = "exposed") {
+async function createDoe(status: "exposed" | "serviced" | "pregnant" | "dry" | "milking" = "exposed") {
+  // Breeding-related statuses live on breedingStatus; lactation ones on lactationStatus.
+  const isBreedingStatus = status === "exposed" || status === "serviced" || status === "pregnant";
   const [doe] = await db
     .insert(goatsTable)
     .values({
@@ -30,7 +32,8 @@ async function createDoe(lactationStatus: "exposed" | "serviced" | "pregnant" | 
       name: `Test Doe ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       sex: "doe",
       breed: "alpine",
-      lactationStatus,
+      lactationStatus: isBreedingStatus ? null : status,
+      breedingStatus: isBreedingStatus ? status : null,
     })
     .returning();
   createdGoatIds.push(doe.id);
@@ -159,7 +162,7 @@ afterAll(async () => {
 });
 
 describe("PUT /api/breedings/:id doe status transitions", () => {
-  it("confirming a pregnancy sets the doe's lactationStatus to 'pregnant'", async () => {
+  it("confirming a pregnancy sets the doe's breedingStatus to 'pregnant'", async () => {
     const doe = await createDoe("exposed");
     const breeding = await createBreeding(doe.id, "bred");
 
@@ -171,7 +174,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     expect(res.body.status).toBe("confirmed-pregnant");
 
     const updatedDoe = await getDoe(doe.id);
-    expect(updatedDoe.lactationStatus).toBe("pregnant");
+    expect(updatedDoe.breedingStatus).toBe("pregnant");
   });
 
   it("does not re-fire the pregnant transition on a repeat save", async () => {
@@ -180,10 +183,10 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
 
     // First confirm: should set the doe to pregnant.
     await agent.put(`/api/breedings/${breeding.id}`).send({ status: "confirmed-pregnant" });
-    expect((await getDoe(doe.id)).lactationStatus).toBe("pregnant");
+    expect((await getDoe(doe.id)).breedingStatus).toBe("pregnant");
 
     // Simulate the doe's status drifting away from "pregnant" (e.g. another workflow).
-    await db.update(goatsTable).set({ lactationStatus: "milking" }).where(eq(goatsTable.id, doe.id));
+    await db.update(goatsTable).set({ breedingStatus: "exposed" }).where(eq(goatsTable.id, doe.id));
 
     // Saving "confirmed-pregnant" again should NOT re-fire the transition, because the
     // breeding is already in that status.
@@ -193,10 +196,10 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
 
     expect(res.status).toBe(200);
     const doeAfter = await getDoe(doe.id);
-    expect(doeAfter.lactationStatus).toBe("milking");
+    expect(doeAfter.breedingStatus).toBe("exposed");
   });
 
-  it("reopening a breeding reverts a pregnant doe back to 'dry'", async () => {
+  it("reopening a breeding clears the doe's breeding status", async () => {
     const doe = await createDoe("pregnant");
     const breeding = await createBreeding(doe.id, "confirmed-pregnant");
 
@@ -208,10 +211,10 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
     expect(res.body.status).toBe("open");
 
     const updatedDoe = await getDoe(doe.id);
-    expect(updatedDoe.lactationStatus).toBe("dry");
+    expect(updatedDoe.breedingStatus).toBeNull();
   });
 
-  it("reopening a breeding does not change a doe that is not pregnant", async () => {
+  it("reopening a breeding does not change the doe's lactation status", async () => {
     const doe = await createDoe("milking");
     const breeding = await createBreeding(doe.id, "bred");
 
@@ -219,6 +222,7 @@ describe("PUT /api/breedings/:id doe status transitions", () => {
 
     const updatedDoe = await getDoe(doe.id);
     expect(updatedDoe.lactationStatus).toBe("milking");
+    expect(updatedDoe.breedingStatus).toBeNull();
   });
 });
 
@@ -244,6 +248,7 @@ describe("POST /api/breedings/:id/kids doe status transition", () => {
 
     const updatedDoe = await getDoe(doe.id);
     expect(updatedDoe.lactationStatus).toBe("milking");
+    expect(updatedDoe.breedingStatus).toBeNull();
 
     const [updatedBreeding] = await db
       .select()
@@ -346,7 +351,7 @@ describe("POST /api/breedings/import", () => {
     expect(inserted[0].sireName).toBe("Imported Buck");
 
     // status "bred" + natural method => doe becomes "exposed".
-    expect((await getDoe(doe.id)).lactationStatus).toBe("exposed");
+    expect((await getDoe(doe.id)).breedingStatus).toBe("exposed");
   });
 
   it("defaults a blank sire to 'Unknown' and AI bred does to 'serviced'", async () => {
@@ -372,7 +377,7 @@ describe("POST /api/breedings/import", () => {
       .where(eq(breedingsTable.doeId, doe.id));
     inserted.forEach((b) => createdBreedingIds.push(b.id));
     expect(inserted[0].sireName).toBe("Unknown");
-    expect((await getDoe(doe.id)).lactationStatus).toBe("serviced");
+    expect((await getDoe(doe.id)).breedingStatus).toBe("serviced");
   });
 
   it("skips rows whose doe is not in the herd with a clear error", async () => {
@@ -556,7 +561,7 @@ describe("POST /api/breedings/:id/pregnancy-tests", () => {
     // Breeding + doe unchanged.
     expect(res.body.status).toBe("bred");
     const stored = await getDoe(doe.id);
-    expect(stored.lactationStatus).toBe("serviced");
+    expect(stored.breedingStatus).toBe("serviced");
   });
 
   it("confirms the pregnancy on a positive result when confirmPregnancy is set", async () => {
@@ -575,7 +580,7 @@ describe("POST /api/breedings/:id/pregnancy-tests", () => {
     expect(res.status).toBe(201);
     expect(res.body.status).toBe("confirmed-pregnant");
     const stored = await getDoe(doe.id);
-    expect(stored.lactationStatus).toBe("pregnant");
+    expect(stored.breedingStatus).toBe("pregnant");
   });
 
   it("marks the doe open and logs a final cover on a negative result", async () => {
@@ -598,7 +603,7 @@ describe("POST /api/breedings/:id/pregnancy-tests", () => {
     const coverEvents = (res.body.events ?? []).filter((e: { eventType: string }) => e.eventType === "cover");
     expect(coverEvents).toHaveLength(1);
     const stored = await getDoe(doe.id);
-    expect(stored.lactationStatus).toBe("dry");
+    expect(stored.breedingStatus).toBeNull();
   });
 
   it("returns 404 for a breeding in another farm's scope", async () => {
@@ -626,13 +631,13 @@ describe("pregnancy tests vs. manual status edits stay consistent", () => {
     const doe = await createDoe("pregnant");
     const breeding = await createBreeding(doe.id, "confirmed-pregnant");
 
-    // Manual edit: reopen the breeding. This drops the doe back to "dry".
+    // Manual edit: reopen the breeding. This clears the doe's breeding status.
     const reopenRes = await agent
       .put(`/api/breedings/${breeding.id}`)
       .send({ status: "open" });
     expect(reopenRes.status).toBe(200);
     expect(reopenRes.body.status).toBe("open");
-    expect((await getDoe(doe.id)).lactationStatus).toBe("dry");
+    expect((await getDoe(doe.id)).breedingStatus).toBeNull();
 
     // A later positive test that confirms the pregnancy must bring both the
     // breeding and the doe back into a consistent confirmed-pregnant state —
@@ -648,8 +653,8 @@ describe("pregnancy tests vs. manual status edits stay consistent", () => {
 
     expect(testRes.status).toBe(201);
     expect(testRes.body.status).toBe("confirmed-pregnant");
-    expect(testRes.body.doe.lactationStatus).toBe("pregnant");
-    expect((await getDoe(doe.id)).lactationStatus).toBe("pregnant");
+    expect(testRes.body.doe.breedingStatus).toBe("pregnant");
+    expect((await getDoe(doe.id)).breedingStatus).toBe("pregnant");
   });
 
   it("logging a plain test on a kidded breeding does not regress the doe or overwrite the kidding outcome", async () => {
@@ -791,7 +796,7 @@ describe("PUT /api/breedings/:id/pregnancy-tests/:testId", () => {
     const [storedBreeding] = await db.select().from(breedingsTable).where(eq(breedingsTable.id, breeding.id));
     expect(storedBreeding.status).toBe("bred");
     const storedDoe = await getDoe(doe.id);
-    expect(storedDoe.lactationStatus).toBe("serviced");
+    expect(storedDoe.breedingStatus).toBe("serviced");
   });
 
   it("clears optional fields when passed null", async () => {

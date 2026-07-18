@@ -30,9 +30,11 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const doeLactationBreakdown = {
     milking: does.filter((g) => g.lactationStatus === "milking").length,
     dry: does.filter((g) => g.lactationStatus === "dry").length,
-    exposed: does.filter((g) => g.lactationStatus === "exposed").length,
-    serviced: does.filter((g) => g.lactationStatus === "serviced").length,
-    pregnant: does.filter((g) => g.lactationStatus === "pregnant").length,
+    // Breeding-related statuses moved to the dedicated breedingStatus field,
+    // but stay in this breakdown so the dashboard keeps showing them.
+    exposed: does.filter((g) => g.breedingStatus === "exposed").length,
+    serviced: does.filter((g) => g.breedingStatus === "serviced").length,
+    pregnant: does.filter((g) => g.breedingStatus === "pregnant").length,
     kid: does.filter((g) => g.lactationStatus === "kid").length,
     retired: does.filter((g) => g.lactationStatus === "retired").length,
   };

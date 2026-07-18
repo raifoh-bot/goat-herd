@@ -24,11 +24,14 @@ import { useToast } from "@/hooks/use-toast";
 const lactationLabels: Record<string, string> = {
   milking: "Milking",
   dry: "Dry",
+  kid: "Kid",
+  retired: "Retired",
+};
+
+const breedingLabels: Record<string, string> = {
   exposed: "Exposed",
   serviced: "Serviced",
   pregnant: "Pregnant",
-  kid: "Kid",
-  retired: "Retired",
 };
 
 const healthStatusLabels: Record<string, string> = {
@@ -78,7 +81,12 @@ function GoatRow({ goat }: { goat: Goat }) {
           <div className="hidden md:block text-sm text-muted-foreground capitalize">{sexLabel(goat)}</div>
           <div className="hidden md:block text-sm text-muted-foreground">{formatAge(goat.dateOfBirth)} old</div>
           <div className="hidden md:block text-sm text-muted-foreground">
-            {goat.lactationStatus ? lactationLabels[goat.lactationStatus] ?? goat.lactationStatus : <span className="text-muted-foreground/40">—</span>}
+            {goat.lactationStatus || goat.breedingStatus
+              ? [
+                  goat.lactationStatus ? (lactationLabels[goat.lactationStatus] ?? goat.lactationStatus) : null,
+                  goat.breedingStatus ? (breedingLabels[goat.breedingStatus] ?? goat.breedingStatus) : null,
+                ].filter(Boolean).join(" · ")
+              : <span className="text-muted-foreground/40">—</span>}
           </div>
           <div className="hidden md:block">
             {goat.herdStatus
@@ -106,7 +114,7 @@ function CompactCard({ goat }: { goat: Goat }) {
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">{goat.name}</p>
           <p className="text-sm sm:text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabel(goat)}</p>
-          <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${lactationLabels[goat.lactationStatus]}` : ""}</p>
+          <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${lactationLabels[goat.lactationStatus] ?? goat.lactationStatus}` : ""}{goat.breedingStatus ? ` · ${breedingLabels[goat.breedingStatus] ?? goat.breedingStatus}` : ""}</p>
         </div>
         {(goat.rightEarTattoo || goat.leftEarTattoo) && (
           <div className="text-right shrink-0">

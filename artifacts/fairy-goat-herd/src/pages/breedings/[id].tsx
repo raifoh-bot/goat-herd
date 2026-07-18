@@ -1650,7 +1650,7 @@ export default function BreedingDetail() {
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-foreground">{breeding.doe.name}</div>
-                  <div className="text-sm text-muted-foreground capitalize">{breeding.doe.breed} · {breeding.doe.lactationStatus}</div>
+                  <div className="text-sm text-muted-foreground capitalize">{breeding.doe.breed}{breeding.doe.breedingStatus ? ` · ${breeding.doe.breedingStatus}` : breeding.doe.lactationStatus ? ` · ${breeding.doe.lactationStatus}` : ""}</div>
                 </div>
                 <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
               </a>

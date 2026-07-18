@@ -57,11 +57,18 @@ export type GoatLactationStatus =
 export const GoatLactationStatus = {
   milking: "milking",
   dry: "dry",
+  kid: "kid",
+  retired: "retired",
+} as const;
+
+export type GoatBreedingStatus =
+  | (typeof GoatBreedingStatus)[keyof typeof GoatBreedingStatus]
+  | null;
+
+export const GoatBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
-  kid: "kid",
-  retired: "retired",
 } as const;
 
 /**
@@ -107,6 +114,7 @@ export interface Goat {
    */
   milkPerDay: number;
   lactationStatus?: GoatLactationStatus;
+  breedingStatus?: GoatBreedingStatus;
   /** Calculated age in years from dateOfBirth */
   age: number;
   description?: string;
@@ -193,11 +201,18 @@ export type CreateGoatBodyLactationStatus =
 export const CreateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
+  kid: "kid",
+  retired: "retired",
+} as const;
+
+export type CreateGoatBodyBreedingStatus =
+  | (typeof CreateGoatBodyBreedingStatus)[keyof typeof CreateGoatBodyBreedingStatus]
+  | null;
+
+export const CreateGoatBodyBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
-  kid: "kid",
-  retired: "retired",
 } as const;
 
 export type CreateGoatBodyHerdStatus =
@@ -239,6 +254,7 @@ export interface CreateGoatBody {
    */
   milkPerDay?: number;
   lactationStatus?: CreateGoatBodyLactationStatus;
+  breedingStatus?: CreateGoatBodyBreedingStatus;
   /** Legacy field, calculated from dateOfBirth */
   age?: number;
   description?: string;
@@ -330,11 +346,18 @@ export type UpdateGoatBodyLactationStatus =
 export const UpdateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
+  kid: "kid",
+  retired: "retired",
+} as const;
+
+export type UpdateGoatBodyBreedingStatus =
+  | (typeof UpdateGoatBodyBreedingStatus)[keyof typeof UpdateGoatBodyBreedingStatus]
+  | null;
+
+export const UpdateGoatBodyBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
-  kid: "kid",
-  retired: "retired",
 } as const;
 
 export type UpdateGoatBodyHerdStatus =
@@ -376,6 +399,7 @@ export interface UpdateGoatBody {
    */
   milkPerDay?: number;
   lactationStatus?: UpdateGoatBodyLactationStatus;
+  breedingStatus?: UpdateGoatBodyBreedingStatus;
   /** Calculated age in years from dateOfBirth */
   age?: number;
   description?: string;
@@ -1021,11 +1045,17 @@ export type ImportGoatRowLactationStatus =
 export const ImportGoatRowLactationStatus = {
   milking: "milking",
   dry: "dry",
+  kid: "kid",
+  retired: "retired",
+} as const;
+
+export type ImportGoatRowBreedingStatus =
+  (typeof ImportGoatRowBreedingStatus)[keyof typeof ImportGoatRowBreedingStatus];
+
+export const ImportGoatRowBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
-  kid: "kid",
-  retired: "retired",
 } as const;
 
 export interface ImportGoatRow {
@@ -1054,6 +1084,7 @@ export interface ImportGoatRow {
   /** @maxLength 50 */
   eidNumber?: string;
   lactationStatus?: ImportGoatRowLactationStatus;
+  breedingStatus?: ImportGoatRowBreedingStatus;
 }
 
 export interface ImportGoatsBody {

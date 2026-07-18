@@ -38,11 +38,14 @@ const healthStatusLabels: Record<string, string> = {
 const lactationLabels: Record<string, string> = {
   milking: "Milking",
   dry: "Dry",
+  kid: "Kid",
+  retired: "Retired",
+};
+
+const breedingLabels: Record<string, string> = {
   exposed: "Exposed",
   serviced: "Serviced",
   pregnant: "Pregnant",
-  kid: "Kid",
-  retired: "Retired",
 };
 
 function ReportSkeleton() {
@@ -79,6 +82,12 @@ function HealthRecord({
       label: "Lactation Status",
       value: goat.lactationStatus
         ? lactationLabels[goat.lactationStatus] ?? goat.lactationStatus
+        : "—",
+    },
+    {
+      label: "Breeding Status",
+      value: goat.breedingStatus
+        ? breedingLabels[goat.breedingStatus] ?? goat.breedingStatus
         : "—",
     },
   ];
