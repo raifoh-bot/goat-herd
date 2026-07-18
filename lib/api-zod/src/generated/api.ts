@@ -2792,6 +2792,12 @@ export const GetCurrentUserResponse = zod.object({
     .describe(
       "The slug of the farm this user belongs to. Null for platform superadmins.",
     ),
+  email: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
   dashboardLayout: zod
     .array(
       zod
@@ -3661,6 +3667,85 @@ export const ChangeOwnPasswordBody = zod.object({
 });
 
 /**
+ * Self-service endpoint so any signed-in user can add or change the email address used by the forgot-password flow, without needing an admin.
+ * @summary Set or update the current user's own contact email
+ */
+
+export const UpdateOwnEmailBody = zod.object({
+  email: zod
+    .string()
+    .min(1)
+    .describe(
+      "The new contact email for the current user, used by the forgot-password flow. Must be non-blank.",
+    ),
+});
+
+export const updateOwnEmailResponseDashboardLayoutItemXMin = 0;
+
+export const updateOwnEmailResponseDashboardLayoutItemYMin = 0;
+
+export const UpdateOwnEmailResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  farmSlug: zod
+    .string()
+    .nullish()
+    .describe(
+      "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
+  email: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(updateOwnEmailResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(updateOwnEmailResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
+        })
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
+    )
+    .nullish()
+    .describe(
+      "The user's personal dashboard layout override. Null means the user uses the farm-wide default layout.",
+    ),
+});
+
+/**
  * Saves a per-user dashboard arrangement that overrides the farm-wide default for this user only. Send `dashboardLayout: null` to remove the personal override and fall back to the farm default.
  * @summary Set or clear the current user's personal dashboard layout
  */
@@ -3733,6 +3818,12 @@ export const UpdateDashboardLayoutResponse = zod.object({
     .nullish()
     .describe(
       "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
+  email: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
     ),
   dashboardLayout: zod
     .array(

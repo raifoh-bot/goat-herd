@@ -75,6 +75,7 @@ import type {
   UpdateFarmSettingsBody,
   UpdateGoatBody,
   UpdateKidBody,
+  UpdateOwnEmailBody,
   UpdatePlatformThresholdsBody,
   UpdatePregnancyTestBody,
   UpdateSemenStrawBody,
@@ -5762,6 +5763,93 @@ export const useChangeOwnPassword = <
   TContext
 > => {
   return useMutation(getChangeOwnPasswordMutationOptions(options));
+};
+
+/**
+ * Self-service endpoint so any signed-in user can add or change the email address used by the forgot-password flow, without needing an admin.
+ * @summary Set or update the current user's own contact email
+ */
+export const getUpdateOwnEmailUrl = () => {
+  return `/api/auth/email`;
+};
+
+export const updateOwnEmail = async (
+  updateOwnEmailBody: UpdateOwnEmailBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getUpdateOwnEmailUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateOwnEmailBody),
+  });
+};
+
+export const getUpdateOwnEmailMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnEmail>>,
+    TError,
+    { data: BodyType<UpdateOwnEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOwnEmail>>,
+  TError,
+  { data: BodyType<UpdateOwnEmailBody> },
+  TContext
+> => {
+  const mutationKey = ["updateOwnEmail"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOwnEmail>>,
+    { data: BodyType<UpdateOwnEmailBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateOwnEmail(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOwnEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOwnEmail>>
+>;
+export type UpdateOwnEmailMutationBody = BodyType<UpdateOwnEmailBody>;
+export type UpdateOwnEmailMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Set or update the current user's own contact email
+ */
+export const useUpdateOwnEmail = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnEmail>>,
+    TError,
+    { data: BodyType<UpdateOwnEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOwnEmail>>,
+  TError,
+  { data: BodyType<UpdateOwnEmailBody> },
+  TContext
+> => {
+  return useMutation(getUpdateOwnEmailMutationOptions(options));
 };
 
 /**

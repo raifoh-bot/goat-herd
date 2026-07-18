@@ -31,6 +31,7 @@ export {
   SetGoatDefaultPhotoBody,
   SetUserPasswordBody,
   UpdateDashboardLayoutBody,
+  UpdateOwnEmailBody,
   UpdatePlatformSettingsBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,

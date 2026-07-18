@@ -12,6 +12,7 @@ import ResetPassword from "@/pages/reset-password";
 import Register from "@/pages/register";
 import SuperadminFarms from "@/pages/superadmin/farms";
 import { SuperadminViewBanner } from "@/components/superadmin-view-banner";
+import { MissingEmailBanner } from "@/components/missing-email-banner";
 import Dashboard from "@/pages/dashboard";
 import GoatsList from "@/pages/goats/index";
 import GoatNew from "@/pages/goats/new";
@@ -77,6 +78,7 @@ function AuthenticatedRoutes() {
   return (
     <AuthGuard>
       <SuperadminViewBanner />
+      <MissingEmailBanner />
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/goats" component={GoatsList} />

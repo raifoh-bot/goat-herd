@@ -7,6 +7,7 @@ import {
   LoginBody,
   ChangeOwnPasswordBody,
   UpdateDashboardLayoutBody,
+  UpdateOwnEmailBody,
   ForgotPasswordBody,
   ResetPasswordBody,
 } from "@workspace/api-zod";
@@ -287,6 +288,37 @@ router.put("/auth/dashboard-layout", requireAuth, async (req, res): Promise<void
     ...req.authUser,
     farmSlug: req.session.farmSlug ?? null,
     dashboardLayout: layout,
+  });
+});
+
+/**
+ * Self-service: sets or updates the current user's own contact email so the
+ * forgot-password flow can reach them. Any authenticated user may change their
+ * own email; admin management of other users' emails lives in /users/:id.
+ */
+router.put("/auth/email", requireAuth, async (req, res): Promise<void> => {
+  const parsed = UpdateOwnEmailBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const email = parsed.data.email.trim();
+  if (!email) {
+    res.status(400).json({ error: "Email cannot be blank" });
+    return;
+  }
+
+  await db
+    .update(usersTable)
+    .set({ email, updatedAt: new Date() })
+    .where(eq(usersTable.id, req.authUser!.id));
+
+  res.json({
+    ...req.authUser,
+    email,
+    farmSlug: req.session.farmSlug ?? null,
+    dashboardLayout: normalizePersonalDashboardLayout(req.authUser!.dashboardLayout),
   });
 });
 

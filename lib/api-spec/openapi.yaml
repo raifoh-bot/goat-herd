@@ -1555,6 +1555,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /auth/email:
+    put:
+      operationId: updateOwnEmail
+      tags: [auth]
+      summary: Set or update the current user's own contact email
+      description: >-
+        Self-service endpoint so any signed-in user can add or change the email
+        address used by the forgot-password flow, without needing an admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOwnEmailBody"
+      responses:
+        "200":
+          description: The updated current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /auth/dashboard-layout:
     put:
       operationId: updateDashboardLayout
@@ -2956,6 +2990,12 @@ components:
           type: string
           nullable: true
           description: The slug of the farm this user belongs to. Null for platform superadmins.
+        email:
+          type: string
+          nullable: true
+          description: >-
+            The user's contact email, used by the forgot-password flow. Null for
+            accounts created before email became required.
         dashboardLayout:
           type: array
           nullable: true
@@ -3080,6 +3120,18 @@ components:
           description: >-
             Contact email, used for the forgot-password flow. When provided it
             must be non-blank; omit the field to leave the email unchanged.
+
+    UpdateOwnEmailBody:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+          description: >-
+            The new contact email for the current user, used by the
+            forgot-password flow. Must be non-blank.
+      required:
+        - email
 
     ForgotPasswordBody:
       type: object

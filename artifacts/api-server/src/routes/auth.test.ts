@@ -449,3 +449,44 @@ describe("self-service password change", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("self-service email update", () => {
+  it("lets a user without an email set one, and /auth/me reflects it", async () => {
+    const username = `auth-email-${suffix}`;
+    const user = await seedUser(username, "first-password-1", "farmhand");
+    expect(user.email).toBeNull();
+    const agent = await login({ username, password: "first-password-1" });
+
+    const before = await agent.get("/api/auth/me");
+    expect(before.status).toBe(200);
+    expect(before.body.email).toBeNull();
+
+    const res = await agent
+      .put("/api/auth/email")
+      .send({ email: "  farmhand@example.com  " });
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe("farmhand@example.com");
+
+    const after = await agent.get("/api/auth/me");
+    expect(after.body.email).toBe("farmhand@example.com");
+
+    const [row] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    expect(row.email).toBe("farmhand@example.com");
+  });
+
+  it("rejects a blank email", async () => {
+    const username = `auth-email-blank-${suffix}`;
+    await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+
+    const res = await agent.put("/api/auth/email").send({ email: "   " });
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .put("/api/auth/email")
+      .send({ email: "someone@example.com" });
+    expect(res.status).toBe(401);
+  });
+});

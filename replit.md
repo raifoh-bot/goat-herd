@@ -66,6 +66,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 ### Auth & Users
 - `POST /api/auth/login` — log in with username/password (public; creates a session). Scoped to the resolved farm; the super-admin logs in at the apex domain (no farm).
 - `POST /api/auth/logout` — destroy the current session
+- `PUT /api/auth/email` — self-service: any signed-in user sets/updates their own contact email (used by forgot-password). `AuthUser` (`/api/auth/me`) includes `email` (null for legacy accounts).
 - `GET /api/auth/me` — get the currently authenticated user
 - `GET /api/users` — list users (Admin/Owner only)
 - `POST /api/users` — create a user (Admin/Owner only; email is required — used by the forgot-password flow)

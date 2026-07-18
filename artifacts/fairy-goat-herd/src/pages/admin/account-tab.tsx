@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound } from "lucide-react";
-import { useChangeOwnPassword } from "@workspace/api-client-react";
+import { KeyRound, Mail } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useChangeOwnPassword,
+  useUpdateOwnEmail,
+  getGetCurrentUserQueryKey,
+} from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +19,88 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
-export function AccountTab() {
+function EmailCard() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateEmail = useUpdateOwnEmail();
+
+  const [email, setEmail] = useState(user.email ?? "");
+
+  const savedEmail = user.email ?? "";
+  const trimmed = email.trim();
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!trimmed || !/^\S+@\S+\.\S+$/.test(trimmed)) {
+      toast({
+        title: "Check the email address",
+        description: "Enter a valid email address, like you@example.com.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateEmail.mutate(
+      { data: { email: trimmed } },
+      {
+        onSuccess: (updated) => {
+          // Refresh the cached current user so the missing-email banner and
+          // other consumers see the new address immediately.
+          queryClient.setQueryData(getGetCurrentUserQueryKey(), updated);
+          toast({
+            title: "Email saved",
+            description: "Password reset links will be sent to this address.",
+          });
+        },
+        onError: () =>
+          toast({
+            title: "Could not save email",
+            description: "That change could not be saved. Please try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  return (
+    <Card className="border-primary/10 shadow-lg">
+      <CardHeader>
+        <CardTitle className="font-serif flex items-center gap-2">
+          <Mail className="h-4 w-4 text-primary" /> Contact Email
+        </CardTitle>
+        <CardDescription>
+          {savedEmail
+            ? "The address password reset links are sent to."
+            : "Your account has no email on file yet — add one so you can reset your password if you ever forget it."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="account-email">Email address</Label>
+            <Input
+              id="account-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={updateEmail.isPending || trimmed === savedEmail}
+          >
+            {updateEmail.isPending ? "Saving…" : savedEmail ? "Update Email" : "Save Email"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PasswordCard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const changePassword = useChangeOwnPassword();
@@ -119,5 +205,14 @@ export function AccountTab() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+export function AccountTab() {
+  return (
+    <div className="space-y-8">
+      <EmailCard />
+      <PasswordCard />
+    </div>
   );
 }
