@@ -34,6 +34,7 @@ import { useFarmSettings } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
 import { deriveKiddingHistory } from "@/lib/kidding";
 import { HealthHistoryCard } from "@/components/health-history";
+import { AccoladesCard } from "@/components/accolades";
 
 const breedingStatusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -798,6 +799,8 @@ export default function GoatDetails() {
                   </CardContent>
                 </Card>
               )}
+
+              <AccoladesCard goatId={goat.id} />
 
               <HealthHistoryCard goatId={goat.id} goatName={goat.name} />
 

@@ -310,5 +310,50 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 13. Livestock show results. Shows are per-farm; each show carries many
+  //     per-goat result rows (judge, class, placement, award). Created
+  //     directly with farm_id NOT NULL — no legacy data to backfill.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "shows" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "name" text NOT NULL,
+        "location" text,
+        "show_date" timestamp NOT NULL,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "shows_farm_id_idx" ON "shows" ("farm_id");`,
+    );
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "show_results" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "show_id" integer NOT NULL REFERENCES "shows"("id"),
+        "goat_id" integer NOT NULL REFERENCES "goats"("id"),
+        "judge_name" text,
+        "class_division" text,
+        "placement" text,
+        "award_ribbon" text,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "show_results_farm_id_idx" ON "show_results" ("farm_id");`,
+    );
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "show_results_show_id_idx" ON "show_results" ("show_id");`,
+    );
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "show_results_goat_id_idx" ON "show_results" ("goat_id");`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }

@@ -6,3 +6,4 @@ export * from "./health";
 export * from "./semen";
 export * from "./auth";
 export * from "./settings";
+export * from "./shows";

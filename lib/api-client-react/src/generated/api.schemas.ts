@@ -605,6 +605,106 @@ export interface CreatePregnancyTestBody {
   addCoverEvent?: CreatePregnancyTestBodyAddCoverEvent;
 }
 
+export interface Show {
+  id: number;
+  name: string;
+  location?: string | null;
+  showDate: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateShowBody {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** @maxLength 200 */
+  location?: string;
+  showDate: string;
+  /** @maxLength 2000 */
+  notes?: string;
+}
+
+export interface UpdateShowBody {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name?: string;
+  /** @maxLength 200 */
+  location?: string | null;
+  showDate?: string;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+export interface ShowResult {
+  id: number;
+  showId: number;
+  goatId: number;
+  judgeName?: string | null;
+  classDivision?: string | null;
+  placement?: string | null;
+  awardRibbon?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ShowResultWithGoat = ShowResult & {
+  goatName: string;
+};
+
+export type ShowWithResults = Show & {
+  results: ShowResultWithGoat[];
+};
+
+/**
+ * One per-goat result row inside a show-results batch.
+ */
+export interface ShowResultItem {
+  goatId: number;
+  /** @maxLength 200 */
+  judgeName?: string;
+  /** @maxLength 200 */
+  classDivision?: string;
+  /** @maxLength 100 */
+  placement?: string;
+  /** @maxLength 200 */
+  awardRibbon?: string;
+  /** @maxLength 2000 */
+  notes?: string;
+}
+
+export interface CreateShowResultsBody {
+  /** @minItems 1 */
+  results: ShowResultItem[];
+}
+
+export interface UpdateShowResultBody {
+  /** @maxLength 200 */
+  judgeName?: string | null;
+  /** @maxLength 200 */
+  classDivision?: string | null;
+  /** @maxLength 100 */
+  placement?: string | null;
+  /** @maxLength 200 */
+  awardRibbon?: string | null;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+/**
+ * One show a goat entered, with every result the goat earned there.
+ */
+export interface GoatAccolade {
+  show: Show;
+  results: ShowResult[];
+}
+
 export type HealthEventEventType =
   (typeof HealthEventEventType)[keyof typeof HealthEventEventType];
 

@@ -1519,6 +1519,253 @@ export const GetHealthWorkDueResponse = zod.object({
 });
 
 /**
+ * @summary List the farm's livestock shows (most recent first)
+ */
+export const ListShowsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  location: zod.string().nullish(),
+  showDate: zod.coerce.date(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListShowsResponse = zod.array(ListShowsResponseItem);
+
+/**
+ * @summary Create a livestock show (Admin/Owner only)
+ */
+export const createShowBodyNameMax = 200;
+
+export const createShowBodyLocationMax = 200;
+
+export const createShowBodyNotesMax = 2000;
+
+export const CreateShowBody = zod.object({
+  name: zod.string().min(1).max(createShowBodyNameMax),
+  location: zod.string().max(createShowBodyLocationMax).optional(),
+  showDate: zod.coerce.date(),
+  notes: zod.string().max(createShowBodyNotesMax).optional(),
+});
+
+/**
+ * @summary Get a show with its results
+ */
+export const GetShowParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetShowResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    location: zod.string().nullish(),
+    showDate: zod.coerce.date(),
+    notes: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      results: zod.array(
+        zod
+          .object({
+            id: zod.number(),
+            showId: zod.number(),
+            goatId: zod.number(),
+            judgeName: zod.string().nullish(),
+            classDivision: zod.string().nullish(),
+            placement: zod.string().nullish(),
+            awardRibbon: zod.string().nullish(),
+            notes: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          })
+          .and(
+            zod.object({
+              goatName: zod.string(),
+            }),
+          ),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update a show's header details (Admin/Owner only)
+ */
+export const UpdateShowParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateShowBodyNameMax = 200;
+
+export const updateShowBodyLocationMax = 200;
+
+export const updateShowBodyNotesMax = 2000;
+
+export const UpdateShowBody = zod.object({
+  name: zod.string().min(1).max(updateShowBodyNameMax).optional(),
+  location: zod.string().max(updateShowBodyLocationMax).nullish(),
+  showDate: zod.coerce.date().optional(),
+  notes: zod.string().max(updateShowBodyNotesMax).nullish(),
+});
+
+export const UpdateShowResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  location: zod.string().nullish(),
+  showDate: zod.coerce.date(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a show and all of its results (Admin/Owner only)
+ */
+export const DeleteShowParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * Persists a batch of per-goat result rows in one transaction. Every goat referenced must belong to the farm or the whole batch is rejected.
+ * @summary Add one or more result rows to a show (Admin/Owner only)
+ */
+export const CreateShowResultsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const createShowResultsBodyResultsItemJudgeNameMax = 200;
+
+export const createShowResultsBodyResultsItemClassDivisionMax = 200;
+
+export const createShowResultsBodyResultsItemPlacementMax = 100;
+
+export const createShowResultsBodyResultsItemAwardRibbonMax = 200;
+
+export const createShowResultsBodyResultsItemNotesMax = 2000;
+
+export const CreateShowResultsBody = zod.object({
+  results: zod
+    .array(
+      zod
+        .object({
+          goatId: zod.number(),
+          judgeName: zod
+            .string()
+            .max(createShowResultsBodyResultsItemJudgeNameMax)
+            .optional(),
+          classDivision: zod
+            .string()
+            .max(createShowResultsBodyResultsItemClassDivisionMax)
+            .optional(),
+          placement: zod
+            .string()
+            .max(createShowResultsBodyResultsItemPlacementMax)
+            .optional(),
+          awardRibbon: zod
+            .string()
+            .max(createShowResultsBodyResultsItemAwardRibbonMax)
+            .optional(),
+          notes: zod
+            .string()
+            .max(createShowResultsBodyResultsItemNotesMax)
+            .optional(),
+        })
+        .describe("One per-goat result row inside a show-results batch."),
+    )
+    .min(1),
+});
+
+/**
+ * @summary Update a single show result row (Admin/Owner only)
+ */
+export const UpdateShowResultParams = zod.object({
+  id: zod.coerce.number(),
+  resultId: zod.coerce.number(),
+});
+
+export const updateShowResultBodyJudgeNameMax = 200;
+
+export const updateShowResultBodyClassDivisionMax = 200;
+
+export const updateShowResultBodyPlacementMax = 100;
+
+export const updateShowResultBodyAwardRibbonMax = 200;
+
+export const updateShowResultBodyNotesMax = 2000;
+
+export const UpdateShowResultBody = zod.object({
+  judgeName: zod.string().max(updateShowResultBodyJudgeNameMax).nullish(),
+  classDivision: zod
+    .string()
+    .max(updateShowResultBodyClassDivisionMax)
+    .nullish(),
+  placement: zod.string().max(updateShowResultBodyPlacementMax).nullish(),
+  awardRibbon: zod.string().max(updateShowResultBodyAwardRibbonMax).nullish(),
+  notes: zod.string().max(updateShowResultBodyNotesMax).nullish(),
+});
+
+export const UpdateShowResultResponse = zod.object({
+  id: zod.number(),
+  showId: zod.number(),
+  goatId: zod.number(),
+  judgeName: zod.string().nullish(),
+  classDivision: zod.string().nullish(),
+  placement: zod.string().nullish(),
+  awardRibbon: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a single show result row (Admin/Owner only)
+ */
+export const DeleteShowResultParams = zod.object({
+  id: zod.coerce.number(),
+  resultId: zod.coerce.number(),
+});
+
+/**
+ * @summary List a goat's show accolades, grouped by show (newest first)
+ */
+export const GetGoatAccoladesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetGoatAccoladesResponseItem = zod
+  .object({
+    show: zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      location: zod.string().nullish(),
+      showDate: zod.coerce.date(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+    results: zod.array(
+      zod.object({
+        id: zod.number(),
+        showId: zod.number(),
+        goatId: zod.number(),
+        judgeName: zod.string().nullish(),
+        classDivision: zod.string().nullish(),
+        placement: zod.string().nullish(),
+        awardRibbon: zod.string().nullish(),
+        notes: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    ),
+  })
+  .describe(
+    "One show a goat entered, with every result the goat earned there.",
+  );
+export const GetGoatAccoladesResponse = zod.array(GetGoatAccoladesResponseItem);
+
+/**
  * @summary List all breeding records
  */
 export const listBreedingsResponseTwoDoeMilkPerDayMin = 0;

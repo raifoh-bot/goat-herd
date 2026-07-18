@@ -17,6 +17,8 @@ export {
   CreatePregnancyTestBody,
   UpdatePregnancyTestBody,
   CreateSemenStrawBody,
+  CreateShowBody,
+  CreateShowResultsBody,
   CreateUserBody,
   DeleteFarmBody,
   ForgotPasswordBody,
@@ -40,5 +42,7 @@ export {
   UpdateGoatBody,
   UpdateKidBody,
   UpdateSemenStrawBody,
+  UpdateShowBody,
+  UpdateShowResultBody,
   UpdateUserBody,
 } from "./generated/api";

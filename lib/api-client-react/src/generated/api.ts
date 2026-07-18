@@ -35,6 +35,8 @@ import type {
   CreateHealthEventsBulk201,
   CreatePregnancyTestBody,
   CreateSemenStrawBody,
+  CreateShowBody,
+  CreateShowResultsBody,
   CreateUserBody,
   DashboardSummary,
   DeleteFarmBody,
@@ -43,6 +45,7 @@ import type {
   FarmSettings,
   ForgotPasswordBody,
   Goat,
+  GoatAccolade,
   HealthDueResponse,
   HealthEvent,
   HealthStatus,
@@ -67,6 +70,9 @@ import type {
   SemenStraw,
   SetGoatDefaultPhotoBody,
   SetUserPasswordBody,
+  Show,
+  ShowResult,
+  ShowWithResults,
   SuperadminFarm,
   UpdateBreedingBody,
   UpdateBreedingEventBody,
@@ -79,6 +85,8 @@ import type {
   UpdatePlatformThresholdsBody,
   UpdatePregnancyTestBody,
   UpdateSemenStrawBody,
+  UpdateShowBody,
+  UpdateShowResultBody,
   UpdateUserBody,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -1692,6 +1700,753 @@ export function useGetHealthWorkDue<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetHealthWorkDueQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List the farm's livestock shows (most recent first)
+ */
+export const getListShowsUrl = () => {
+  return `/api/shows`;
+};
+
+export const listShows = async (options?: RequestInit): Promise<Show[]> => {
+  return customFetch<Show[]>(getListShowsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListShowsQueryKey = () => {
+  return [`/api/shows`] as const;
+};
+
+export const getListShowsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listShows>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listShows>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListShowsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listShows>>> = ({
+    signal,
+  }) => listShows({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listShows>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListShowsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listShows>>
+>;
+export type ListShowsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the farm's livestock shows (most recent first)
+ */
+
+export function useListShows<
+  TData = Awaited<ReturnType<typeof listShows>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listShows>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListShowsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a livestock show (Admin/Owner only)
+ */
+export const getCreateShowUrl = () => {
+  return `/api/shows`;
+};
+
+export const createShow = async (
+  createShowBody: CreateShowBody,
+  options?: RequestInit,
+): Promise<Show> => {
+  return customFetch<Show>(getCreateShowUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createShowBody),
+  });
+};
+
+export const getCreateShowMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShow>>,
+    TError,
+    { data: BodyType<CreateShowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createShow>>,
+  TError,
+  { data: BodyType<CreateShowBody> },
+  TContext
+> => {
+  const mutationKey = ["createShow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createShow>>,
+    { data: BodyType<CreateShowBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createShow(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateShowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createShow>>
+>;
+export type CreateShowMutationBody = BodyType<CreateShowBody>;
+export type CreateShowMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a livestock show (Admin/Owner only)
+ */
+export const useCreateShow = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShow>>,
+    TError,
+    { data: BodyType<CreateShowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createShow>>,
+  TError,
+  { data: BodyType<CreateShowBody> },
+  TContext
+> => {
+  return useMutation(getCreateShowMutationOptions(options));
+};
+
+/**
+ * @summary Get a show with its results
+ */
+export const getGetShowUrl = (id: number) => {
+  return `/api/shows/${id}`;
+};
+
+export const getShow = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ShowWithResults> => {
+  return customFetch<ShowWithResults>(getGetShowUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetShowQueryKey = (id: number) => {
+  return [`/api/shows/${id}`] as const;
+};
+
+export const getGetShowQueryOptions = <
+  TData = Awaited<ReturnType<typeof getShow>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getShow>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetShowQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getShow>>> = ({
+    signal,
+  }) => getShow(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getShow>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetShowQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getShow>>
+>;
+export type GetShowQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a show with its results
+ */
+
+export function useGetShow<
+  TData = Awaited<ReturnType<typeof getShow>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getShow>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetShowQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a show's header details (Admin/Owner only)
+ */
+export const getUpdateShowUrl = (id: number) => {
+  return `/api/shows/${id}`;
+};
+
+export const updateShow = async (
+  id: number,
+  updateShowBody: UpdateShowBody,
+  options?: RequestInit,
+): Promise<Show> => {
+  return customFetch<Show>(getUpdateShowUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateShowBody),
+  });
+};
+
+export const getUpdateShowMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShow>>,
+    TError,
+    { id: number; data: BodyType<UpdateShowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateShow>>,
+  TError,
+  { id: number; data: BodyType<UpdateShowBody> },
+  TContext
+> => {
+  const mutationKey = ["updateShow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateShow>>,
+    { id: number; data: BodyType<UpdateShowBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateShow(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateShowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateShow>>
+>;
+export type UpdateShowMutationBody = BodyType<UpdateShowBody>;
+export type UpdateShowMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a show's header details (Admin/Owner only)
+ */
+export const useUpdateShow = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShow>>,
+    TError,
+    { id: number; data: BodyType<UpdateShowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateShow>>,
+  TError,
+  { id: number; data: BodyType<UpdateShowBody> },
+  TContext
+> => {
+  return useMutation(getUpdateShowMutationOptions(options));
+};
+
+/**
+ * @summary Delete a show and all of its results (Admin/Owner only)
+ */
+export const getDeleteShowUrl = (id: number) => {
+  return `/api/shows/${id}`;
+};
+
+export const deleteShow = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteShowUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteShowMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShow>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteShow>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteShow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteShow>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteShow(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteShowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteShow>>
+>;
+
+export type DeleteShowMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a show and all of its results (Admin/Owner only)
+ */
+export const useDeleteShow = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShow>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteShow>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteShowMutationOptions(options));
+};
+
+/**
+ * Persists a batch of per-goat result rows in one transaction. Every goat referenced must belong to the farm or the whole batch is rejected.
+ * @summary Add one or more result rows to a show (Admin/Owner only)
+ */
+export const getCreateShowResultsUrl = (id: number) => {
+  return `/api/shows/${id}/results`;
+};
+
+export const createShowResults = async (
+  id: number,
+  createShowResultsBody: CreateShowResultsBody,
+  options?: RequestInit,
+): Promise<ShowResult[]> => {
+  return customFetch<ShowResult[]>(getCreateShowResultsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createShowResultsBody),
+  });
+};
+
+export const getCreateShowResultsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShowResults>>,
+    TError,
+    { id: number; data: BodyType<CreateShowResultsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createShowResults>>,
+  TError,
+  { id: number; data: BodyType<CreateShowResultsBody> },
+  TContext
+> => {
+  const mutationKey = ["createShowResults"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createShowResults>>,
+    { id: number; data: BodyType<CreateShowResultsBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createShowResults(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateShowResultsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createShowResults>>
+>;
+export type CreateShowResultsMutationBody = BodyType<CreateShowResultsBody>;
+export type CreateShowResultsMutationError = ErrorType<void>;
+
+/**
+ * @summary Add one or more result rows to a show (Admin/Owner only)
+ */
+export const useCreateShowResults = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShowResults>>,
+    TError,
+    { id: number; data: BodyType<CreateShowResultsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createShowResults>>,
+  TError,
+  { id: number; data: BodyType<CreateShowResultsBody> },
+  TContext
+> => {
+  return useMutation(getCreateShowResultsMutationOptions(options));
+};
+
+/**
+ * @summary Update a single show result row (Admin/Owner only)
+ */
+export const getUpdateShowResultUrl = (id: number, resultId: number) => {
+  return `/api/shows/${id}/results/${resultId}`;
+};
+
+export const updateShowResult = async (
+  id: number,
+  resultId: number,
+  updateShowResultBody: UpdateShowResultBody,
+  options?: RequestInit,
+): Promise<ShowResult> => {
+  return customFetch<ShowResult>(getUpdateShowResultUrl(id, resultId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateShowResultBody),
+  });
+};
+
+export const getUpdateShowResultMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShowResult>>,
+    TError,
+    { id: number; resultId: number; data: BodyType<UpdateShowResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateShowResult>>,
+  TError,
+  { id: number; resultId: number; data: BodyType<UpdateShowResultBody> },
+  TContext
+> => {
+  const mutationKey = ["updateShowResult"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateShowResult>>,
+    { id: number; resultId: number; data: BodyType<UpdateShowResultBody> }
+  > = (props) => {
+    const { id, resultId, data } = props ?? {};
+
+    return updateShowResult(id, resultId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateShowResultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateShowResult>>
+>;
+export type UpdateShowResultMutationBody = BodyType<UpdateShowResultBody>;
+export type UpdateShowResultMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a single show result row (Admin/Owner only)
+ */
+export const useUpdateShowResult = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShowResult>>,
+    TError,
+    { id: number; resultId: number; data: BodyType<UpdateShowResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateShowResult>>,
+  TError,
+  { id: number; resultId: number; data: BodyType<UpdateShowResultBody> },
+  TContext
+> => {
+  return useMutation(getUpdateShowResultMutationOptions(options));
+};
+
+/**
+ * @summary Delete a single show result row (Admin/Owner only)
+ */
+export const getDeleteShowResultUrl = (id: number, resultId: number) => {
+  return `/api/shows/${id}/results/${resultId}`;
+};
+
+export const deleteShowResult = async (
+  id: number,
+  resultId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteShowResultUrl(id, resultId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteShowResultMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShowResult>>,
+    TError,
+    { id: number; resultId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteShowResult>>,
+  TError,
+  { id: number; resultId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteShowResult"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteShowResult>>,
+    { id: number; resultId: number }
+  > = (props) => {
+    const { id, resultId } = props ?? {};
+
+    return deleteShowResult(id, resultId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteShowResultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteShowResult>>
+>;
+
+export type DeleteShowResultMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a single show result row (Admin/Owner only)
+ */
+export const useDeleteShowResult = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShowResult>>,
+    TError,
+    { id: number; resultId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteShowResult>>,
+  TError,
+  { id: number; resultId: number },
+  TContext
+> => {
+  return useMutation(getDeleteShowResultMutationOptions(options));
+};
+
+/**
+ * @summary List a goat's show accolades, grouped by show (newest first)
+ */
+export const getGetGoatAccoladesUrl = (id: number) => {
+  return `/api/goats/${id}/accolades`;
+};
+
+export const getGoatAccolades = async (
+  id: number,
+  options?: RequestInit,
+): Promise<GoatAccolade[]> => {
+  return customFetch<GoatAccolade[]>(getGetGoatAccoladesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGoatAccoladesQueryKey = (id: number) => {
+  return [`/api/goats/${id}/accolades`] as const;
+};
+
+export const getGetGoatAccoladesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGoatAccolades>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGoatAccolades>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGoatAccoladesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGoatAccolades>>
+  > = ({ signal }) => getGoatAccolades(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGoatAccolades>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGoatAccoladesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGoatAccolades>>
+>;
+export type GetGoatAccoladesQueryError = ErrorType<void>;
+
+/**
+ * @summary List a goat's show accolades, grouped by show (newest first)
+ */
+
+export function useGetGoatAccolades<
+  TData = Awaited<ReturnType<typeof getGoatAccolades>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGoatAccolades>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGoatAccoladesQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

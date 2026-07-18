@@ -46,6 +46,12 @@ const REPORTS: ReportEntry[] = [
     icon: HeartPulse,
   },
   {
+    href: "/reports/show-results",
+    title: "Enter Show Results",
+    description: "Record a show's results — which goats entered, how each judge placed them, and what they won.",
+    icon: Trophy,
+  },
+  {
     href: "/reports/show-time",
     title: "Show Time",
     description: "Print-ready show check-in sheet: one row per goat with tattoo IDs and each doe's kidding record.",

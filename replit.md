@@ -52,6 +52,17 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - `GET /api/health-events/bulk-session` — active goats eligible for a herd work day (excludes dead/sold/retired)
 - `POST /api/health-events/bulk` — record a batch of events for many goats in one transaction (farmhand allowed); returns `{created}`
 
+### Shows
+- `GET /api/shows` — list shows (newest first)
+- `POST /api/shows` — create a show (Admin/Owner only)
+- `GET /api/shows/:id` — show detail with results (goat names joined)
+- `PUT /api/shows/:id` — update a show (Admin/Owner only)
+- `DELETE /api/shows/:id` — delete a show and all its results (Admin/Owner only)
+- `POST /api/shows/:id/results` — batch-record result rows (Admin/Owner only; rejects cross-farm goats)
+- `PUT /api/shows/:id/results/:resultId` — update a result (Admin/Owner only)
+- `DELETE /api/shows/:id/results/:resultId` — delete a result (Admin/Owner only)
+- `GET /api/goats/:id/accolades` — a goat's show results grouped by show, newest first
+
 ### Dashboard
 - `GET /api/dashboard/summary` — herd totals, health counts, lactation counts, avg milk production
 - `GET /api/dashboard/breed-breakdown` — goat counts by breed
@@ -145,7 +156,8 @@ redirects to `/<slug>/...`.
 - `/breedings/new` — Record a new breeding form (auto-calculates ~150 day kidding date)
 - `/breedings/:id` — Breeding detail with status updates and kidding recording dialog
 - `/health-events/new` — "Herd Work Day" 3-step bulk wizard (pick goats → pick tasks → FAMACHA scores & review); FAMACHA scores at/above the farm threshold suggest an extra deworming event per goat (opt-out). Linked from the sidebar and a "Log Herd Work Day" button on the herd list. The goat detail page has a Health History card with an ad hoc "Add Event" dialog. The farm settings page has a FAMACHA threshold setting (1–5, default 3, `famachaThreshold` in farm settings).
-- `/reports` — Reports hub (cards for Lineage Report, Barn Worksheet, Pedigree Certificate, Health History Report, Show Time)
+- `/reports` — Reports hub (cards for Lineage Report, Barn Worksheet, Pedigree Certificate, Health History Report, Enter Show Results, Show Time)
+- `/reports/show-results` — Show results worksheet: list of shows, create/edit/delete a show (name, location, date, notes), and per-goat result rows (searchable goat picker; judge, class/division, placement dropdown, award/ribbon, notes; batch save). Admin/Owner can edit; farmhands view-only. `?show=<id>` opens one show. Goat detail pages show an Accolades card (results grouped by show, hidden when empty).
 - `/reports/health-history` — Printable per-goat health record (`?goat=<id>`): identity section (name, breed, sex, DOB/age, status, lactation status) + chronological health events table (oldest first). No lineage — suited to buyers of unregistered goats. Linked from the goat detail page next to the Pedigree Certificate button.
 - `/reports/barn-worksheet` — Printable work day worksheet: filter/select goats (breed, sex, herd status; select-all + per-goat checkboxes, defaults to all on-farm goats), then print one table (alphabetical, one row per goat) with pre-filled identity columns and blank hand-write columns (FAMACHA, deworming, hoof trim, CDT, copper bolus, weight, notes). Landscape `@page`, repeating `<thead>`, work-day date and recorded-by blanks, `ReportHeader` on print.
 - `/login` — Login page (public; outside the AuthGuard)

@@ -7,6 +7,7 @@ import dashboardRouter from "./dashboard";
 import breedingsRouter from "./breedings";
 import healthEventsRouter from "./health-events";
 import semenRouter from "./semen";
+import showsRouter from "./shows";
 import storageRouter from "./storage";
 import usersRouter from "./users";
 import settingsRouter from "./settings";
@@ -48,6 +49,7 @@ router.use(dashboardRouter);
 router.use(breedingsRouter);
 router.use(healthEventsRouter);
 router.use(semenRouter);
+router.use(showsRouter);
 router.use(usersRouter);
 router.use(settingsRouter);
 
