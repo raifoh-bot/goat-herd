@@ -110,6 +110,18 @@ export function dateInputToIso(value: string): string {
   return new Date(`${value}T12:00:00`).toISOString();
 }
 
+/** Format a full ISO timestamp as a short human date (e.g. "Jun 4, 2026"). */
+export function formatIsoDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export function formatLongDate(value: string): string {
   return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, {
     month: "long",

@@ -10,6 +10,7 @@ import type {
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -131,12 +132,14 @@ export default function DueScreen() {
 
 function GoatDueCard({ entry }: { entry: GoatDueHealth }) {
   const colors = useColors();
+  const router = useRouter();
   const { goat, items } = entry;
   const meta = [breedLabel(goat.breed), sexLabel(goat.sex)]
     .filter(Boolean)
     .join(" · ");
 
   return (
+    <Pressable onPress={() => router.push(`/goat/${goat.id}`)}>
     <Card style={styles.goatCard}>
       <Text style={[styles.goatName, { color: colors.foreground }]}>
         {goat.name}
@@ -156,6 +159,7 @@ function GoatDueCard({ entry }: { entry: GoatDueHealth }) {
         ))}
       </View>
     </Card>
+    </Pressable>
   );
 }
 

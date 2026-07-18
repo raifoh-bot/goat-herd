@@ -14,3 +14,6 @@ The screenshot tool has no cookies, so auth-guarded pages always render the logi
 
 **Why:** repeated need to visually verify tenant-scoped, login-gated pages (reports, print layouts) with no test-login backdoor.
 **How to apply:** any time a task needs a screenshot or print/PDF check of a page behind the AuthGuard.
+
+## Expo web preview CORS quirk
+The mobile app's custom fetch uses `credentials: "include"` while the API responds `Access-Control-Allow-Origin: *`, so cross-origin API calls from the Expo web preview fail with net::ERR_FAILED in a normal browser context. For headless verification, launch chromium with `--disable-web-security` (native apps are unaffected — no CORS there). Seed auth via localStorage keys `goatherd.token` / `goatherd.farmSlug` / `goatherd.user` on `$REPLIT_EXPO_DEV_DOMAIN`. Also: installing puppeteer-core while Metro is running crashes the expo workflow (file-watch ENOENT) — restart the workflow after installing.

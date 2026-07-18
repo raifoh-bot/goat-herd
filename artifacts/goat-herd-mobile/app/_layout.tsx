@@ -64,6 +64,9 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="work-day" options={{ title: "Herd Work Day" }} />
+      <Stack.Screen name="new-show" options={{ title: "New Show" }} />
+      <Stack.Screen name="show/[id]" options={{ title: "Show Results" }} />
+      <Stack.Screen name="goat/[id]" options={{ title: "Goat" }} />
     </Stack>
   );
 }

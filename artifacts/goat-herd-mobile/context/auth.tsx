@@ -153,3 +153,13 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
   return ctx;
 }
+
+/** True when the signed-in user can manage records (Admin/Owner/Super-admin). */
+export function useIsManager(): boolean {
+  const { user } = useAuth();
+  return (
+    user?.role === "admin" ||
+    user?.role === "owner" ||
+    user?.role === "superadmin"
+  );
+}
