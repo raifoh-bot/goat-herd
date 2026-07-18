@@ -132,7 +132,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
+            enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
         - name: sex
           in: query
           schema:
@@ -1686,7 +1686,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
           description: Current standing of the goat in the herd
         rightEarTattoo:
           type: string
@@ -1791,7 +1791,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -1911,7 +1911,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, first-freshener, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4

@@ -58,7 +58,6 @@ export const ListGoatsQueryParams = zod.object({
   status: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -168,7 +167,6 @@ export const ListGoatsResponseItem = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -290,7 +288,6 @@ export const CreateGoatBody = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -415,7 +412,6 @@ export const GetGoatResponse = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -536,7 +532,6 @@ export const UpdateGoatBody = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -654,7 +649,6 @@ export const UpdateGoatResponse = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -811,7 +805,6 @@ export const AddGoatPhotoResponse = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -963,7 +956,6 @@ export const SetGoatDefaultPhotoResponse = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -1290,7 +1282,6 @@ export const GetHealthEventBulkSessionResponseItem = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",
@@ -1529,7 +1520,6 @@ export const GetHealthWorkDueResponse = zod.object({
         herdStatus: zod
           .enum([
             "dead",
-            "first-freshener",
             "leased",
             "on-farm",
             "retired",
@@ -1746,7 +1736,6 @@ export const ListBreedingsResponseItem = zod
           herdStatus: zod
             .enum([
               "dead",
-              "first-freshener",
               "leased",
               "on-farm",
               "retired",
@@ -2052,7 +2041,6 @@ export const GetBreedingResponse = zod
           herdStatus: zod
             .enum([
               "dead",
-              "first-freshener",
               "leased",
               "on-farm",
               "retired",
@@ -2632,7 +2620,6 @@ export const GetDashboardSummaryResponse = zod.object({
       herdStatus: zod
         .enum([
           "dead",
-          "first-freshener",
           "leased",
           "on-farm",
           "retired",
@@ -2804,7 +2791,6 @@ export const GetRecentActivityResponseItem = zod.object({
   herdStatus: zod
     .enum([
       "dead",
-      "first-freshener",
       "leased",
       "on-farm",
       "retired",

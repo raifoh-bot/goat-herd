@@ -271,5 +271,13 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 10. "first-freshener" was removed as a herd status. Migrate any legacy
+  //     rows to the default "on-farm" value.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(
+      `UPDATE "goats" SET "herd_status" = 'on-farm' WHERE "herd_status" = 'first-freshener';`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }

@@ -40,7 +40,6 @@ const healthStatusLabels: Record<string, string> = {
 
 const herdStatusLabels: Record<string, string> = {
   dead: "Dead",
-  "first-freshener": "First Freshener",
   leased: "Leased",
   "on-farm": "On Farm",
   retired: "Retired",
@@ -281,7 +280,6 @@ export default function GoatsList() {
               <SelectContent>
                 <SelectItem value="all">All Herd Status</SelectItem>
                 <SelectItem value="on-farm">On Farm</SelectItem>
-                <SelectItem value="first-freshener">First Freshener</SelectItem>
                 <SelectItem value="leased">Leased</SelectItem>
                 <SelectItem value="retired">Retired</SelectItem>
                 <SelectItem value="sold-registered">Sold-Registered</SelectItem>

@@ -14,7 +14,6 @@ import { breedLabel, BREED_CATALOG } from "@/lib/breeds";
 
 const herdStatusLabels: Record<string, string> = {
   "on-farm": "On Farm",
-  "first-freshener": "First Freshener",
   leased: "Leased",
   retired: "Retired",
   "sold-registered": "Sold-Registered",

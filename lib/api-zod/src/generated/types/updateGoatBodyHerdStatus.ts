@@ -12,7 +12,6 @@ export type UpdateGoatBodyHerdStatus =
 
 export const UpdateGoatBodyHerdStatus = {
   dead: "dead",
-  "first-freshener": "first-freshener",
   leased: "leased",
   "on-farm": "on-farm",
   retired: "retired",

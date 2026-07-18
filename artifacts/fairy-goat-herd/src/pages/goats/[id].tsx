@@ -556,7 +556,6 @@ export default function GoatDetails() {
                       <span className="text-muted-foreground flex items-center gap-2 text-sm"><Tag className="h-4 w-4" /> Herd Status</span>
                       <span className="font-medium text-foreground">
                         {goat.herdStatus === "dead" ? "Dead"
-                          : goat.herdStatus === "first-freshener" ? "First Freshener"
                           : goat.herdStatus === "leased" ? "Leased"
                           : goat.herdStatus === "on-farm" ? "On Farm"
                           : goat.herdStatus === "retired" ? "Retired"
