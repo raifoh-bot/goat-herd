@@ -558,7 +558,6 @@ export default function GoatDetails() {
                         {goat.herdStatus === "dead" ? "Dead"
                           : goat.herdStatus === "leased" ? "Leased"
                           : goat.herdStatus === "on-farm" ? "On Farm"
-                          : goat.herdStatus === "retired" ? "Retired"
                           : goat.herdStatus === "sold-registered" ? "Sold-Registered"
                           : goat.herdStatus === "sold-not-registered" ? "Sold-Not Registered"
                           : "—"}
@@ -572,7 +571,6 @@ export default function GoatDetails() {
                           {goat.lactationStatus === "milking" ? "Milking"
                             : goat.lactationStatus === "dry" ? "Dry"
                             : goat.lactationStatus === "kid" ? "Kid"
-                            : goat.lactationStatus === "retired" ? "Retired"
                             : "—"}
                         </span>
                       </div>
@@ -585,6 +583,7 @@ export default function GoatDetails() {
                           {goat.breedingStatus === "exposed" ? "Exposed"
                             : goat.breedingStatus === "serviced" ? "Serviced"
                             : goat.breedingStatus === "pregnant" ? "Pregnant"
+                            : goat.breedingStatus === "retired" ? "Retired"
                             : "—"}
                         </span>
                       </div>

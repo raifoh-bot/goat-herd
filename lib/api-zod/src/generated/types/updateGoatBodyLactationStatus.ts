@@ -14,5 +14,4 @@ export const UpdateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
   kid: "kid",
-  retired: "retired",
 } as const;

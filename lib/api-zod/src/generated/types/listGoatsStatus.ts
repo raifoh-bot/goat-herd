@@ -13,7 +13,6 @@ export const ListGoatsStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
-  retired: "retired",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;

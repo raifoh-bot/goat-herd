@@ -36,7 +36,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     serviced: does.filter((g) => g.breedingStatus === "serviced").length,
     pregnant: does.filter((g) => g.breedingStatus === "pregnant").length,
     kid: does.filter((g) => g.lactationStatus === "kid").length,
-    retired: does.filter((g) => g.lactationStatus === "retired").length,
+    retired: does.filter((g) => g.breedingStatus === "retired").length,
   };
 
   const healthyCount = ownedGoats.filter((g) => g.status === "healthy").length;

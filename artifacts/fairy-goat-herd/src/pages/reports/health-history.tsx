@@ -39,13 +39,13 @@ const lactationLabels: Record<string, string> = {
   milking: "Milking",
   dry: "Dry",
   kid: "Kid",
-  retired: "Retired",
 };
 
 const breedingLabels: Record<string, string> = {
   exposed: "Exposed",
   serviced: "Serviced",
   pregnant: "Pregnant",
+  retired: "Retired",
 };
 
 function ReportSkeleton() {

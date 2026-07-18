@@ -105,9 +105,10 @@ router.post("/goats", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  // Breeding status only applies to does; bucks and wethers never carry one.
+  // Pregnancy-related breeding statuses only apply to does; bucks and wethers
+  // may only carry "retired" (retired from breeding use).
   const createData = { ...parsed.data, farmId: farmId(req) };
-  if (createData.sex === "buck" || createData.sex === "wether") {
+  if ((createData.sex === "buck" || createData.sex === "wether") && createData.breedingStatus !== "retired") {
     createData.breedingStatus = null;
   }
 
@@ -150,7 +151,9 @@ router.post("/goats/import", requireManager, async (req, res): Promise<void> => 
         eidNumber: row.eidNumber ?? null,
         lactationStatus: row.lactationStatus ?? null,
         breedingStatus:
-          row.sex === "buck" || row.sex === "wether" ? null : (row.breedingStatus ?? null),
+          (row.sex === "buck" || row.sex === "wether") && row.breedingStatus !== "retired"
+            ? null
+            : (row.breedingStatus ?? null),
       });
       imported++;
     } catch (err) {
@@ -264,11 +267,13 @@ router.put("/goats/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  // Breeding status only applies to does; bucks and wethers never carry one.
+  // Pregnancy-related breeding statuses only apply to does; bucks and wethers
+  // may only carry "retired" (retired from breeding use).
   const updateData = { ...parsed.data };
   const effectiveSex = updateData.sex !== undefined ? updateData.sex : existing.sex;
   if (effectiveSex === "buck" || effectiveSex === "wether") {
-    updateData.breedingStatus = null;
+    const incoming = updateData.breedingStatus !== undefined ? updateData.breedingStatus : existing.breedingStatus;
+    updateData.breedingStatus = incoming === "retired" ? "retired" : null;
   }
 
   const [goat] = await db

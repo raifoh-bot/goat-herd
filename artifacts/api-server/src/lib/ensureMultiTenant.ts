@@ -291,7 +291,22 @@ export async function ensureMultiTenant(): Promise<void> {
     );
     await pool.query(
       `UPDATE "goats" SET "breeding_status" = NULL
-       WHERE "breeding_status" IS NOT NULL AND "sex" IN ('buck', 'wether');`,
+       WHERE "breeding_status" IN ('exposed', 'serviced', 'pregnant') AND "sex" IN ('buck', 'wether');`,
+    );
+  }
+
+  // 12. "Retired" moved from herd status and lactation status into breeding
+  //     status. Move the value across exactly once, restoring herd status to
+  //     the on-farm default for retired goats (a retired goat is still on the
+  //     farm). Retired is the one breeding status bucks/wethers may carry.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(
+      `UPDATE "goats" SET "breeding_status" = 'retired', "herd_status" = 'on-farm'
+       WHERE "herd_status" = 'retired';`,
+    );
+    await pool.query(
+      `UPDATE "goats" SET "breeding_status" = 'retired', "lactation_status" = NULL
+       WHERE "lactation_status" = 'retired';`,
     );
   }
 

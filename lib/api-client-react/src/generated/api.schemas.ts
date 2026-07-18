@@ -58,7 +58,6 @@ export const GoatLactationStatus = {
   milking: "milking",
   dry: "dry",
   kid: "kid",
-  retired: "retired",
 } as const;
 
 export type GoatBreedingStatus =
@@ -69,6 +68,7 @@ export const GoatBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;
 
 /**
@@ -82,7 +82,6 @@ export const GoatHerdStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
-  retired: "retired",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;
@@ -202,7 +201,6 @@ export const CreateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
   kid: "kid",
-  retired: "retired",
 } as const;
 
 export type CreateGoatBodyBreedingStatus =
@@ -213,6 +211,7 @@ export const CreateGoatBodyBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;
 
 export type CreateGoatBodyHerdStatus =
@@ -223,7 +222,6 @@ export const CreateGoatBodyHerdStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
-  retired: "retired",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;
@@ -347,7 +345,6 @@ export const UpdateGoatBodyLactationStatus = {
   milking: "milking",
   dry: "dry",
   kid: "kid",
-  retired: "retired",
 } as const;
 
 export type UpdateGoatBodyBreedingStatus =
@@ -358,6 +355,7 @@ export const UpdateGoatBodyBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;
 
 export type UpdateGoatBodyHerdStatus =
@@ -368,7 +366,6 @@ export const UpdateGoatBodyHerdStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
-  retired: "retired",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;
@@ -1046,7 +1043,6 @@ export const ImportGoatRowLactationStatus = {
   milking: "milking",
   dry: "dry",
   kid: "kid",
-  retired: "retired",
 } as const;
 
 export type ImportGoatRowBreedingStatus =
@@ -1056,6 +1052,7 @@ export const ImportGoatRowBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;
 
 export interface ImportGoatRow {
@@ -1744,7 +1741,6 @@ export const ListGoatsStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
-  retired: "retired",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;

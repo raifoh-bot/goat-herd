@@ -132,7 +132,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
+            enum: [dead, leased, on-farm, sold-registered, sold-not-registered]
         - name: sex
           in: query
           schema:
@@ -404,7 +404,7 @@ paths:
       summary: List the goats eligible for a herd-work-day bulk session
       description: >-
         Returns the farm's goats that are worked during a herd work day —
-        excludes goats whose herd status is dead, sold (registered or not registered), or retired.
+        excludes goats whose herd status is dead or sold (registered or not registered).
       responses:
         "200":
           description: Eligible goats
@@ -451,7 +451,7 @@ paths:
         Uses the farm's per-event-type interval settings to work out which
         goats are due (or overdue) for routine work such as hoof trims, CD&T
         boosters, copper bolus, and deworming. Only goats worked on a herd work
-        day are considered (dead, sold, and retired goats are excluded).
+        day are considered (dead and sold goats are excluded).
       responses:
         "200":
           description: The configured intervals and the goats with work due
@@ -1654,11 +1654,11 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, kid, retired]
+          enum: [milking, dry, kid]
         breedingStatus:
           type: string
           nullable: true
-          enum: [exposed, serviced, pregnant]
+          enum: [exposed, serviced, pregnant, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth
@@ -1690,7 +1690,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, sold-registered, sold-not-registered]
           description: Current standing of the goat in the herd
         rightEarTattoo:
           type: string
@@ -1778,11 +1778,11 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, kid, retired]
+          enum: [milking, dry, kid]
         breedingStatus:
           type: string
           nullable: true
-          enum: [exposed, serviced, pregnant]
+          enum: [exposed, serviced, pregnant, retired]
         age:
           type: integer
           description: Legacy field, calculated from dateOfBirth
@@ -1799,7 +1799,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -1902,11 +1902,11 @@ components:
         lactationStatus:
           type: string
           nullable: true
-          enum: [milking, dry, kid, retired]
+          enum: [milking, dry, kid]
         breedingStatus:
           type: string
           nullable: true
-          enum: [exposed, serviced, pregnant]
+          enum: [exposed, serviced, pregnant, retired]
         age:
           type: integer
           description: Calculated age in years from dateOfBirth
@@ -1923,7 +1923,7 @@ components:
         herdStatus:
           type: string
           nullable: true
-          enum: [dead, leased, on-farm, retired, sold-registered, sold-not-registered]
+          enum: [dead, leased, on-farm, sold-registered, sold-not-registered]
         rightEarTattoo:
           type: string
           maxLength: 4
@@ -2783,10 +2783,10 @@ components:
           maxLength: 50
         lactationStatus:
           type: string
-          enum: [milking, dry, kid, retired]
+          enum: [milking, dry, kid]
         breedingStatus:
           type: string
-          enum: [exposed, serviced, pregnant]
+          enum: [exposed, serviced, pregnant, retired]
       required:
         - name
         - breed

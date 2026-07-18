@@ -51,11 +51,11 @@ const formSchema = z.object({
   paternalGranddamRegNo: z.string().optional(),
   paternalGrandsireRegNo: z.string().optional(),
   breed: z.enum(BREED_SLUGS),
-  lactationStatus: z.enum(["milking", "dry", "kid", "retired"]).nullable().optional(),
-  breedingStatus: z.enum(["exposed", "serviced", "pregnant"]).nullable().optional(),
+  lactationStatus: z.enum(["milking", "dry", "kid"]).nullable().optional(),
+  breedingStatus: z.enum(["exposed", "serviced", "pregnant", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrls: z.array(z.string()).max(4, "Up to 4 photos allowed").default([]),
-  herdStatus: z.enum(["dead", "leased", "on-farm", "retired", "sold-registered", "sold-not-registered"]).nullable().optional(),
+  herdStatus: z.enum(["dead", "leased", "on-farm", "sold-registered", "sold-not-registered"]).nullable().optional(),
   leasedBuck: z.boolean().optional(),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
   leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
@@ -317,18 +317,18 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
       paternalGrandsireRegNo: defaultValues?.paternalGrandsireRegNo || "",
       breed: defaultValues?.breed || "mixed",
       lactationStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether")
-        ? ((defaultValues?.lactationStatus as "milking" | "dry" | "kid" | "retired" | null | undefined) || null)
-        : (defaultValues?.lactationStatus as "milking" | "dry" | "kid" | "retired" | undefined) || "milking",
-      breedingStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether")
+        ? ((defaultValues?.lactationStatus as "milking" | "dry" | "kid" | null | undefined) || null)
+        : (defaultValues?.lactationStatus as "milking" | "dry" | "kid" | undefined) || "milking",
+      breedingStatus: (defaultValues?.sex === "buck" || defaultValues?.sex === "wether") && defaultValues?.breedingStatus !== "retired"
         ? null
-        : (defaultValues?.breedingStatus as "exposed" | "serviced" | "pregnant" | null | undefined) ?? null,
+        : (defaultValues?.breedingStatus as "exposed" | "serviced" | "pregnant" | "retired" | null | undefined) ?? null,
       description: defaultValues?.description || "",
       imageUrls: defaultValues?.imageUrls && defaultValues.imageUrls.length > 0
         ? defaultValues.imageUrls
         : defaultValues?.imageUrl
           ? [defaultValues.imageUrl]
           : [],
-      herdStatus: (defaultValues?.herdStatus as "dead" | "leased" | "on-farm" | "retired" | "sold-registered" | "sold-not-registered" | null | undefined) ?? "on-farm",
+      herdStatus: (defaultValues?.herdStatus as "dead" | "leased" | "on-farm" | "sold-registered" | "sold-not-registered" | null | undefined) ?? "on-farm",
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
@@ -373,7 +373,9 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
     }
     if (sex === "buck" || sex === "wether") {
       form.setValue("lactationStatus", null);
-      form.setValue("breedingStatus", null);
+      if (form.getValues("breedingStatus") !== "retired") {
+        form.setValue("breedingStatus", null);
+      }
     } else if (sex === "doe" && !form.getValues("lactationStatus")) {
       form.setValue("lactationStatus", "milking");
     }
@@ -567,7 +569,6 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     <SelectItem value="milking">Milking</SelectItem>
                     <SelectItem value="dry">Dry</SelectItem>
                     <SelectItem value="kid">Kid</SelectItem>
-                    <SelectItem value="retired">Retired</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -575,34 +576,37 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
             )}
           />
 
-          {!showBlankLactation && (
-            <FormField
-              control={form.control}
-              name="breedingStatus"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Breeding Status</FormLabel>
-                  <Select
-                    onValueChange={(val) => field.onChange(val === "_none" ? null : val)}
-                    value={field.value ?? "_none"}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-background/50">
-                        <SelectValue placeholder="Select breeding status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="_none">— None —</SelectItem>
-                      <SelectItem value="exposed">Exposed (with buck)</SelectItem>
-                      <SelectItem value="serviced">Serviced (cover witnessed)</SelectItem>
-                      <SelectItem value="pregnant">Pregnant</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="breedingStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Breeding Status</FormLabel>
+                <Select
+                  onValueChange={(val) => field.onChange(val === "_none" ? null : val)}
+                  value={field.value ?? "_none"}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder="Select breeding status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="_none">— None —</SelectItem>
+                    {!showBlankLactation && (
+                      <>
+                        <SelectItem value="exposed">Exposed (with buck)</SelectItem>
+                        <SelectItem value="serviced">Serviced (cover witnessed)</SelectItem>
+                        <SelectItem value="pregnant">Pregnant</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="retired">Retired</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -624,7 +628,6 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     <SelectItem value="dead">Dead</SelectItem>
                     <SelectItem value="leased">Leased</SelectItem>
                     <SelectItem value="on-farm">On Farm</SelectItem>
-                    <SelectItem value="retired">Retired</SelectItem>
                     <SelectItem value="sold-registered">Sold-Registered</SelectItem>
                     <SelectItem value="sold-not-registered">Sold-Not Registered</SelectItem>
                   </SelectContent>

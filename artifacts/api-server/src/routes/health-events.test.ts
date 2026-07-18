@@ -221,13 +221,13 @@ describe("DELETE /api/goats/:id/health-events/:eventId", () => {
 });
 
 describe("GET /api/health-events/bulk-session", () => {
-  it("excludes dead, sold, and retired goats", async () => {
+  it("excludes dead and sold goats but keeps retired-from-breeding goats", async () => {
     const eligible = await createGoat({ herdStatus: "on-farm" });
     const noStatus = await createGoat();
     const dead = await createGoat({ herdStatus: "dead" });
     const sold = await createGoat({ herdStatus: "sold-not-registered" });
     const soldRegistered = await createGoat({ herdStatus: "sold-registered" });
-    const retired = await createGoat({ herdStatus: "retired" });
+    const retired = await createGoat({ breedingStatus: "retired" });
 
     const res = await adminAgent.get("/api/health-events/bulk-session");
     expect(res.status).toBe(200);
@@ -237,7 +237,7 @@ describe("GET /api/health-events/bulk-session", () => {
     expect(ids).not.toContain(dead.id);
     expect(ids).not.toContain(sold.id);
     expect(ids).not.toContain(soldRegistered.id);
-    expect(ids).not.toContain(retired.id);
+    expect(ids).toContain(retired.id);
   });
 });
 
@@ -349,17 +349,17 @@ describe("GET /api/health-events/due", () => {
     expect(entry).toBeFalsy();
   });
 
-  it("excludes dead, sold, and retired goats", async () => {
+  it("excludes dead and sold goats but keeps retired-from-breeding goats", async () => {
     await setIntervals({ hoof_trim: 56 });
     const eligible = await createGoat({ herdStatus: "on-farm" });
     const dead = await createGoat({ herdStatus: "dead" });
-    const retired = await createGoat({ herdStatus: "retired" });
+    const retired = await createGoat({ breedingStatus: "retired" });
 
     const res = await adminAgent.get("/api/health-events/due");
     const ids = res.body.goats.map((g: { goat: { id: number } }) => g.goat.id);
     expect(ids).toContain(eligible.id);
     expect(ids).not.toContain(dead.id);
-    expect(ids).not.toContain(retired.id);
+    expect(ids).toContain(retired.id);
   });
 
   it("requires authentication", async () => {

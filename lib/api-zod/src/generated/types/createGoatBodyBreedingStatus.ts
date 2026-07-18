@@ -14,4 +14,5 @@ export const CreateGoatBodyBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;

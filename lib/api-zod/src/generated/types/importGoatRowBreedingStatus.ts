@@ -13,4 +13,5 @@ export const ImportGoatRowBreedingStatus = {
   exposed: "exposed",
   serviced: "serviced",
   pregnant: "pregnant",
+  retired: "retired",
 } as const;

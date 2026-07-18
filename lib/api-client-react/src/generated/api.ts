@@ -1458,7 +1458,7 @@ export const useDeleteGoatHealthEvent = <
 };
 
 /**
- * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead, sold (registered or not registered), or retired.
+ * Returns the farm's goats that are worked during a herd work day — excludes goats whose herd status is dead or sold (registered or not registered).
  * @summary List the goats eligible for a herd-work-day bulk session
  */
 export const getGetHealthEventBulkSessionUrl = () => {
@@ -1624,7 +1624,7 @@ export const useCreateHealthEventsBulk = <
 };
 
 /**
- * Uses the farm's per-event-type interval settings to work out which goats are due (or overdue) for routine work such as hoof trims, CD&T boosters, copper bolus, and deworming. Only goats worked on a herd work day are considered (dead, sold, and retired goats are excluded).
+ * Uses the farm's per-event-type interval settings to work out which goats are due (or overdue) for routine work such as hoof trims, CD&T boosters, copper bolus, and deworming. Only goats worked on a herd work day are considered (dead and sold goats are excluded).
  * @summary List goats with routine health work due or overdue
  */
 export const getGetHealthWorkDueUrl = () => {

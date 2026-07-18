@@ -25,13 +25,13 @@ const lactationLabels: Record<string, string> = {
   milking: "Milking",
   dry: "Dry",
   kid: "Kid",
-  retired: "Retired",
 };
 
 const breedingLabels: Record<string, string> = {
   exposed: "Exposed",
   serviced: "Serviced",
   pregnant: "Pregnant",
+  retired: "Retired",
 };
 
 const healthStatusLabels: Record<string, string> = {
@@ -45,7 +45,6 @@ const herdStatusLabels: Record<string, string> = {
   dead: "Dead",
   leased: "Leased",
   "on-farm": "On Farm",
-  retired: "Retired",
   "sold-registered": "Sold-Registered",
   "sold-not-registered": "Sold-Not Registered",
 };
@@ -289,7 +288,6 @@ export default function GoatsList() {
                 <SelectItem value="all">All Herd Status</SelectItem>
                 <SelectItem value="on-farm">On Farm</SelectItem>
                 <SelectItem value="leased">Leased</SelectItem>
-                <SelectItem value="retired">Retired</SelectItem>
                 <SelectItem value="sold-registered">Sold-Registered</SelectItem>
                 <SelectItem value="sold-not-registered">Sold-Not Registered</SelectItem>
                 <SelectItem value="dead">Dead</SelectItem>

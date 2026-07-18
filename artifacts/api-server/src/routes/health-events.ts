@@ -14,7 +14,7 @@ const router: IRouter = Router();
 const requireManager = requireRole("admin", "owner");
 
 // Herd statuses that are never worked on a herd work day.
-const EXCLUDED_HERD_STATUSES = ["dead", "sold-registered", "sold-not-registered", "retired"] as const;
+const EXCLUDED_HERD_STATUSES = ["dead", "sold-registered", "sold-not-registered"] as const;
 
 /** Returns the goat only if it belongs to the request's farm; otherwise null. */
 async function findFarmGoat(req: Parameters<typeof farmId>[0], goatId: number) {

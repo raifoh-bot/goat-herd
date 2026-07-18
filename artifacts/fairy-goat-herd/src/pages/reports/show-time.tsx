@@ -20,7 +20,6 @@ import { deriveKiddingRecord } from "@/lib/kidding";
 const herdStatusLabels: Record<string, string> = {
   "on-farm": "On Farm",
   leased: "Leased",
-  retired: "Retired",
   "sold-registered": "Sold-Registered",
   "sold-not-registered": "Sold-Not Registered",
   dead: "Dead",

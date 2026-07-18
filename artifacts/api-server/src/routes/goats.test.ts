@@ -108,7 +108,29 @@ describe("PUT /api/goats/:id tattoo and EID clearing", () => {
   });
 });
 
-describe("breedingStatus is doe-only", () => {
+describe("breedingStatus rules by sex", () => {
+  it("allows bucks to carry breedingStatus 'retired' on create and update", async () => {
+    const createRes = await agent.post("/api/goats").send({
+      name: `Test Buck ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      breed: "alpine",
+      sex: "buck",
+      breedingStatus: "retired",
+    });
+    expect(createRes.status).toBe(201);
+    const buckId = createRes.body.id as number;
+    createdGoatIds.push(buckId);
+    expect((await getGoat(buckId)).breedingStatus).toBe("retired");
+
+    // Clearing it works, and setting it back via update works too.
+    let updateRes = await agent.put(`/api/goats/${buckId}`).send({ breedingStatus: null });
+    expect(updateRes.status).toBe(200);
+    expect((await getGoat(buckId)).breedingStatus).toBeNull();
+
+    updateRes = await agent.put(`/api/goats/${buckId}`).send({ breedingStatus: "retired" });
+    expect(updateRes.status).toBe(200);
+    expect((await getGoat(buckId)).breedingStatus).toBe("retired");
+  });
+
   it("forces breedingStatus to null for bucks on create and update", async () => {
     // A buck created with a breedingStatus must not persist it.
     const createRes = await agent.post("/api/goats").send({
