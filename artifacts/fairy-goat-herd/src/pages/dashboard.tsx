@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Responsive, WidthProvider, type Layout as GridLayoutItem } from "react-grid-layout";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint, GripHorizontal, Move, Check } from "lucide-react";
+import { Activity, Milk, ShieldPlus, Stethoscope, SlidersHorizontal, CalendarHeart, PawPrint, GripHorizontal, Move, Check, Trophy } from "lucide-react";
 import {
   getGetBreedBreakdownQueryKey,
   getGetCurrentUserQueryKey,
@@ -302,6 +302,8 @@ export default function Dashboard() {
         return (
           <RecentActivityCard recentActivity={recentActivity} isLoading={isLoadingActivity} />
         );
+      case "show-time":
+        return <ShowTimeCard />;
       default:
         return null;
     }
@@ -747,6 +749,32 @@ function TotalGoatsCard({ summary, isLoading }: { summary?: { totalGoats: number
             )}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ShowTimeCard() {
+  return (
+    <Card className="border-primary/10 shadow-md h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-base font-serif flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-primary" /> Show Time
+        </CardTitle>
+        <Link href="/reports/show-time" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+          Open →
+        </Link>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Print-ready check-in sheet for shows: barn name, registered name, breed, age, and each
+          doe's kidding record.
+        </p>
+        <Link href="/reports/show-time" className="self-start">
+          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Trophy className="mr-2 h-4 w-4" /> Prepare Show Sheet
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );

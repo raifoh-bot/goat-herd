@@ -23,6 +23,7 @@ const DEFAULT_DASHBOARD_WIDGETS: { id: string; grid: GridDefault }[] = [
   { id: "recent-activity", grid: { x: 6, y: 9, w: 6, h: 6 } },
   { id: "breeding-calendar", grid: { x: 0, y: 15, w: 6, h: 7 } },
   { id: "health-due", grid: { x: 6, y: 15, w: 6, h: 5 } },
+  { id: "show-time", grid: { x: 0, y: 22, w: 6, h: 4 } },
 ];
 
 export const DEFAULT_DASHBOARD_WIDGET_IDS = DEFAULT_DASHBOARD_WIDGETS.map(
@@ -34,10 +35,9 @@ const GRID_BY_ID = new Map(DEFAULT_DASHBOARD_WIDGETS.map((w) => [w.id, w.grid]))
 /**
  * Widgets that are opt-in: they belong to the catalog (so they aren't stripped)
  * but stay hidden when appended to a layout that predates them. Mirrors the
- * frontend's `defaultVisible: false` flag. Currently empty — every catalog
- * widget is visible by default.
+ * frontend's `defaultVisible: false` flag.
  */
-const DEFAULT_HIDDEN_WIDGET_IDS = new Set<string>([]);
+const DEFAULT_HIDDEN_WIDGET_IDS = new Set<string>(["show-time"]);
 
 /**
  * Merges a saved entry's grid coordinates with the widget's defaults, keeping

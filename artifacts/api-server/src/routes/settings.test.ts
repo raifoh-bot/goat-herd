@@ -284,6 +284,7 @@ describe("dashboard layout customization", () => {
     "recent-activity": { x: 6, y: 9, w: 6, h: 6 },
     "breeding-calendar": { x: 0, y: 15, w: 6, h: 7 },
     "health-due": { x: 6, y: 15, w: 6, h: 5 },
+    "show-time": { x: 0, y: 22, w: 6, h: 4 },
   };
   const withGrid = (id: string, visible: boolean) => ({ id, visible, ...GRID[id] });
 
@@ -307,6 +308,8 @@ describe("dashboard layout customization", () => {
       withGrid("recent-activity", true),
       withGrid("breeding-calendar", true),
       withGrid("health-due", true),
+      // Opt-in widget: appended hidden.
+      withGrid("show-time", false),
     ]);
   });
 
@@ -326,10 +329,12 @@ describe("dashboard layout customization", () => {
     ];
     const res = await agent.put("/api/settings").send({ dashboardLayout: layout });
     expect(res.status).toBe(200);
-    expect(res.body.dashboardLayout).toEqual(layout);
+    // The opt-in show-time widget (absent from the saved layout) is appended hidden.
+    const expected = [...layout, withGrid("show-time", false)];
+    expect(res.body.dashboardLayout).toEqual(expected);
 
     const readBack = await agent.get("/api/settings");
-    expect(readBack.body.dashboardLayout).toEqual(layout);
+    expect(readBack.body.dashboardLayout).toEqual(expected);
   });
 
   it("forward-migrates a legacy id+visible layout with default grid positions", async () => {
@@ -354,6 +359,8 @@ describe("dashboard layout customization", () => {
       withGrid("recent-activity", true),
       withGrid("breeding-calendar", true),
       withGrid("health-due", true),
+      // Opt-in widget: appended hidden.
+      withGrid("show-time", false),
     ]);
   });
 
@@ -378,6 +385,8 @@ describe("dashboard layout customization", () => {
       // A newly-shipped widget is appended visible to a layout that predates it.
       withGrid("breeding-calendar", true),
       withGrid("health-due", true),
+      // Opt-in widget: appended hidden.
+      withGrid("show-time", false),
     ]);
   });
 

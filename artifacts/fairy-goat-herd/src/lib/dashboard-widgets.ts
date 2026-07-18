@@ -11,7 +11,8 @@ export type DashboardWidgetId =
   | "breed-breakdown"
   | "recent-activity"
   | "breeding-calendar"
-  | "health-due";
+  | "health-due"
+  | "show-time";
 
 /** A widget's default placement + minimum size on the 12-column snap grid. */
 export interface GridItem {
@@ -130,6 +131,14 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
     description: "Goats overdue or coming due for routine health work, based on your schedule.",
     defaultGridItem: { x: 6, y: 15, w: 6, h: 5, minW: 3, minH: 3 },
     defaultGridItemMd: { x: 0, y: 25, w: 3, h: 5, minW: 3, minH: 3 },
+  },
+  {
+    id: "show-time",
+    label: "Show Time",
+    description: "Quick access to the printable Show Time check-in sheet.",
+    defaultVisible: false,
+    defaultGridItem: { x: 0, y: 22, w: 6, h: 4, minW: 3, minH: 3 },
+    defaultGridItemMd: { x: 3, y: 25, w: 3, h: 4, minW: 3, minH: 3 },
   },
 ];
 
