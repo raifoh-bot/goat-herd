@@ -344,6 +344,7 @@ export default function HerdWorkDay() {
                   <SelectContent>
                     <SelectItem value="all">All Herd Status</SelectItem>
                     <SelectItem value="on-farm">On Farm</SelectItem>
+                    <SelectItem value="on-farm-boarding">On Farm - Boarding</SelectItem>
                     <SelectItem value="leased">Leased</SelectItem>
                   </SelectContent>
                 </Select>

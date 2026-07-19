@@ -229,6 +229,7 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
         or(
           isNull(goatsTable.herdStatus),
           eq(goatsTable.herdStatus, "on-farm"),
+          eq(goatsTable.herdStatus, "on-farm-boarding"),
         ),
       ),
     )

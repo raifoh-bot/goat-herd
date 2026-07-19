@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { matchesHerdStatus } from "@/lib/goats";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Trash2, ChevronDown } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -222,7 +223,7 @@ export default function BreedingNew() {
     [semenStraws]
   );
 
-  const does = goats?.filter((g) => g.sex === "doe" && g.herdStatus === "on-farm") ?? [];
+  const does = goats?.filter((g) => g.sex === "doe" && matchesHerdStatus(g, "on-farm")) ?? [];
 
   const goatNames = useMemo(() => {
     const names = new Set<string>();

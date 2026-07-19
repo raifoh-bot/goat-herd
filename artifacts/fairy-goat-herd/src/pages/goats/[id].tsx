@@ -28,7 +28,7 @@ import {
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 import { useUpload } from "@workspace/object-storage-web";
 import { breedLabels } from "@/lib/breeds";
-import { sexLabelWithSymbol } from "@/lib/goats";
+import { HERD_STATUS_LABELS, sexLabelWithSymbol } from "@/lib/goats";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import { useFarmSettings } from "@/lib/settings";
@@ -557,12 +557,7 @@ export default function GoatDetails() {
                     <div className="flex justify-between items-center pb-3 border-b border-border">
                       <span className="text-muted-foreground flex items-center gap-2 text-sm"><Tag className="h-4 w-4" /> Herd Status</span>
                       <span className="font-medium text-foreground">
-                        {goat.herdStatus === "dead" ? "Dead"
-                          : goat.herdStatus === "leased" ? "Leased"
-                          : goat.herdStatus === "on-farm" ? "On Farm"
-                          : goat.herdStatus === "sold-registered" ? "Sold-Registered"
-                          : goat.herdStatus === "sold-not-registered" ? "Sold-Not Registered"
-                          : "—"}
+                        {(goat.herdStatus && HERD_STATUS_LABELS[goat.herdStatus]) || "—"}
                       </span>
                     </div>
 

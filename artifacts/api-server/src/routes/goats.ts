@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, arrayOverlaps, desc, eq } from "drizzle-orm";
+import { and, arrayOverlaps, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db, goatsTable, healthEventsTable } from "@workspace/db";
 import {
   AddGoatPhotoBody,
@@ -82,7 +82,16 @@ router.get("/goats", async (req, res): Promise<void> => {
   }
 
   const conditions = [eq(goatsTable.farmId, farmId(req))];
-  if (params.data.status) {
+  if (params.data.status === "on-farm") {
+    // "On Farm" is an inclusion filter: boarding goats live on the farm too,
+    // and goats recorded before herd status existed (null) count as on-farm.
+    conditions.push(
+      or(
+        isNull(goatsTable.herdStatus),
+        inArray(goatsTable.herdStatus, ["on-farm", "on-farm-boarding"]),
+      )!,
+    );
+  } else if (params.data.status) {
     conditions.push(eq(goatsTable.herdStatus, params.data.status));
   }
   if (params.data.sex) {

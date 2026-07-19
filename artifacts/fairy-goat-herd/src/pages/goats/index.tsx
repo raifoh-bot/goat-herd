@@ -260,6 +260,7 @@ export default function GoatsList() {
               <SelectContent>
                 <SelectItem value="all">All Herd Status</SelectItem>
                 <SelectItem value="on-farm">On Farm</SelectItem>
+                <SelectItem value="on-farm-boarding">On Farm - Boarding</SelectItem>
                 <SelectItem value="leased">Leased</SelectItem>
                 <SelectItem value="sold-registered">Sold-Registered</SelectItem>
                 <SelectItem value="sold-not-registered">Sold-Not Registered</SelectItem>

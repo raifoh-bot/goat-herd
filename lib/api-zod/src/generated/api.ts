@@ -60,6 +60,7 @@ export const ListGoatsQueryParams = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -161,6 +162,7 @@ export const ListGoatsResponseItem = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -274,6 +276,7 @@ export const CreateGoatBody = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -390,6 +393,7 @@ export const GetGoatResponse = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -502,6 +506,7 @@ export const UpdateGoatBody = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -611,6 +616,7 @@ export const UpdateGoatResponse = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -759,6 +765,7 @@ export const AddGoatPhotoResponse = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -902,6 +909,7 @@ export const SetGoatDefaultPhotoResponse = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -1300,6 +1308,7 @@ export const GetHealthEventBulkSessionResponseItem = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])
@@ -1530,6 +1539,7 @@ export const GetHealthWorkDueResponse = zod.object({
             "dead",
             "leased",
             "on-farm",
+            "on-farm-boarding",
             "sold-registered",
             "sold-not-registered",
           ])
@@ -1985,6 +1995,7 @@ export const ListBreedingsResponseItem = zod
               "dead",
               "leased",
               "on-farm",
+              "on-farm-boarding",
               "sold-registered",
               "sold-not-registered",
             ])
@@ -2282,6 +2293,7 @@ export const GetBreedingResponse = zod
               "dead",
               "leased",
               "on-farm",
+              "on-farm-boarding",
               "sold-registered",
               "sold-not-registered",
             ])
@@ -2936,6 +2948,7 @@ export const GetDashboardSummaryResponse = zod.object({
           "dead",
           "leased",
           "on-farm",
+          "on-farm-boarding",
           "sold-registered",
           "sold-not-registered",
         ])
@@ -3099,6 +3112,7 @@ export const GetRecentActivityResponseItem = zod.object({
       "dead",
       "leased",
       "on-farm",
+      "on-farm-boarding",
       "sold-registered",
       "sold-not-registered",
     ])

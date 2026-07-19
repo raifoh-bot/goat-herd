@@ -7,6 +7,7 @@
 /** Herd status slugs → user-facing labels, in display order. */
 export const HERD_STATUS_LABELS: Record<string, string> = {
   "on-farm": "On Farm",
+  "on-farm-boarding": "On Farm - Boarding",
   leased: "Leased",
   "sold-registered": "Sold-Registered",
   "sold-not-registered": "Sold-Not Registered",
@@ -50,10 +51,17 @@ export function effectiveHerdStatus(goat: { herdStatus?: string | null }): strin
   return goat.herdStatus ?? "on-farm";
 }
 
-/** Whether a goat matches a herd-status filter (undefined filter = all). */
+/**
+ * Whether a goat matches a herd-status filter (undefined filter = all).
+ * The "on-farm" filter is an inclusion rule: boarding goats live on the farm
+ * too, so they count as on-farm everywhere on-farm determines inclusion.
+ */
 export function matchesHerdStatus(
   goat: { herdStatus?: string | null },
   filter: string | undefined,
 ): boolean {
-  return !filter || effectiveHerdStatus(goat) === filter;
+  if (!filter) return true;
+  const status = effectiveHerdStatus(goat);
+  if (filter === "on-farm") return status === "on-farm" || status === "on-farm-boarding";
+  return status === filter;
 }

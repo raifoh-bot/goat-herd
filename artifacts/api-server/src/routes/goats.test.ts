@@ -108,6 +108,47 @@ describe("PUT /api/goats/:id tattoo and EID clearing", () => {
   });
 });
 
+describe("GET /api/goats?status=on-farm inclusion rule", () => {
+  it("includes on-farm, on-farm-boarding, and legacy null herd statuses; excludes others", async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const specs = [
+      { name: `Incl OnFarm ${suffix}`, herdStatus: "on-farm" },
+      { name: `Incl Boarding ${suffix}`, herdStatus: "on-farm-boarding" },
+      { name: `Excl Leased ${suffix}`, herdStatus: "leased" },
+      { name: `Excl Sold ${suffix}`, herdStatus: "sold-registered" },
+    ];
+    for (const spec of specs) {
+      const res = await agent.post("/api/goats").send({ breed: "alpine", ...spec });
+      expect(res.status).toBe(201);
+      createdGoatIds.push(res.body.id as number);
+    }
+
+    // Legacy goats recorded before herd status existed carry null.
+    const legacyName = `Incl Legacy ${suffix}`;
+    const [legacy] = await db
+      .insert(goatsTable)
+      .values({ farmId: testFarmId, name: legacyName, breed: "alpine", herdStatus: null })
+      .returning();
+    createdGoatIds.push(legacy.id);
+
+    const listRes = await agent.get("/api/goats?status=on-farm");
+    expect(listRes.status).toBe(200);
+    const names = new Set((listRes.body as { name: string }[]).map((g) => g.name));
+    expect(names.has(`Incl OnFarm ${suffix}`)).toBe(true);
+    expect(names.has(`Incl Boarding ${suffix}`)).toBe(true);
+    expect(names.has(legacyName)).toBe(true);
+    expect(names.has(`Excl Leased ${suffix}`)).toBe(false);
+    expect(names.has(`Excl Sold ${suffix}`)).toBe(false);
+
+    // Exact-match filters still work for the new status.
+    const boardingRes = await agent.get("/api/goats?status=on-farm-boarding");
+    expect(boardingRes.status).toBe(200);
+    const boardingNames = new Set((boardingRes.body as { name: string }[]).map((g) => g.name));
+    expect(boardingNames.has(`Incl Boarding ${suffix}`)).toBe(true);
+    expect(boardingNames.has(`Incl OnFarm ${suffix}`)).toBe(false);
+  });
+});
+
 describe("breedingStatus rules by sex", () => {
   it("allows bucks to carry breedingStatus 'retired' on create and update", async () => {
     const createRes = await agent.post("/api/goats").send({

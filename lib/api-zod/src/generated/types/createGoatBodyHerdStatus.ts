@@ -14,6 +14,7 @@ export const CreateGoatBodyHerdStatus = {
   dead: "dead",
   leased: "leased",
   "on-farm": "on-farm",
+  "on-farm-boarding": "on-farm-boarding",
   "sold-registered": "sold-registered",
   "sold-not-registered": "sold-not-registered",
 } as const;

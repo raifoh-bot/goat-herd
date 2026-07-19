@@ -55,7 +55,7 @@ const formSchema = z.object({
   breedingStatus: z.enum(["exposed", "serviced", "pregnant", "retired"]).nullable().optional(),
   description: z.string().optional(),
   imageUrls: z.array(z.string()).max(4, "Up to 4 photos allowed").default([]),
-  herdStatus: z.enum(["dead", "leased", "on-farm", "sold-registered", "sold-not-registered"]).nullable().optional(),
+  herdStatus: z.enum(["dead", "leased", "on-farm", "on-farm-boarding", "sold-registered", "sold-not-registered"]).nullable().optional(),
   leasedBuck: z.boolean().optional(),
   rightEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
   leftEarTattoo: z.string().max(4, "Max 4 characters").optional().transform((v) => (v ? v : null)),
@@ -328,7 +328,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
         : defaultValues?.imageUrl
           ? [defaultValues.imageUrl]
           : [],
-      herdStatus: (defaultValues?.herdStatus as "dead" | "leased" | "on-farm" | "sold-registered" | "sold-not-registered" | null | undefined) ?? "on-farm",
+      herdStatus: (defaultValues?.herdStatus as "dead" | "leased" | "on-farm" | "on-farm-boarding" | "sold-registered" | "sold-not-registered" | null | undefined) ?? "on-farm",
       leasedBuck: defaultValues?.leasedBuck ?? false,
       rightEarTattoo: defaultValues?.rightEarTattoo || "",
       leftEarTattoo: defaultValues?.leftEarTattoo || "",
@@ -628,6 +628,7 @@ export function GoatForm({ defaultValues, onSubmit, isSubmitting = false }: Goat
                     <SelectItem value="dead">Dead</SelectItem>
                     <SelectItem value="leased">Leased</SelectItem>
                     <SelectItem value="on-farm">On Farm</SelectItem>
+                    <SelectItem value="on-farm-boarding">On Farm - Boarding</SelectItem>
                     <SelectItem value="sold-registered">Sold-Registered</SelectItem>
                     <SelectItem value="sold-not-registered">Sold-Not Registered</SelectItem>
                   </SelectContent>
