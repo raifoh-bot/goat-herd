@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportHeader } from "@/components/report-header";
-import { healthEventTypeConfig } from "@/components/health-history";
+import { doseUnit, healthEventTypeConfig } from "@/components/health-history";
 import { breedLabels, breedLabel } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
@@ -142,7 +142,7 @@ function HealthRecord({
                     FAMACHA
                   </th>
                   <th className="py-1.5 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                    Dosage (mL)
+                    Dosage
                   </th>
                   <th className="py-1.5 pr-3 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                     Weight ({weightUnit})
@@ -171,7 +171,7 @@ function HealthRecord({
                       {event.famachaScore ?? "—"}
                     </td>
                     <td className="py-1.5 pr-3 text-foreground align-top">
-                      {event.dosageMl ?? "—"}
+                      {event.dosageMl != null ? `${event.dosageMl} ${doseUnit(event.eventType)}` : "—"}
                     </td>
                     <td className="py-1.5 pr-3 text-foreground align-top">
                       {event.bodyWeight ?? "—"}

@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { breedLabels } from "@/lib/breeds";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
-import { HEALTH_EVENT_TYPES, dateInputToIso } from "@/components/health-history";
+import { COPPER_BOLUS_DOSES_G, HEALTH_EVENT_TYPES, dateInputToIso, doseUnit } from "@/components/health-history";
 
 function todayInputValue(): string {
   const now = new Date();
@@ -425,15 +425,39 @@ export default function HerdWorkDay() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Default dose mL (optional)</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.1"
-                              placeholder="Per-goat override next step"
-                              value={dosageByType[t.value] ?? ""}
-                              onChange={(e) => setDosageByType((p) => ({ ...p, [t.value]: e.target.value }))}
-                            />
+                            {t.value === "copper_bolus" ? (
+                              <>
+                                <Label className="text-xs">Default dose g (optional)</Label>
+                                <Select
+                                  value={dosageByType[t.value] ?? "none"}
+                                  onValueChange={(v) =>
+                                    setDosageByType((p) => ({ ...p, [t.value]: v === "none" ? "" : v }))
+                                  }
+                                >
+                                  <SelectTrigger aria-label="Default copper bolus dose in grams">
+                                    <SelectValue placeholder="Select dose" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">—</SelectItem>
+                                    {COPPER_BOLUS_DOSES_G.map((g) => (
+                                      <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </>
+                            ) : (
+                              <>
+                                <Label className="text-xs">Default dose mL (optional)</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.1"
+                                  placeholder="Per-goat override next step"
+                                  value={dosageByType[t.value] ?? ""}
+                                  onChange={(e) => setDosageByType((p) => ({ ...p, [t.value]: e.target.value }))}
+                                />
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -520,20 +544,41 @@ export default function HerdWorkDay() {
                           {selectedDosageTypes.map((type) => (
                             <div key={type} className="space-y-1">
                               <Label className="text-xs text-muted-foreground">
-                                {HEALTH_EVENT_TYPES.find((t) => t.value === type)?.label} dose mL
+                                {HEALTH_EVENT_TYPES.find((t) => t.value === type)?.label} dose {doseUnit(type)}
                               </Label>
-                              <Input
-                                type="number"
-                                min={0}
-                                step="0.1"
-                                className="h-8"
-                                placeholder={dosageByType[type] || "—"}
-                                value={doseByGoatType[`${goat.id}:${type}`] ?? ""}
-                                onChange={(e) =>
-                                  setDoseByGoatType((p) => ({ ...p, [`${goat.id}:${type}`]: e.target.value }))
-                                }
-                                aria-label={`${type} dose for ${goat.name}`}
-                              />
+                              {type === "copper_bolus" ? (
+                                <Select
+                                  value={doseByGoatType[`${goat.id}:${type}`] ?? "default"}
+                                  onValueChange={(v) =>
+                                    setDoseByGoatType((p) => ({ ...p, [`${goat.id}:${type}`]: v === "default" ? "" : v }))
+                                  }
+                                >
+                                  <SelectTrigger className="h-8" aria-label={`Copper bolus dose for ${goat.name}`}>
+                                    <SelectValue placeholder={dosageByType[type] ? `${dosageByType[type]} g` : "—"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="default">
+                                      {dosageByType[type] ? `Default (${dosageByType[type]} g)` : "—"}
+                                    </SelectItem>
+                                    {COPPER_BOLUS_DOSES_G.map((g) => (
+                                      <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.1"
+                                  className="h-8"
+                                  placeholder={dosageByType[type] || "—"}
+                                  value={doseByGoatType[`${goat.id}:${type}`] ?? ""}
+                                  onChange={(e) =>
+                                    setDoseByGoatType((p) => ({ ...p, [`${goat.id}:${type}`]: e.target.value }))
+                                  }
+                                  aria-label={`${type} dose for ${goat.name}`}
+                                />
+                              )}
                             </div>
                           ))}
                         </div>

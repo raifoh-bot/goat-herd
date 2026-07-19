@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { breedLabel, getBreedOptions } from "@/lib/breeds";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
-import { dateInputToIso } from "@/components/health-history";
+import { COPPER_BOLUS_DOSES_G, dateInputToIso } from "@/components/health-history";
 
 function todayInputValue(): string {
   const now = new Date();
@@ -46,6 +46,7 @@ interface RowState {
   hoofTrim: boolean;
   cdt: boolean;
   copperBolus: boolean;
+  copperDose: string;
   weight: string;
   notes: string;
   /** Opt out of the auto-suggested deworming when FAMACHA is at/above threshold. */
@@ -60,6 +61,7 @@ const EMPTY_ROW: RowState = {
   hoofTrim: false,
   cdt: false,
   copperBolus: false,
+  copperDose: "",
   weight: "",
   notes: "",
   dewormOptOut: false,
@@ -144,7 +146,12 @@ export default function WorksheetResults() {
 
     if (row.hoofTrim) items.push({ goatId, eventType: "hoof_trim" });
     if (row.cdt) items.push({ goatId, eventType: "cdt_shot" });
-    if (row.copperBolus) items.push({ goatId, eventType: "copper_bolus" });
+    if (row.copperBolus) {
+      const item: BulkHealthEventItem = { goatId, eventType: "copper_bolus" };
+      const copperDose = row.copperDose ? Number(row.copperDose) : null;
+      if (copperDose != null && copperDose > 0) item.dosageMl = copperDose;
+      items.push(item);
+    }
 
     // Weight is attached to every event for the goat (matches the wizard); a
     // notes line is attached to the goat's first event so it isn't duplicated.
@@ -398,11 +405,31 @@ export default function WorksheetResults() {
                               />
                             </td>
                             <td className="px-2 py-2 align-top text-center">
-                              <Checkbox
-                                checked={row.copperBolus}
-                                onCheckedChange={(c) => updateRow(goat.id, { copperBolus: c === true })}
-                                aria-label={`Copper bolus ${goat.name}`}
-                              />
+                              <div className="space-y-1.5 flex flex-col items-center">
+                                <Checkbox
+                                  checked={row.copperBolus}
+                                  onCheckedChange={(c) =>
+                                    updateRow(goat.id, { copperBolus: c === true, ...(c === true ? {} : { copperDose: "" }) })
+                                  }
+                                  aria-label={`Copper bolus ${goat.name}`}
+                                />
+                                {row.copperBolus && (
+                                  <Select
+                                    value={row.copperDose || "none"}
+                                    onValueChange={(v) => updateRow(goat.id, { copperDose: v === "none" ? "" : v })}
+                                  >
+                                    <SelectTrigger className="h-8 w-[80px]" aria-label={`Copper bolus dose for ${goat.name}`}>
+                                      <SelectValue placeholder="Dose" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">—</SelectItem>
+                                      {COPPER_BOLUS_DOSES_G.map((g) => (
+                                        <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
                             </td>
                             <td className="px-2 py-2 align-top">
                               <Input
@@ -551,11 +578,31 @@ export default function WorksheetResults() {
                         <label className="flex items-center gap-2 text-sm text-foreground">
                           <Checkbox
                             checked={row.copperBolus}
-                            onCheckedChange={(c) => updateRow(goat.id, { copperBolus: c === true })}
+                            onCheckedChange={(c) =>
+                              updateRow(goat.id, { copperBolus: c === true, ...(c === true ? {} : { copperDose: "" }) })
+                            }
                             aria-label={`Copper bolus ${goat.name}`}
                           />
                           Copper Bolus
                         </label>
+                        {row.copperBolus && (
+                          <div className="pl-6">
+                            <Select
+                              value={row.copperDose || "none"}
+                              onValueChange={(v) => updateRow(goat.id, { copperDose: v === "none" ? "" : v })}
+                            >
+                              <SelectTrigger className="h-9 w-[120px]" aria-label={`Copper bolus dose for ${goat.name}`}>
+                                <SelectValue placeholder="Dose (g)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                {COPPER_BOLUS_DOSES_G.map((g) => (
+                                  <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1">

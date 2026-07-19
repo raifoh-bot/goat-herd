@@ -49,6 +49,14 @@ export const healthEventTypeConfig = Object.fromEntries(
   HEALTH_EVENT_TYPES.map((t) => [t.value, t]),
 ) as Record<HealthEventEventType, (typeof HEALTH_EVENT_TYPES)[number]>;
 
+/** Copper bolus doses are given in whole-gram boluses: 2g increments, 2–20g. */
+export const COPPER_BOLUS_DOSES_G = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
+
+/** The dose unit for an event type — copper boluses are grams, everything else mL. */
+export function doseUnit(eventType: HealthEventEventType): "g" | "mL" {
+  return eventType === "copper_bolus" ? "g" : "mL";
+}
+
 function todayInputValue(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -202,8 +210,25 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
                 <Input id="he-product" placeholder="e.g. Cydectin" value={productName} onChange={(e) => setProductName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="he-dosage">Dose in mL (optional)</Label>
-                <Input id="he-dosage" type="number" min={0} step="0.1" value={dosageMl} onChange={(e) => setDosageMl(e.target.value)} />
+                {eventType === "copper_bolus" ? (
+                  <>
+                    <Label>Dose in g (optional)</Label>
+                    <Select value={dosageMl || "none"} onValueChange={(v) => setDosageMl(v === "none" ? "" : v)}>
+                      <SelectTrigger aria-label="Copper bolus dose in grams"><SelectValue placeholder="Select dose" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {COPPER_BOLUS_DOSES_G.map((g) => (
+                          <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Label htmlFor="he-dosage">Dose in mL (optional)</Label>
+                    <Input id="he-dosage" type="number" min={0} step="0.1" value={dosageMl} onChange={(e) => setDosageMl(e.target.value)} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -371,8 +396,25 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
                 <Input id="he-edit-product" placeholder="e.g. Cydectin" value={productName} onChange={(e) => setProductName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="he-edit-dosage">Dose in mL (optional)</Label>
-                <Input id="he-edit-dosage" type="number" min={0} step="0.1" value={dosageMl} onChange={(e) => setDosageMl(e.target.value)} />
+                {eventType === "copper_bolus" ? (
+                  <>
+                    <Label>Dose in g (optional)</Label>
+                    <Select value={dosageMl || "none"} onValueChange={(v) => setDosageMl(v === "none" ? "" : v)}>
+                      <SelectTrigger aria-label="Copper bolus dose in grams"><SelectValue placeholder="Select dose" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {COPPER_BOLUS_DOSES_G.map((g) => (
+                          <SelectItem key={g} value={String(g)}>{g} g</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Label htmlFor="he-edit-dosage">Dose in mL (optional)</Label>
+                    <Input id="he-edit-dosage" type="number" min={0} step="0.1" value={dosageMl} onChange={(e) => setDosageMl(e.target.value)} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -412,7 +454,7 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
   const details: string[] = [];
   if (event.famachaScore != null) details.push(`FAMACHA ${event.famachaScore}`);
   if (event.productName) details.push(event.productName);
-  if (event.dosageMl != null) details.push(`${event.dosageMl} mL`);
+  if (event.dosageMl != null) details.push(`${event.dosageMl} ${doseUnit(event.eventType)}`);
   if (event.bodyWeight != null) details.push(`${event.bodyWeight} ${weightUnitLabel(weightUnit)}`);
 
   const remove = () => {
