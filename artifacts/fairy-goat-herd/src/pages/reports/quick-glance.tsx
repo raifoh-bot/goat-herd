@@ -10,36 +10,39 @@ import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
 import type { Goat } from "@workspace/api-client-react/src/generated/api.schemas";
 
-type SortKey = "name" | "dateOfBirth" | "age" | "tattoos" | "damName" | "sireName";
+type TattooKey =
+  | "rightEarTattoo"
+  | "leftEarTattoo"
+  | "rightTailTattoo"
+  | "leftTailTattoo"
+  | "centerTailTattoo";
+
+type SortKey = "name" | "dateOfBirth" | "age" | TattooKey;
 type SortDir = "asc" | "desc";
+
+const TATTOO_COLUMNS: { key: TattooKey; label: string }[] = [
+  { key: "rightEarTattoo", label: "Right Ear" },
+  { key: "leftEarTattoo", label: "Left Ear" },
+  { key: "rightTailTattoo", label: "Right Tail" },
+  { key: "leftTailTattoo", label: "Left Tail" },
+  { key: "centerTailTattoo", label: "Center Tail" },
+];
 
 const COLUMNS: { key: SortKey; label: string; width?: string }[] = [
   { key: "name",        label: "Barn Name",     width: "w-40" },
   { key: "dateOfBirth", label: "Date of Birth", width: "w-32" },
   { key: "age",         label: "Age",           width: "w-28" },
-  { key: "tattoos",     label: "Tattoos",       width: "" },
-  { key: "damName",     label: "Dam",           width: "" },
-  { key: "sireName",    label: "Sire",          width: "" },
+  ...TATTOO_COLUMNS,
 ];
 
-const TATTOO_FIELDS: { key: keyof Goat; label: string }[] = [
-  { key: "rightEarTattoo", label: "RE" },
-  { key: "leftEarTattoo", label: "LE" },
-  { key: "rightTailTattoo", label: "RT" },
-  { key: "leftTailTattoo", label: "LT" },
-  { key: "centerTailTattoo", label: "CT" },
-];
+const TATTOO_KEYS = TATTOO_COLUMNS.map((c) => c.key);
 
-/**
- * Combined tattoo string used for sorting: the left-ear/left-tail side
- * usually carries the year letter + birth order, so sorting on the joined
- * uppercase string groups litters together and exposes gaps in birth order.
- */
-function tattooSortValue(goat: Goat): string {
-  return TATTOO_FIELDS
-    .map((f) => ((goat[f.key] as string | null | undefined) ?? "").trim().toUpperCase())
-    .filter(Boolean)
-    .join(" ");
+function tattooValue(goat: Goat, key: TattooKey): string {
+  return ((goat[key] as string | null | undefined) ?? "").trim().toUpperCase();
+}
+
+function hasAnyTattoo(goat: Goat): boolean {
+  return TATTOO_KEYS.some((k) => tattooValue(goat, k) !== "");
 }
 
 function sortGoats(goats: Goat[], key: SortKey, dir: SortDir): Goat[] {
@@ -52,15 +55,15 @@ function sortGoats(goats: Goat[], key: SortKey, dir: SortDir): Goat[] {
 
     let aVal: string;
     let bVal: string;
-    if (key === "tattoos") {
-      aVal = tattooSortValue(a);
-      bVal = tattooSortValue(b);
-      // Goats with no tattoos sort last so missing tattoos stand out together.
+    if (key === "name") {
+      aVal = a.name ?? "";
+      bVal = b.name ?? "";
+    } else {
+      aVal = tattooValue(a, key);
+      bVal = tattooValue(b, key);
+      // Goats missing this tattoo sort last so gaps stand out together.
       if (!aVal && bVal) return 1;
       if (aVal && !bVal) return -1;
-    } else {
-      aVal = (a[key] as string | null | undefined) ?? "";
-      bVal = (b[key] as string | null | undefined) ?? "";
     }
     const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
     return dir === "asc" ? cmp : -cmp;
@@ -72,32 +75,6 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
   return sortDir === "asc"
     ? <ChevronUp className="h-3.5 w-3.5 text-primary" />
     : <ChevronDown className="h-3.5 w-3.5 text-primary" />;
-}
-
-function TattooCell({ goat }: { goat: Goat }) {
-  const tattoos = TATTOO_FIELDS
-    .map((f) => ({ label: f.label, value: goat[f.key] as string | null | undefined }))
-    .filter((t) => t.value);
-
-  if (tattoos.length === 0) {
-    return (
-      <td className="px-4 py-3 align-top">
-        <span className="text-xs font-medium text-destructive/80">None recorded</span>
-      </td>
-    );
-  }
-
-  return (
-    <td className="px-4 py-3 align-top text-muted-foreground">
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-        {tattoos.map((t) => (
-          <span key={t.label} className="whitespace-nowrap text-xs">
-            {t.label} <span className="font-mono uppercase text-foreground">{t.value}</span>
-          </span>
-        ))}
-      </div>
-    </td>
-  );
 }
 
 export default function QuickGlanceReport() {
@@ -116,7 +93,7 @@ export default function QuickGlanceReport() {
   }
 
   const sorted = goats ? sortGoats(goats, sortKey, sortDir) : [];
-  const missingTattoos = sorted.filter((g) => tattooSortValue(g) === "").length;
+  const missingTattoos = sorted.filter((g) => !hasAnyTattoo(g)).length;
 
   return (
     <Layout>
@@ -188,9 +165,18 @@ export default function QuickGlanceReport() {
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap align-top">
                       {goat.dateOfBirth ? formatAge(goat.dateOfBirth) : "—"}
                     </td>
-                    <TattooCell goat={goat} />
-                    <td className="px-4 py-3 text-muted-foreground align-top">{goat.damName || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground align-top">{goat.sireName || "—"}</td>
+                    {TATTOO_COLUMNS.map((col) => {
+                      const value = tattooValue(goat, col.key);
+                      return (
+                        <td key={col.key} className="px-4 py-3 align-top whitespace-nowrap">
+                          {value ? (
+                            <span className="font-mono uppercase text-foreground">{value}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))
               )}
