@@ -425,17 +425,21 @@ describe("GET /api/health-events/due", () => {
     expect(entry).toBeFalsy();
   });
 
-  it("excludes dead and sold goats but keeps retired-from-breeding goats", async () => {
+  it("only includes on-farm goats (null herdStatus counts as on-farm)", async () => {
     await setIntervals({ hoof_trim: 56 });
     const eligible = await createGoat({ herdStatus: "on-farm" });
+    const noStatus = await createGoat({ herdStatus: null });
+    const leased = await createGoat({ herdStatus: "leased" });
     const dead = await createGoat({ herdStatus: "dead" });
     const retired = await createGoat({ breedingStatus: "retired" });
 
     const res = await adminAgent.get("/api/health-events/due");
     const ids = res.body.goats.map((g: { goat: { id: number } }) => g.goat.id);
     expect(ids).toContain(eligible.id);
-    expect(ids).not.toContain(dead.id);
+    expect(ids).toContain(noStatus.id);
     expect(ids).toContain(retired.id);
+    expect(ids).not.toContain(leased.id);
+    expect(ids).not.toContain(dead.id);
   });
 
   it("requires authentication", async () => {

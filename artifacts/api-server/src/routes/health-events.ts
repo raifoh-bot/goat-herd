@@ -217,6 +217,9 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
     return;
   }
 
+  // Only on-farm goats appear in the Health Work Due widget — leased-out or
+  // otherwise off-farm goats aren't the farmer's routine-care responsibility.
+  // A null herdStatus is treated as on-farm.
   const goats = await db
     .select()
     .from(goatsTable)
@@ -225,7 +228,7 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
         eq(goatsTable.farmId, fid),
         or(
           isNull(goatsTable.herdStatus),
-          notInArray(goatsTable.herdStatus, [...EXCLUDED_HERD_STATUSES]),
+          eq(goatsTable.herdStatus, "on-farm"),
         ),
       ),
     )
