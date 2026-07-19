@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Award, GitBranch, ClipboardList, ChevronRight, HeartPulse, PencilLine, Trophy, type LucideIcon } from "lucide-react";
+import { Award, GitBranch, ClipboardList, ChevronRight, Eye, HeartPulse, PencilLine, Trophy, type LucideIcon } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -20,6 +20,12 @@ const REPORTS: ReportEntry[] = [
     title: "Lineage Report",
     description: "Full pedigree listing for every goat in the herd, with printable output.",
     icon: GitBranch,
+  },
+  {
+    href: "/reports/quick-glance",
+    title: "Quick Glance",
+    description: "Sortable roster to double-check tattoos, confirm birth order, and account for every goat.",
+    icon: Eye,
   },
   {
     href: "/reports/barn-worksheet",

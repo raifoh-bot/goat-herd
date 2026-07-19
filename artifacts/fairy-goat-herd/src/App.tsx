@@ -30,6 +30,7 @@ import WorksheetResults from "@/pages/health-events/worksheet";
 import InventoryList from "@/pages/inventory/index";
 import Reports from "@/pages/reports/index";
 import LineageReports from "@/pages/reports/lineage";
+import QuickGlanceReport from "@/pages/reports/quick-glance";
 import BarnWorksheet from "@/pages/reports/barn-worksheet";
 import PedigreeCertificate from "@/pages/reports/pedigree";
 import HealthHistoryReport from "@/pages/reports/health-history";
@@ -102,6 +103,7 @@ function AuthenticatedRoutes() {
         <Route path="/inventory" component={InventoryList} />
         <Route path="/reports" component={Reports} />
         <Route path="/reports/lineage" component={LineageReports} />
+        <Route path="/reports/quick-glance" component={QuickGlanceReport} />
         <Route path="/reports/barn-worksheet" component={BarnWorksheet} />
         <Route path="/reports/pedigree" component={PedigreeCertificate} />
         <Route path="/reports/health-history" component={HealthHistoryReport} />
