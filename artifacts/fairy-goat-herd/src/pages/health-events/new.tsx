@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { breedLabels } from "@/lib/breeds";
+import { breedLabels, getBreedOptions } from "@/lib/breeds";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import { COPPER_BOLUS_DOSES_G, HEALTH_EVENT_TYPES, dateInputToIso, doseUnit } from "@/components/health-history";
 
@@ -64,7 +64,7 @@ export default function HerdWorkDay() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const { famachaThreshold, weightUnit } = useFarmSettings();
+  const { famachaThreshold, weightUnit, enabledBreeds } = useFarmSettings();
 
   const { data: goats, isLoading } = useGetHealthEventBulkSession({
     query: { queryKey: getGetHealthEventBulkSessionQueryKey() },
@@ -76,6 +76,9 @@ export default function HerdWorkDay() {
 
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
+  const [breedFilter, setBreedFilter] = useState<string | undefined>(undefined);
+  const [sexFilter, setSexFilter] = useState<string | undefined>(undefined);
+  const [herdStatusFilter, setHerdStatusFilter] = useState<string | undefined>("on-farm");
   const [selectedGoatIds, setSelectedGoatIds] = useState<Set<number>>(new Set());
   const [selectedTypes, setSelectedTypes] = useState<Set<HealthEventEventType>>(new Set());
   const [eventDate, setEventDate] = useState(todayInputValue());
@@ -89,11 +92,22 @@ export default function HerdWorkDay() {
   const [dewormOptOut, setDewormOptOut] = useState<Set<number>>(new Set());
 
   const allGoats = useMemo(() => goats ?? [], [goats]);
+  const breedOptions = useMemo(() => getBreedOptions(enabledBreeds), [enabledBreeds]);
   const filteredGoats = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return allGoats;
-    return allGoats.filter((g) => g.name.toLowerCase().includes(q));
-  }, [allGoats, search]);
+    return allGoats.filter((g) => {
+      if (q && !g.name.toLowerCase().includes(q)) return false;
+      if (breedFilter && g.breed !== breedFilter) return false;
+      if (sexFilter && g.sex !== sexFilter) return false;
+      if (herdStatusFilter) {
+        // Goats without a recorded herd status are treated as on-farm so the
+        // default filter never hides them.
+        const status = g.herdStatus ?? "on-farm";
+        if (status !== herdStatusFilter) return false;
+      }
+      return true;
+    });
+  }, [allGoats, search, breedFilter, sexFilter, herdStatusFilter]);
   const selectedGoats = useMemo(
     () => allGoats.filter((g) => selectedGoatIds.has(g.id)),
     [allGoats, selectedGoatIds],
@@ -288,8 +302,10 @@ export default function HerdWorkDay() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedGoatIds(new Set(allGoats.map((g) => g.id)))}
-                  disabled={isLoading || allGoats.length === 0}
+                  onClick={() =>
+                    setSelectedGoatIds((prev) => new Set([...prev, ...filteredGoats.map((g) => g.id)]))
+                  }
+                  disabled={isLoading || filteredGoats.length === 0}
                 >
                   Select all
                 </Button>
@@ -318,14 +334,57 @@ export default function HerdWorkDay() {
                   </div>
                 </div>
               )}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search goats..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search goats..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select
+                  value={herdStatusFilter || "all"}
+                  onValueChange={(val) => setHerdStatusFilter(val === "all" ? undefined : val)}
+                >
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Herd Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Herd Status</SelectItem>
+                    <SelectItem value="on-farm">On Farm</SelectItem>
+                    <SelectItem value="leased">Leased</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={breedFilter || "all"}
+                  onValueChange={(val) => setBreedFilter(val === "all" ? undefined : val)}
+                >
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Breed" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Breeds</SelectItem>
+                    {breedOptions.map((b) => (
+                      <SelectItem key={b.slug} value={b.slug}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={sexFilter || "all"}
+                  onValueChange={(val) => setSexFilter(val === "all" ? undefined : val)}
+                >
+                  <SelectTrigger className="w-full sm:w-[130px]">
+                    <SelectValue placeholder="Sex" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sexes</SelectItem>
+                    <SelectItem value="doe">Does</SelectItem>
+                    <SelectItem value="buck">Bucks</SelectItem>
+                    <SelectItem value="wether">Wethers</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {isLoading ? (
                 <div className="space-y-2">
