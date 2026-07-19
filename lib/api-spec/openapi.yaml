@@ -378,6 +378,38 @@ paths:
           description: Goat not found
 
   /goats/{id}/health-events/{eventId}:
+    put:
+      operationId: updateGoatHealthEvent
+      tags: [health-events]
+      summary: Update a health event (any farm member)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHealthEventBody"
+      responses:
+        "200":
+          description: Health event updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEvent"
+        "400":
+          description: Invalid input
+        "404":
+          description: Health event not found
     delete:
       operationId: deleteGoatHealthEvent
       tags: [health-events]
@@ -2718,6 +2750,40 @@ components:
       required:
         - eventType
         - eventDate
+
+    UpdateHealthEventBody:
+      type: object
+      description: >-
+        Fields to change on a health event. Omitted fields are left as-is;
+        nullable fields can be cleared by sending null.
+      properties:
+        eventType:
+          type: string
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+        eventDate:
+          type: string
+          format: date-time
+        famachaScore:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        dosageMl:
+          type: number
+          nullable: true
+          minimum: 0
+        bodyWeight:
+          type: number
+          nullable: true
+          minimum: 0
+        productName:
+          type: string
+          nullable: true
+          maxLength: 200
+        notes:
+          type: string
+          nullable: true
+          maxLength: 2000
 
     BulkHealthEventItem:
       type: object

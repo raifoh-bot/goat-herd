@@ -184,6 +184,82 @@ describe("POST /api/goats/:id/health-events", () => {
   });
 });
 
+describe("PUT /api/goats/:id/health-events/:eventId", () => {
+  async function seedEvent(goatId: number) {
+    const res = await adminAgent.post(`/api/goats/${goatId}/health-events`).send({
+      eventType: "deworming",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      famachaScore: 4,
+      productName: "Cydectin",
+      dosageMl: 5,
+      notes: "original notes",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    return res.body as { id: number };
+  }
+
+  it("updates fields and clears nullable fields with null", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const res = await adminAgent.put(`/api/goats/${goat.id}/health-events/${event.id}`).send({
+      eventDate: "2026-06-15T00:00:00.000Z",
+      famachaScore: 2,
+      productName: "Valbazen",
+      dosageMl: null,
+      notes: null,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.famachaScore).toBe(2);
+    expect(res.body.productName).toBe("Valbazen");
+    expect(res.body.dosageMl).toBeNull();
+    expect(res.body.notes).toBeNull();
+    expect(new Date(res.body.eventDate).toISOString()).toBe("2026-06-15T00:00:00.000Z");
+  });
+
+  it("drops the FAMACHA score when the type changes to a non-FAMACHA event", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ eventType: "hoof_trim" });
+    expect(res.status).toBe(200);
+    expect(res.body.eventType).toBe("hoof_trim");
+    expect(res.body.famachaScore).toBeNull();
+  });
+
+  it("allows a farmhand to edit an event", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const res = await farmhandAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ notes: "corrected by farmhand" });
+    expect(res.status).toBe(200);
+    expect(res.body.notes).toBe("corrected by farmhand");
+  });
+
+  it("rejects an invalid body with 400", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ famachaScore: 9 });
+    expect(res.status).toBe(400);
+  });
+
+  it("404s for a goat in another farm", async () => {
+    const goat = await createGoat({ farmId: otherFarmId });
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/1`)
+      .send({ notes: "nope" });
+    expect(res.status).toBe(404);
+  });
+});
+
 describe("DELETE /api/goats/:id/health-events/:eventId", () => {
   it("lets an admin delete and blocks a farmhand", async () => {
     const goat = await createGoat();

@@ -1108,6 +1108,93 @@ export const CreateGoatHealthEventBody = zod.object({
 });
 
 /**
+ * @summary Update a health event (any farm member)
+ */
+export const UpdateGoatHealthEventParams = zod.object({
+  id: zod.coerce.number(),
+  eventId: zod.coerce.number(),
+});
+
+export const updateGoatHealthEventBodyFamachaScoreMax = 5;
+
+export const updateGoatHealthEventBodyDosageMlMin = 0;
+
+export const updateGoatHealthEventBodyBodyWeightMin = 0;
+
+export const updateGoatHealthEventBodyProductNameMax = 200;
+
+export const updateGoatHealthEventBodyNotesMax = 2000;
+
+export const UpdateGoatHealthEventBody = zod
+  .object({
+    eventType: zod
+      .enum([
+        "hoof_trim",
+        "cdt_shot",
+        "copper_bolus",
+        "famacha",
+        "deworming",
+        "other",
+      ])
+      .optional(),
+    eventDate: zod.coerce.date().optional(),
+    famachaScore: zod
+      .number()
+      .min(1)
+      .max(updateGoatHealthEventBodyFamachaScoreMax)
+      .nullish(),
+    dosageMl: zod.number().min(updateGoatHealthEventBodyDosageMlMin).nullish(),
+    bodyWeight: zod
+      .number()
+      .min(updateGoatHealthEventBodyBodyWeightMin)
+      .nullish(),
+    productName: zod
+      .string()
+      .max(updateGoatHealthEventBodyProductNameMax)
+      .nullish(),
+    notes: zod.string().max(updateGoatHealthEventBodyNotesMax).nullish(),
+  })
+  .describe(
+    "Fields to change on a health event. Omitted fields are left as-is; nullable fields can be cleared by sending null.",
+  );
+
+export const updateGoatHealthEventResponseFamachaScoreMax = 5;
+
+export const UpdateGoatHealthEventResponse = zod.object({
+  id: zod.number(),
+  goatId: zod.number(),
+  eventType: zod.enum([
+    "hoof_trim",
+    "cdt_shot",
+    "copper_bolus",
+    "famacha",
+    "deworming",
+    "other",
+  ]),
+  eventDate: zod.coerce.date(),
+  famachaScore: zod
+    .number()
+    .min(1)
+    .max(updateGoatHealthEventResponseFamachaScoreMax)
+    .nullish()
+    .describe("FAMACHA anemia score (1 = healthy, 5 = severely anemic)."),
+  dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
+  bodyWeight: zod
+    .number()
+    .nullish()
+    .describe(
+      "The goat's body weight at the time of the event (farm weight unit).",
+    ),
+  productName: zod
+    .string()
+    .nullish()
+    .describe("Product used (e.g. dewormer or vaccine brand)."),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Delete a health event (Admin/Owner only)
  */
 export const DeleteGoatHealthEventParams = zod.object({

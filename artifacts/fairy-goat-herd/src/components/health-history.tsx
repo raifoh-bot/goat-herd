@@ -5,12 +5,13 @@ import {
   useCreateGoatHealthEvent,
   useDeleteGoatHealthEvent,
   useListGoatHealthEvents,
+  useUpdateGoatHealthEvent,
 } from "@workspace/api-client-react";
 import type {
   HealthEvent,
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
-import { AlertTriangle, Bug, ChevronDown, ChevronUp, Droplets, Eye, Footprints, HeartPulse, Loader2, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
+import { AlertTriangle, Bug, ChevronDown, ChevronUp, Droplets, Eye, Footprints, HeartPulse, Loader2, Pencil, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -230,11 +231,181 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
   );
 }
 
+/** Convert an ISO timestamp to a yyyy-mm-dd date-input value (local time). */
+function isoToDateInput(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+interface EditHealthEventDialogProps {
+  goatId: number;
+  event: HealthEvent;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * Edit a previously recorded health event — fixes transcription mistakes made
+ * on the goat page or when entering Barn Worksheet results. Cleared optional
+ * fields are sent as null so they are actually removed from the record.
+ */
+export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: EditHealthEventDialogProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { weightUnit } = useFarmSettings();
+  const updateEvent = useUpdateGoatHealthEvent();
+
+  const [eventType, setEventType] = useState<HealthEventEventType>(event.eventType);
+  const [eventDate, setEventDate] = useState(isoToDateInput(event.eventDate));
+  const [famachaScore, setFamachaScore] = useState<string>(event.famachaScore != null ? String(event.famachaScore) : "");
+  const [dosageMl, setDosageMl] = useState(event.dosageMl != null ? String(event.dosageMl) : "");
+  const [bodyWeight, setBodyWeight] = useState(event.bodyWeight != null ? String(event.bodyWeight) : "");
+  const [productName, setProductName] = useState(event.productName ?? "");
+  const [notes, setNotes] = useState(event.notes ?? "");
+
+  // Re-prime the form whenever the dialog opens for a (possibly different) event.
+  useEffect(() => {
+    if (!open) return;
+    setEventType(event.eventType);
+    setEventDate(isoToDateInput(event.eventDate));
+    setFamachaScore(event.famachaScore != null ? String(event.famachaScore) : "");
+    setDosageMl(event.dosageMl != null ? String(event.dosageMl) : "");
+    setBodyWeight(event.bodyWeight != null ? String(event.bodyWeight) : "");
+    setProductName(event.productName ?? "");
+    setNotes(event.notes ?? "");
+  }, [open, event]);
+
+  const showFamacha = eventType === "famacha" || eventType === "deworming";
+  const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
+  const showDosage = showProduct;
+
+  const submit = () => {
+    if (!eventDate) {
+      toast({ title: "Pick a date", description: "The event date is required.", variant: "destructive" });
+      return;
+    }
+    const scoreNum = famachaScore ? Number(famachaScore) : null;
+    updateEvent.mutate(
+      {
+        id: goatId,
+        eventId: event.id,
+        data: {
+          eventType,
+          eventDate: dateInputToIso(eventDate),
+          famachaScore: showFamacha && scoreNum ? scoreNum : null,
+          dosageMl: showDosage && dosageMl ? Number(dosageMl) : null,
+          bodyWeight: bodyWeight ? Number(bodyWeight) : null,
+          productName: showProduct && productName.trim() ? productName.trim() : null,
+          notes: notes.trim() ? notes.trim() : null,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListGoatHealthEventsQueryKey(goatId) });
+          toast({ title: "Health event updated", description: "The record was saved." });
+          onOpenChange(false);
+        },
+        onError: () =>
+          toast({
+            title: "Could not save",
+            description: "The health event could not be updated. Please try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-serif">Edit Health Event</DialogTitle>
+          <DialogDescription>
+            Fix anything that was mistyped when this event was recorded.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Event type</Label>
+              <Select value={eventType} onValueChange={(v) => setEventType(v as HealthEventEventType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {HEALTH_EVENT_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="he-edit-date">Date</Label>
+              <Input id="he-edit-date" type="date" value={eventDate} max={todayInputValue()} onChange={(e) => setEventDate(e.target.value)} />
+            </div>
+          </div>
+
+          {showFamacha && (
+            <div className="space-y-1.5">
+              <Label>FAMACHA score {eventType === "deworming" ? "(optional)" : ""}</Label>
+              <Select value={famachaScore || "none"} onValueChange={(v) => setFamachaScore(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Select score (1 = healthy, 5 = anemic)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <SelectItem key={s} value={String(s)}>
+                      {s} — {s === 1 ? "Red (optimal)" : s === 2 ? "Red-pink" : s === 3 ? "Pink" : s === 4 ? "Pink-white" : "White (severe)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {showProduct && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="he-edit-product">Product (optional)</Label>
+                <Input id="he-edit-product" placeholder="e.g. Cydectin" value={productName} onChange={(e) => setProductName(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="he-edit-dosage">Dose in mL (optional)</Label>
+                <Input id="he-edit-dosage" type="number" min={0} step="0.1" value={dosageMl} onChange={(e) => setDosageMl(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="he-edit-weight">Body weight in {weightUnitLabel(weightUnit)} (optional)</Label>
+            <Input id="he-edit-weight" type="number" min={0} step="0.1" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="he-edit-notes">Notes (optional)</Label>
+            <Textarea id="he-edit-notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={updateEvent.isPending}>
+            {updateEvent.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: number; weightUnit: "kg" | "lb" }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isManager = useIsManager();
   const deleteEvent = useDeleteGoatHealthEvent();
+  const [editOpen, setEditOpen] = useState(false);
   const config = healthEventTypeConfig[event.eventType];
   const Icon = config?.icon ?? HeartPulse;
 
@@ -275,6 +446,15 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
       <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
         {formatDate(new Date(event.eventDate), { month: "short", day: "numeric", year: "numeric" })}
       </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 text-muted-foreground/50 hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        onClick={() => setEditOpen(true)}
+        aria-label="Edit health event"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </Button>
       {isManager && (
         <Button
           variant="ghost"
@@ -287,6 +467,7 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       )}
+      <EditHealthEventDialog goatId={goatId} event={event} open={editOpen} onOpenChange={setEditOpen} />
     </div>
   );
 }

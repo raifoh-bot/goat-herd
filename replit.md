@@ -48,6 +48,7 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 ### Health Events
 - `GET /api/goats/:id/health-events` — list a goat's health events (newest first)
 - `POST /api/goats/:id/health-events` — record a health event (farmhand allowed)
+- `PUT /api/goats/:id/health-events/:eventId` — edit a health event (farmhand allowed; omitted fields unchanged, null clears; FAMACHA score auto-dropped on non-FAMACHA/deworming types)
 - `DELETE /api/goats/:id/health-events/:eventId` — delete a health event (Admin/Owner only)
 - `GET /api/health-events/bulk-session` — active goats eligible for a herd work day (excludes dead/sold/retired)
 - `POST /api/health-events/bulk` — record a batch of events for many goats in one transaction (farmhand allowed); returns `{created}`

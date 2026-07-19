@@ -82,6 +82,7 @@ import type {
   UpdateFarmBody,
   UpdateFarmSettingsBody,
   UpdateGoatBody,
+  UpdateHealthEventBody,
   UpdateKidBody,
   UpdateOwnEmailBody,
   UpdatePlatformThresholdsBody,
@@ -1382,6 +1383,94 @@ export const useCreateGoatHealthEvent = <
   TContext
 > => {
   return useMutation(getCreateGoatHealthEventMutationOptions(options));
+};
+
+/**
+ * @summary Update a health event (any farm member)
+ */
+export const getUpdateGoatHealthEventUrl = (id: number, eventId: number) => {
+  return `/api/goats/${id}/health-events/${eventId}`;
+};
+
+export const updateGoatHealthEvent = async (
+  id: number,
+  eventId: number,
+  updateHealthEventBody: UpdateHealthEventBody,
+  options?: RequestInit,
+): Promise<HealthEvent> => {
+  return customFetch<HealthEvent>(getUpdateGoatHealthEventUrl(id, eventId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateHealthEventBody),
+  });
+};
+
+export const getUpdateGoatHealthEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGoatHealthEvent>>,
+    TError,
+    { id: number; eventId: number; data: BodyType<UpdateHealthEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateGoatHealthEvent>>,
+  TError,
+  { id: number; eventId: number; data: BodyType<UpdateHealthEventBody> },
+  TContext
+> => {
+  const mutationKey = ["updateGoatHealthEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateGoatHealthEvent>>,
+    { id: number; eventId: number; data: BodyType<UpdateHealthEventBody> }
+  > = (props) => {
+    const { id, eventId, data } = props ?? {};
+
+    return updateGoatHealthEvent(id, eventId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateGoatHealthEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateGoatHealthEvent>>
+>;
+export type UpdateGoatHealthEventMutationBody = BodyType<UpdateHealthEventBody>;
+export type UpdateGoatHealthEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a health event (any farm member)
+ */
+export const useUpdateGoatHealthEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGoatHealthEvent>>,
+    TError,
+    { id: number; eventId: number; data: BodyType<UpdateHealthEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateGoatHealthEvent>>,
+  TError,
+  { id: number; eventId: number; data: BodyType<UpdateHealthEventBody> },
+  TContext
+> => {
+  return useMutation(getUpdateGoatHealthEventMutationOptions(options));
 };
 
 /**

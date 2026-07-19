@@ -769,6 +769,39 @@ export interface CreateHealthEventBody {
   notes?: string;
 }
 
+export type UpdateHealthEventBodyEventType =
+  (typeof UpdateHealthEventBodyEventType)[keyof typeof UpdateHealthEventBodyEventType];
+
+export const UpdateHealthEventBodyEventType = {
+  hoof_trim: "hoof_trim",
+  cdt_shot: "cdt_shot",
+  copper_bolus: "copper_bolus",
+  famacha: "famacha",
+  deworming: "deworming",
+  other: "other",
+} as const;
+
+/**
+ * Fields to change on a health event. Omitted fields are left as-is; nullable fields can be cleared by sending null.
+ */
+export interface UpdateHealthEventBody {
+  eventType?: UpdateHealthEventBodyEventType;
+  eventDate?: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  famachaScore?: number | null;
+  /** @minimum 0 */
+  dosageMl?: number | null;
+  /** @minimum 0 */
+  bodyWeight?: number | null;
+  /** @maxLength 200 */
+  productName?: string | null;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
 export type BulkHealthEventItemEventType =
   (typeof BulkHealthEventItemEventType)[keyof typeof BulkHealthEventItemEventType];
 
