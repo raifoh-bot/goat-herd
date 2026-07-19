@@ -1495,6 +1495,25 @@ export interface CreateUserBody {
   role: CreateUserBodyRole;
 }
 
+export interface CreateSuperadminUserBody {
+  /** @minLength 1 */
+  username: string;
+  /**
+   * Contact email, required for the super-admin password recovery flow.
+   * @minLength 1
+   */
+  email: string;
+  /**
+   * A temporary password the new super-admin should change after first login.
+   * @minLength 8
+   */
+  password: string;
+}
+
+export interface UpdateSuperadminUserBody {
+  active: boolean;
+}
+
 export type UpdateUserBodyRole =
   (typeof UpdateUserBodyRole)[keyof typeof UpdateUserBodyRole];
 

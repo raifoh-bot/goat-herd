@@ -15,6 +15,8 @@ import {
   UpdateFarmBody,
   DeleteFarmBody,
   SetUserPasswordBody,
+  CreateSuperadminUserBody,
+  UpdateSuperadminUserBody,
   UpdatePlatformSettingsBody,
   GetPlatformSummaryResponse,
   GetPlatformSettingsResponse,
@@ -348,6 +350,115 @@ router.post(
     res.sendStatus(204);
   },
 );
+
+router.get("/superadmin/users", async (_req, res): Promise<void> => {
+  // Platform operators are the rows with no farm binding. Filtering on role too
+  // guards against any legacy farm-less rows that are not superadmins.
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(and(isNull(usersTable.farmId), eq(usersTable.role, "superadmin")))
+    .orderBy(desc(usersTable.createdAt));
+  res.json(users.map(toPublicUser));
+});
+
+router.post("/superadmin/users", async (req, res): Promise<void> => {
+  const parsed = CreateSuperadminUserBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const username = parsed.data.username.trim();
+  if (!username) {
+    res.status(400).json({ error: "Username is required" });
+    return;
+  }
+  const email = parsed.data.email.trim();
+  if (!email) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
+  // Super-admin usernames are unique among farm-less accounts (enforced by the
+  // partial unique index); check first for a friendly 409.
+  const [existing] = await db
+    .select()
+    .from(usersTable)
+    .where(and(eq(usersTable.username, username), isNull(usersTable.farmId)));
+  if (existing) {
+    res.status(409).json({ error: "Username already taken" });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+
+  const [user] = await db
+    .insert(usersTable)
+    .values({
+      farmId: null,
+      username,
+      email,
+      passwordHash,
+      role: "superadmin",
+      active: true,
+    })
+    .returning();
+
+  req.log.info(
+    { newSuperadmin: user.username, createdBy: req.authUser?.username },
+    "superadmin created a new super-admin account",
+  );
+
+  res.status(201).json(toPublicUser(user));
+});
+
+router.put("/superadmin/users/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = UpdateSuperadminUserBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  // A super-admin can never deactivate their own account — that could lock the
+  // platform out of all operator access.
+  if (req.authUser?.id === id && parsed.data.active === false) {
+    res.status(400).json({ error: "You cannot deactivate your own account" });
+    return;
+  }
+
+  // Scope to farm-less superadmin rows so this endpoint can never touch a
+  // tenant user.
+  const [user] = await db
+    .update(usersTable)
+    .set({ active: parsed.data.active, updatedAt: new Date() })
+    .where(
+      and(
+        eq(usersTable.id, id),
+        isNull(usersTable.farmId),
+        eq(usersTable.role, "superadmin"),
+      ),
+    )
+    .returning();
+
+  if (!user) {
+    res.status(404).json({ error: "Super-admin not found" });
+    return;
+  }
+
+  req.log.info(
+    { targetSuperadmin: user.username, active: user.active, updatedBy: req.authUser?.username },
+    "superadmin updated a super-admin account's active status",
+  );
+
+  res.json(toPublicUser(user));
+});
 
 router.post("/superadmin/farms/:id/delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);

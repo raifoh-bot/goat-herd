@@ -38,6 +38,7 @@ import type {
   CreateSemenTankBody,
   CreateShowBody,
   CreateShowResultsBody,
+  CreateSuperadminUserBody,
   CreateUserBody,
   DashboardSummary,
   DeleteFarmBody,
@@ -91,6 +92,7 @@ import type {
   UpdateSemenTankBody,
   UpdateShowBody,
   UpdateShowResultBody,
+  UpdateSuperadminUserBody,
   UpdateUserBody,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -5307,6 +5309,180 @@ export const useResetPassword = <
 };
 
 /**
+ * Public. Looks up a platform super-admin account (no farm) by username or email and, if found, emails a time-limited reset link pointing at the super-admin reset page. Always returns 200 with a neutral message.
+ * @summary Request a password reset link for a super-admin account
+ */
+export const getSuperadminForgotPasswordUrl = () => {
+  return `/api/auth/superadmin-forgot-password`;
+};
+
+export const superadminForgotPassword = async (
+  forgotPasswordBody: ForgotPasswordBody,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getSuperadminForgotPasswordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(forgotPasswordBody),
+  });
+};
+
+export const getSuperadminForgotPasswordMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminForgotPassword>>,
+    TError,
+    { data: BodyType<ForgotPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof superadminForgotPassword>>,
+  TError,
+  { data: BodyType<ForgotPasswordBody> },
+  TContext
+> => {
+  const mutationKey = ["superadminForgotPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof superadminForgotPassword>>,
+    { data: BodyType<ForgotPasswordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return superadminForgotPassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuperadminForgotPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof superadminForgotPassword>>
+>;
+export type SuperadminForgotPasswordMutationBody = BodyType<ForgotPasswordBody>;
+export type SuperadminForgotPasswordMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Request a password reset link for a super-admin account
+ */
+export const useSuperadminForgotPassword = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminForgotPassword>>,
+    TError,
+    { data: BodyType<ForgotPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof superadminForgotPassword>>,
+  TError,
+  { data: BodyType<ForgotPasswordBody> },
+  TContext
+> => {
+  return useMutation(getSuperadminForgotPasswordMutationOptions(options));
+};
+
+/**
+ * Public. Validates the reset token (exists, not expired, not used, and belongs to a super-admin account), sets the new password, and invalidates the token.
+ * @summary Set a new super-admin password using a reset token
+ */
+export const getSuperadminResetPasswordUrl = () => {
+  return `/api/auth/superadmin-reset-password`;
+};
+
+export const superadminResetPassword = async (
+  resetPasswordBody: ResetPasswordBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getSuperadminResetPasswordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resetPasswordBody),
+  });
+};
+
+export const getSuperadminResetPasswordMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminResetPassword>>,
+    TError,
+    { data: BodyType<ResetPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof superadminResetPassword>>,
+  TError,
+  { data: BodyType<ResetPasswordBody> },
+  TContext
+> => {
+  const mutationKey = ["superadminResetPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof superadminResetPassword>>,
+    { data: BodyType<ResetPasswordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return superadminResetPassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuperadminResetPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof superadminResetPassword>>
+>;
+export type SuperadminResetPasswordMutationBody = BodyType<ResetPasswordBody>;
+export type SuperadminResetPasswordMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Set a new super-admin password using a reset token
+ */
+export const useSuperadminResetPassword = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof superadminResetPassword>>,
+    TError,
+    { data: BodyType<ResetPasswordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof superadminResetPassword>>,
+  TError,
+  { data: BodyType<ResetPasswordBody> },
+  TContext
+> => {
+  return useMutation(getSuperadminResetPasswordMutationOptions(options));
+};
+
+/**
  * @summary End the current session
  */
 export const getLogoutUrl = () => {
@@ -6371,6 +6547,256 @@ export const useDeleteFarm = <
   TContext
 > => {
   return useMutation(getDeleteFarmMutationOptions(options));
+};
+
+/**
+ * @summary List all platform super-admin accounts (superadmin only)
+ */
+export const getListSuperadminUsersUrl = () => {
+  return `/api/superadmin/users`;
+};
+
+export const listSuperadminUsers = async (
+  options?: RequestInit,
+): Promise<User[]> => {
+  return customFetch<User[]>(getListSuperadminUsersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSuperadminUsersQueryKey = () => {
+  return [`/api/superadmin/users`] as const;
+};
+
+export const getListSuperadminUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSuperadminUsers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSuperadminUsers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSuperadminUsersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSuperadminUsers>>
+  > = ({ signal }) => listSuperadminUsers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSuperadminUsers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSuperadminUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSuperadminUsers>>
+>;
+export type ListSuperadminUsersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all platform super-admin accounts (superadmin only)
+ */
+
+export function useListSuperadminUsers<
+  TData = Awaited<ReturnType<typeof listSuperadminUsers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSuperadminUsers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSuperadminUsersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new platform super-admin account (superadmin only)
+ */
+export const getCreateSuperadminUserUrl = () => {
+  return `/api/superadmin/users`;
+};
+
+export const createSuperadminUser = async (
+  createSuperadminUserBody: CreateSuperadminUserBody,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getCreateSuperadminUserUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSuperadminUserBody),
+  });
+};
+
+export const getCreateSuperadminUserMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSuperadminUser>>,
+    TError,
+    { data: BodyType<CreateSuperadminUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSuperadminUser>>,
+  TError,
+  { data: BodyType<CreateSuperadminUserBody> },
+  TContext
+> => {
+  const mutationKey = ["createSuperadminUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSuperadminUser>>,
+    { data: BodyType<CreateSuperadminUserBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSuperadminUser(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSuperadminUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSuperadminUser>>
+>;
+export type CreateSuperadminUserMutationBody =
+  BodyType<CreateSuperadminUserBody>;
+export type CreateSuperadminUserMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Create a new platform super-admin account (superadmin only)
+ */
+export const useCreateSuperadminUser = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSuperadminUser>>,
+    TError,
+    { data: BodyType<CreateSuperadminUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSuperadminUser>>,
+  TError,
+  { data: BodyType<CreateSuperadminUserBody> },
+  TContext
+> => {
+  return useMutation(getCreateSuperadminUserMutationOptions(options));
+};
+
+/**
+ * @summary Activate or deactivate a super-admin account (superadmin only)
+ */
+export const getUpdateSuperadminUserUrl = (id: number) => {
+  return `/api/superadmin/users/${id}`;
+};
+
+export const updateSuperadminUser = async (
+  id: number,
+  updateSuperadminUserBody: UpdateSuperadminUserBody,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getUpdateSuperadminUserUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSuperadminUserBody),
+  });
+};
+
+export const getUpdateSuperadminUserMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSuperadminUser>>,
+    TError,
+    { id: number; data: BodyType<UpdateSuperadminUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSuperadminUser>>,
+  TError,
+  { id: number; data: BodyType<UpdateSuperadminUserBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSuperadminUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSuperadminUser>>,
+    { id: number; data: BodyType<UpdateSuperadminUserBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSuperadminUser(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSuperadminUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSuperadminUser>>
+>;
+export type UpdateSuperadminUserMutationBody =
+  BodyType<UpdateSuperadminUserBody>;
+export type UpdateSuperadminUserMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Activate or deactivate a super-admin account (superadmin only)
+ */
+export const useUpdateSuperadminUser = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSuperadminUser>>,
+    TError,
+    { id: number; data: BodyType<UpdateSuperadminUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSuperadminUser>>,
+  TError,
+  { id: number; data: BodyType<UpdateSuperadminUserBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSuperadminUserMutationOptions(options));
 };
 
 /**

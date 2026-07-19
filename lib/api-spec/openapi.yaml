@@ -1397,6 +1397,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /auth/superadmin-forgot-password:
+    post:
+      operationId: superadminForgotPassword
+      tags: [auth]
+      summary: Request a password reset link for a super-admin account
+      description: >-
+        Public. Looks up a platform super-admin account (no farm) by username or
+        email and, if found, emails a time-limited reset link pointing at the
+        super-admin reset page. Always returns 200 with a neutral message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: A neutral confirmation (no account enumeration)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /auth/superadmin-reset-password:
+    post:
+      operationId: superadminResetPassword
+      tags: [auth]
+      summary: Set a new super-admin password using a reset token
+      description: >-
+        Public. Validates the reset token (exists, not expired, not used, and
+        belongs to a super-admin account), sets the new password, and
+        invalidates the token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "204":
+          description: Password reset; the token is now consumed
+        "400":
+          description: Invalid or expired token, or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /auth/logout:
     post:
       operationId: logout
@@ -1708,6 +1762,87 @@ paths:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/users:
+    get:
+      operationId: listSuperadminUsers
+      tags: [superadmin]
+      summary: List all platform super-admin accounts (superadmin only)
+      responses:
+        "200":
+          description: All super-admin accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createSuperadminUser
+      tags: [superadmin]
+      summary: Create a new platform super-admin account (superadmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSuperadminUserBody"
+      responses:
+        "201":
+          description: The created super-admin account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/users/{id}:
+    put:
+      operationId: updateSuperadminUser
+      tags: [superadmin]
+      summary: Activate or deactivate a super-admin account (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSuperadminUserBody"
+      responses:
+        "200":
+          description: The updated super-admin account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input, or attempting to deactivate yourself
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Super-admin not found
           content:
             application/json:
               schema:
@@ -3724,6 +3859,34 @@ components:
         - password
         - email
         - role
+
+    CreateSuperadminUserBody:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: Contact email, required for the super-admin password recovery flow.
+        password:
+          type: string
+          minLength: 8
+          description: A temporary password the new super-admin should change after first login.
+      required:
+        - username
+        - email
+        - password
+
+    UpdateSuperadminUserBody:
+      type: object
+      properties:
+        active:
+          type: boolean
+      required:
+        - active
 
     UpdateUserBody:
       type: object

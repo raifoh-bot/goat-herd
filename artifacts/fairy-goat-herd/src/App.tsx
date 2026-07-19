@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ComponentType } from "react";
 import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +11,9 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import Register from "@/pages/register";
 import SuperadminFarms from "@/pages/superadmin/farms";
+import SuperadminUsers from "@/pages/superadmin/users";
+import SuperadminForgotPassword from "@/pages/superadmin/forgot-password";
+import SuperadminResetPassword from "@/pages/superadmin/reset-password";
 import { SuperadminViewBanner } from "@/components/superadmin-view-banner";
 import { MissingEmailBanner } from "@/components/missing-email-banner";
 import Dashboard from "@/pages/dashboard";
@@ -36,12 +39,16 @@ import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
 
-function SuperadminRoute() {
+function SuperadminRoute({
+  component: Component,
+}: {
+  component: ComponentType;
+}) {
   const { user } = useAuth();
   if (user.role !== "superadmin") {
     return <Redirect to="/" replace />;
   }
-  return <SuperadminFarms />;
+  return <Component />;
 }
 
 /**
@@ -131,9 +138,16 @@ function GlobalRouter() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/superadmin/forgot-password" component={SuperadminForgotPassword} />
+      <Route path="/superadmin/reset-password" component={SuperadminResetPassword} />
       <Route path="/superadmin/farms">
         <AuthGuard>
-          <SuperadminRoute />
+          <SuperadminRoute component={SuperadminFarms} />
+        </AuthGuard>
+      </Route>
+      <Route path="/superadmin/users">
+        <AuthGuard>
+          <SuperadminRoute component={SuperadminUsers} />
         </AuthGuard>
       </Route>
       <Route path="/" component={RootLanding} />

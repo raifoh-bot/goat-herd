@@ -37,6 +37,13 @@ function buildResetUrl(req: Request, slug: string, token: string): string {
   return `${origin}/${slug}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
+/** Reset URL for super-admins — the reset page lives at the domain root. */
+function buildSuperadminResetUrl(req: Request, token: string): string {
+  const override = process.env.APP_BASE_URL?.trim().replace(/\/$/, "");
+  const origin = override || `${req.protocol}://${req.get("host")}`;
+  return `${origin}/superadmin/reset-password?token=${encodeURIComponent(token)}`;
+}
+
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
@@ -230,6 +237,102 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
 
   // Update the password and consume the token together so a valid-but-slow
   // request can't be replayed. Stamp usedAt regardless of user existence.
+  await db
+    .update(usersTable)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(usersTable.id, record.userId));
+
+  await db
+    .update(passwordResetTokensTable)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokensTable.id, record.id));
+
+  res.sendStatus(204);
+});
+
+/**
+ * Public: begins a password reset for a platform super-admin (an account with
+ * no farm). Mirrors the farm-scoped flow but looks up farm-less superadmin rows
+ * and links to the root-level reset page. Always responds neutrally.
+ */
+router.post("/auth/superadmin-forgot-password", async (req, res): Promise<void> => {
+  const parsed = ForgotPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const identifier = parsed.data.identifier.trim();
+  if (!identifier) {
+    res.status(200).json({ message: NEUTRAL_FORGOT_MESSAGE });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(
+      and(
+        isNull(usersTable.farmId),
+        eq(usersTable.role, "superadmin"),
+        or(eq(usersTable.username, identifier), eq(usersTable.email, identifier)),
+      ),
+    );
+
+  if (user && user.active && user.email) {
+    const token = randomBytes(32).toString("hex");
+    await db.insert(passwordResetTokensTable).values({
+      userId: user.id,
+      token,
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+    });
+    const resetUrl = buildSuperadminResetUrl(req, token);
+    await sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  res.status(200).json({ message: NEUTRAL_FORGOT_MESSAGE });
+});
+
+/**
+ * Public: completes a super-admin password reset. Identical to the farm flow
+ * except the token must belong to a farm-less superadmin account, so a farm
+ * user's token can never be replayed against this endpoint (or vice versa).
+ */
+router.post("/auth/superadmin-reset-password", async (req, res): Promise<void> => {
+  const parsed = ResetPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [record] = await db
+    .select()
+    .from(passwordResetTokensTable)
+    .where(eq(passwordResetTokensTable.token, parsed.data.token));
+
+  if (!record || record.usedAt || record.expiresAt.getTime() < Date.now()) {
+    res.status(400).json({ error: "This reset link is invalid or has expired." });
+    return;
+  }
+
+  // The token must have been issued to a super-admin (no farm).
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.id, record.userId),
+        isNull(usersTable.farmId),
+        eq(usersTable.role, "superadmin"),
+      ),
+    );
+  if (!user) {
+    res.status(400).json({ error: "This reset link is invalid or has expired." });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.newPassword, 10);
+
   await db
     .update(usersTable)
     .set({ passwordHash, updatedAt: new Date() })

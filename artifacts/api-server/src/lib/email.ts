@@ -60,6 +60,101 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
   }
 }
 
+export type NewFarmNotification = {
+  farmName: string;
+  farmSlug: string;
+  adminUsername: string;
+  registeredAt: Date;
+  /** Absolute link to the super-admin farms panel. */
+  panelUrl: string;
+};
+
+/**
+ * Notifies a platform super-admin that a new farm self-registered. Follows the
+ * same degrade-gracefully contract as the reset email: with no Resend config
+ * the details are logged instead of sent, and delivery failures are swallowed
+ * so a failed email can never affect the registration itself.
+ */
+export async function sendNewFarmNotificationEmail(
+  to: string,
+  details: NewFarmNotification,
+): Promise<void> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  if (!resend || !from) {
+    logger.warn(
+      { to, ...details },
+      "Email not configured (set RESEND_API_KEY and EMAIL_FROM_ADDRESS); logging new-farm notification instead of sending",
+    );
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject: `New farm registered: ${details.farmName}`,
+      html: renderNewFarmEmailHtml(details),
+      text: renderNewFarmEmailText(details),
+    });
+    if (error) {
+      logger.error({ err: error, to }, "Resend reported an error sending the new-farm notification");
+      return;
+    }
+    logger.info({ to, farmSlug: details.farmSlug }, "Sent new-farm notification email");
+  } catch (err) {
+    logger.error({ err, to }, "Failed to send new-farm notification email");
+  }
+}
+
+function renderNewFarmEmailHtml(details: NewFarmNotification): string {
+  const registered = details.registeredAt.toISOString();
+  return `
+    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+      <h1 style="font-size: 20px; margin-bottom: 8px;">New farm registered</h1>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        A new farm just signed up on MyGoatHerd.
+      </p>
+      <table style="font-size: 14px; line-height: 1.8; color: #1f2937; border-collapse: collapse;">
+        <tr><td style="padding-right: 12px; color: #6b7280;">Farm name</td><td>${escapeHtml(details.farmName)}</td></tr>
+        <tr><td style="padding-right: 12px; color: #6b7280;">Address</td><td>${escapeHtml(details.farmSlug)}</td></tr>
+        <tr><td style="padding-right: 12px; color: #6b7280;">First admin</td><td>${escapeHtml(details.adminUsername)}</td></tr>
+        <tr><td style="padding-right: 12px; color: #6b7280;">Registered</td><td>${registered}</td></tr>
+      </table>
+      <p style="margin: 24px 0;">
+        <a href="${details.panelUrl}"
+           style="background: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
+          Open the super-admin panel
+        </a>
+      </p>
+    </div>
+  `;
+}
+
+function renderNewFarmEmailText(details: NewFarmNotification): string {
+  return [
+    "New farm registered on MyGoatHerd",
+    "",
+    `Farm name: ${details.farmName}`,
+    `Address: ${details.farmSlug}`,
+    `First admin: ${details.adminUsername}`,
+    `Registered: ${details.registeredAt.toISOString()}`,
+    "",
+    `Open the super-admin panel: ${details.panelUrl}`,
+  ].join("\n");
+}
+
+/** Minimal HTML-escaping for user-provided values embedded in email markup. */
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function renderResetEmailHtml(resetUrl: string): string {
   return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">

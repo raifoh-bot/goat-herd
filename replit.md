@@ -74,10 +74,16 @@ All tenant tables carry a `farmId` (FK→farms) and every query is scoped to the
 - `GET /api/superadmin/farms` — list all farms (superadmin only)
 - `POST /api/superadmin/farms` — create a farm (superadmin only)
 - `PUT /api/superadmin/farms/:id` — update a farm's name/status (superadmin only)
+- `GET /api/superadmin/users` — list all super-admin accounts (superadmin only)
+- `POST /api/superadmin/users` — create a super-admin (username, email, password ≥ 8; superadmin only)
+- `PUT /api/superadmin/users/:id` — activate/deactivate a super-admin (superadmin only; cannot deactivate yourself)
+- On farm self-registration, all active super-admins with an email on file get a "new farm registered" notification email (fire-and-forget; logged instead of sent when Resend isn't configured).
 
 ### Auth & Users
 - `POST /api/auth/login` — log in with username/password (public; creates a session). Scoped to the resolved farm; the super-admin logs in at the apex domain (no farm).
 - `POST /api/auth/logout` — destroy the current session
+- `POST /api/auth/superadmin-forgot-password` — public; emails a reset link to a super-admin (by username or email; neutral response)
+- `POST /api/auth/superadmin-reset-password` — public; sets a new super-admin password from a reset token (token must belong to a farm-less superadmin)
 - `PUT /api/auth/email` — self-service: any signed-in user sets/updates their own contact email (used by forgot-password). `AuthUser` (`/api/auth/me`) includes `email` (null for legacy accounts).
 - `GET /api/auth/me` — get the currently authenticated user
 - `GET /api/users` — list users (Admin/Owner only)
@@ -164,4 +170,6 @@ redirects to `/<slug>/...`.
 - `/login` — Login page (public; outside the AuthGuard)
 - `/register` — Public farm self-registration (creates a farm + first admin)
 - `/superadmin/farms` — Super-admin panel: list/create farms and toggle active/suspended (superadmin only)
+- `/superadmin/users` — Super-admin accounts: list/create super-admins and activate/deactivate them (superadmin only; Farms/Users tab nav shared across the panel)
+- `/superadmin/forgot-password` / `/superadmin/reset-password` — public super-admin password recovery pages; the root `/login` "Forgot your password?" link points here when no farm context
 - `/admin/users` — User management: add users, change roles, activate/deactivate (Admin/Owner only)

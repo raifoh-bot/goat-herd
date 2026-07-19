@@ -33,6 +33,7 @@ import {
   Users,
 } from "lucide-react";
 import { GoatIcon } from "@/components/goat-icon";
+import { SuperadminNav } from "@/components/superadmin-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1155,18 +1156,21 @@ export default function SuperadminFarms() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-              <GoatIcon className="h-6 w-6" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+                <GoatIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="font-serif text-lg font-semibold">
+                  Platform admin
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Manage every farm on MyGoatHerd
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-serif text-lg font-semibold">
-                Platform admin
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Manage every farm on MyGoatHerd
-              </p>
-            </div>
+            <SuperadminNav />
           </div>
           <Button
             variant="ghost"

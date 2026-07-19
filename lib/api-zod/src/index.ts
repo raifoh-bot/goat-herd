@@ -21,6 +21,8 @@ export {
   UpdateSemenTankBody,
   CreateShowBody,
   CreateShowResultsBody,
+  CreateSuperadminUserBody,
+  UpdateSuperadminUserBody,
   CreateUserBody,
   DeleteFarmBody,
   ForgotPasswordBody,

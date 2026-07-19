@@ -3193,6 +3193,34 @@ export const ResetPasswordBody = zod.object({
 });
 
 /**
+ * Public. Looks up a platform super-admin account (no farm) by username or email and, if found, emails a time-limited reset link pointing at the super-admin reset page. Always returns 200 with a neutral message.
+ * @summary Request a password reset link for a super-admin account
+ */
+
+export const SuperadminForgotPasswordBody = zod.object({
+  identifier: zod
+    .string()
+    .min(1)
+    .describe("The account's username or email address."),
+});
+
+export const SuperadminForgotPasswordResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * Public. Validates the reset token (exists, not expired, not used, and belongs to a super-admin account), sets the new password, and invalidates the token.
+ * @summary Set a new super-admin password using a reset token
+ */
+
+export const superadminResetPasswordBodyNewPasswordMin = 8;
+
+export const SuperadminResetPasswordBody = zod.object({
+  token: zod.string().min(1),
+  newPassword: zod.string().min(superadminResetPasswordBodyNewPasswordMin),
+});
+
+/**
  * @summary Get the currently authenticated user
  */
 export const getCurrentUserResponseDashboardLayoutItemXMin = 0;
@@ -3546,6 +3574,66 @@ export const DeleteFarmResponse = zod.object({
     .string()
     .nullable()
     .describe("Username of the super-admin who deleted the farm."),
+});
+
+/**
+ * @summary List all platform super-admin accounts (superadmin only)
+ */
+export const ListSuperadminUsersResponseItem = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  email: zod.string().nullable(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSuperadminUsersResponse = zod.array(
+  ListSuperadminUsersResponseItem,
+);
+
+/**
+ * @summary Create a new platform super-admin account (superadmin only)
+ */
+
+export const createSuperadminUserBodyPasswordMin = 8;
+
+export const CreateSuperadminUserBody = zod.object({
+  username: zod.string().min(1),
+  email: zod
+    .string()
+    .email()
+    .min(1)
+    .describe(
+      "Contact email, required for the super-admin password recovery flow.",
+    ),
+  password: zod
+    .string()
+    .min(createSuperadminUserBodyPasswordMin)
+    .describe(
+      "A temporary password the new super-admin should change after first login.",
+    ),
+});
+
+/**
+ * @summary Activate or deactivate a super-admin account (superadmin only)
+ */
+export const UpdateSuperadminUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateSuperadminUserBody = zod.object({
+  active: zod.boolean(),
+});
+
+export const UpdateSuperadminUserResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  email: zod.string().nullable(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
