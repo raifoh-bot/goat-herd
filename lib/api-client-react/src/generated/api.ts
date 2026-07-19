@@ -6712,7 +6712,7 @@ export const useCreateSuperadminUser = <
 };
 
 /**
- * @summary Activate or deactivate a super-admin account (superadmin only)
+ * @summary Update a super-admin account's active status and/or email (superadmin only)
  */
 export const getUpdateSuperadminUserUrl = (id: number) => {
   return `/api/superadmin/users/${id}`;
@@ -6777,7 +6777,7 @@ export type UpdateSuperadminUserMutationBody =
 export type UpdateSuperadminUserMutationError = ErrorType<ErrorEnvelope>;
 
 /**
- * @summary Activate or deactivate a super-admin account (superadmin only)
+ * @summary Update a super-admin account's active status and/or email (superadmin only)
  */
 export const useUpdateSuperadminUser = <
   TError = ErrorType<ErrorEnvelope>,

@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Update a super-admin account. Send `active` to activate/deactivate, and/or `email` to set the account's contact email (used for password recovery). At least one field must be provided.
+ */
 export interface UpdateSuperadminUserBody {
-  active: boolean;
+  active?: boolean;
+  /** @minLength 1 */
+  email?: string;
 }

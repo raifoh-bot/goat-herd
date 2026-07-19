@@ -1815,7 +1815,7 @@ paths:
     put:
       operationId: updateSuperadminUser
       tags: [superadmin]
-      summary: Activate or deactivate a super-admin account (superadmin only)
+      summary: Update a super-admin account's active status and/or email (superadmin only)
       parameters:
         - name: id
           in: path
@@ -3882,11 +3882,17 @@ components:
 
     UpdateSuperadminUserBody:
       type: object
+      description: >-
+        Update a super-admin account. Send `active` to activate/deactivate,
+        and/or `email` to set the account's contact email (used for password
+        recovery). At least one field must be provided.
       properties:
         active:
           type: boolean
-      required:
-        - active
+        email:
+          type: string
+          format: email
+          minLength: 1
 
     UpdateUserBody:
       type: object

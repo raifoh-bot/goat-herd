@@ -3630,15 +3630,20 @@ export const CreateSuperadminUserBody = zod.object({
 });
 
 /**
- * @summary Activate or deactivate a super-admin account (superadmin only)
+ * @summary Update a super-admin account's active status and/or email (superadmin only)
  */
 export const UpdateSuperadminUserParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const UpdateSuperadminUserBody = zod.object({
-  active: zod.boolean(),
-});
+export const UpdateSuperadminUserBody = zod
+  .object({
+    active: zod.boolean().optional(),
+    email: zod.string().email().min(1).optional(),
+  })
+  .describe(
+    "Update a super-admin account. Send `active` to activate\/deactivate, and\/or `email` to set the account's contact email (used for password recovery). At least one field must be provided.",
+  );
 
 export const UpdateSuperadminUserResponse = zod.object({
   id: zod.number(),

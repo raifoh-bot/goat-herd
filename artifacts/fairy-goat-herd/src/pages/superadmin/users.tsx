@@ -188,6 +188,97 @@ function CreateSuperadminDialog() {
   );
 }
 
+function EditEmailDialog({ user }: { user: User }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateUser = useUpdateSuperadminUser();
+
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState(user.email ?? "");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!EMAIL_RE.test(trimmed)) {
+      toast({
+        title: "Check the email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateUser.mutate(
+      { id: user.id, data: { email: trimmed } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({
+            queryKey: getListSuperadminUsersQueryKey(),
+          });
+          toast({
+            title: "Email saved",
+            description: `${user.username} can now use password recovery.`,
+          });
+          setOpen(false);
+        },
+        onError: () => {
+          toast({
+            title: "Could not save email",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setEmail(user.email ?? "");
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          {user.email ? "Edit email" : "Add email"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>
+              {user.email ? "Edit email" : "Add email"} for {user.username}
+            </DialogTitle>
+            <DialogDescription>
+              The contact email is used for password recovery and new-farm
+              notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor={`sa-edit-email-${user.id}`}>Email</Label>
+            <Input
+              id={`sa-edit-email-${user.id}`}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+              required
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={updateUser.isPending}>
+              {updateUser.isPending ? "Saving…" : "Save email"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SuperadminUserRow({
   user,
   isSelf,
@@ -239,15 +330,18 @@ function SuperadminUserRow({
       </TableCell>
       <TableCell>{formatDate(user.createdAt)}</TableCell>
       <TableCell className="text-right">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleActive}
-          disabled={isSelf || updateUser.isPending}
-          title={isSelf ? "You cannot deactivate your own account" : undefined}
-        >
-          {user.active ? "Deactivate" : "Activate"}
-        </Button>
+        <div className="flex justify-end gap-2">
+          <EditEmailDialog user={user} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleActive}
+            disabled={isSelf || updateUser.isPending}
+            title={isSelf ? "You cannot deactivate your own account" : undefined}
+          >
+            {user.active ? "Deactivate" : "Activate"}
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );

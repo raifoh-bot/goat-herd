@@ -433,11 +433,26 @@ router.put("/superadmin/users/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const updateData: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
+  if (parsed.data.email !== undefined) {
+    const email = parsed.data.email.trim();
+    if (!email) {
+      res.status(400).json({ error: "Email cannot be blank" });
+      return;
+    }
+    updateData.email = email;
+  }
+  if (parsed.data.active === undefined && parsed.data.email === undefined) {
+    res.status(400).json({ error: "Nothing to update" });
+    return;
+  }
+
   // Scope to farm-less superadmin rows so this endpoint can never touch a
   // tenant user.
   const [user] = await db
     .update(usersTable)
-    .set({ active: parsed.data.active, updatedAt: new Date() })
+    .set(updateData)
     .where(
       and(
         eq(usersTable.id, id),
@@ -454,7 +469,7 @@ router.put("/superadmin/users/:id", async (req, res): Promise<void> => {
 
   req.log.info(
     { targetSuperadmin: user.username, active: user.active, updatedBy: req.authUser?.username },
-    "superadmin updated a super-admin account's active status",
+    "superadmin updated a super-admin account",
   );
 
   res.json(toPublicUser(user));
