@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { breedLabel, BREED_CATALOG } from "@/lib/breeds";
+import { breedLabel, getBreedOptions } from "@/lib/breeds";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import { dateInputToIso } from "@/components/health-history";
 
@@ -75,7 +75,7 @@ export default function WorksheetResults() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const { famachaThreshold, weightUnit } = useFarmSettings();
+  const { famachaThreshold, weightUnit, enabledBreeds } = useFarmSettings();
 
   const { data: goats, isLoading } = useGetHealthEventBulkSession({
     query: { queryKey: getGetHealthEventBulkSessionQueryKey() },
@@ -86,6 +86,9 @@ export default function WorksheetResults() {
   const [search, setSearch] = useState("");
   const [breedFilter, setBreedFilter] = useState<string | undefined>(undefined);
   const [sexFilter, setSexFilter] = useState<string | undefined>(undefined);
+  const [herdStatusFilter, setHerdStatusFilter] = useState<string | undefined>("on-farm");
+
+  const breedOptions = useMemo(() => getBreedOptions(enabledBreeds), [enabledBreeds]);
   const [rows, setRows] = useState<Record<number, RowState>>({});
 
   const rowOf = (id: number): RowState => rows[id] ?? EMPTY_ROW;
@@ -99,9 +102,15 @@ export default function WorksheetResults() {
       if (q && !g.name.toLowerCase().includes(q)) return false;
       if (breedFilter && g.breed !== breedFilter) return false;
       if (sexFilter && g.sex !== sexFilter) return false;
+      if (herdStatusFilter) {
+        // Goats without a recorded herd status are treated as on-farm so the
+        // default filter never hides them.
+        const status = g.herdStatus ?? "on-farm";
+        if (status !== herdStatusFilter) return false;
+      }
       return true;
     });
-  }, [allGoats, search, breedFilter, sexFilter]);
+  }, [allGoats, search, breedFilter, sexFilter, herdStatusFilter]);
 
   /** Whether a goat's FAMACHA is at/above threshold with no deworming marked. */
   const isFlagged = (goat: { id: number }) => {
@@ -245,6 +254,19 @@ export default function WorksheetResults() {
                 />
               </div>
               <Select
+                value={herdStatusFilter || "all"}
+                onValueChange={(val) => setHerdStatusFilter(val === "all" ? undefined : val)}
+              >
+                <SelectTrigger className="w-full sm:w-[170px]">
+                  <SelectValue placeholder="Herd Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Herd Status</SelectItem>
+                  <SelectItem value="on-farm">On Farm</SelectItem>
+                  <SelectItem value="leased">Leased</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
                 value={breedFilter || "all"}
                 onValueChange={(val) => setBreedFilter(val === "all" ? undefined : val)}
               >
@@ -253,7 +275,7 @@ export default function WorksheetResults() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Breeds</SelectItem>
-                  {BREED_CATALOG.map((b) => (
+                  {breedOptions.map((b) => (
                     <SelectItem key={b.slug} value={b.slug}>{b.label}</SelectItem>
                   ))}
                 </SelectContent>
