@@ -19,23 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { breedLabel, getBreedOptions } from "@/lib/breeds";
+import { todayInputValue, dateInputToIso } from "@/lib/date";
+import { sexLabel, matchesHerdStatus } from "@/lib/goats";
+import { COPPER_BOLUS_DOSES_G, famachaSuggestsDeworming } from "@/lib/health";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
-import { COPPER_BOLUS_DOSES_G, dateInputToIso } from "@/components/health-history";
-
-function todayInputValue(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function sexLabel(sex: string | null | undefined) {
-  if (sex === "doe") return "Doe";
-  if (sex === "buck") return "Buck";
-  if (sex === "wether") return "Wether";
-  return "—";
-}
 
 /** What the farmer transcribed for one goat's worksheet row. */
 interface RowState {
@@ -104,12 +91,7 @@ export default function WorksheetResults() {
       if (q && !g.name.toLowerCase().includes(q)) return false;
       if (breedFilter && g.breed !== breedFilter) return false;
       if (sexFilter && g.sex !== sexFilter) return false;
-      if (herdStatusFilter) {
-        // Goats without a recorded herd status are treated as on-farm so the
-        // default filter never hides them.
-        const status = g.herdStatus ?? "on-farm";
-        if (status !== herdStatusFilter) return false;
-      }
+      if (!matchesHerdStatus(g, herdStatusFilter)) return false;
       return true;
     });
   }, [allGoats, search, breedFilter, sexFilter, herdStatusFilter]);
@@ -119,7 +101,7 @@ export default function WorksheetResults() {
     const row = rowOf(goat.id);
     if (row.deworm) return false;
     const score = Number(row.famacha);
-    return score >= famachaThreshold;
+    return famachaSuggestsDeworming(score, famachaThreshold);
   };
 
   /** Turn one goat's transcribed row into the health events it represents. */
@@ -133,7 +115,7 @@ export default function WorksheetResults() {
       items.push({ goatId, eventType: "famacha", famachaScore: score });
     }
 
-    const dewormAuto = !row.deworm && hasScore && score >= famachaThreshold && !row.dewormOptOut;
+    const dewormAuto = !row.deworm && hasScore && famachaSuggestsDeworming(score, famachaThreshold) && !row.dewormOptOut;
     if (row.deworm || dewormAuto) {
       const item: BulkHealthEventItem = { goatId, eventType: "deworming" };
       if (hasScore) item.famachaScore = score;

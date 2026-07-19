@@ -11,6 +11,20 @@ export function parseDate(d: string | Date | null | undefined): Date | null {
   return isNaN(date.getTime()) ? null : date;
 }
 
+/** Today's date as a yyyy-mm-dd value for HTML date inputs (local time). */
+export function todayInputValue(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Convert a yyyy-mm-dd input value to an ISO timestamp at local noon. */
+export function dateInputToIso(value: string): string {
+  return new Date(`${value}T12:00:00`).toISOString();
+}
+
 /**
  * Format an API date string for display.  Always renders in UTC so the
  * displayed date matches the stored date regardless of the user's timezone.

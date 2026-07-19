@@ -25,16 +25,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { breedLabels, getBreedOptions } from "@/lib/breeds";
+import { todayInputValue, dateInputToIso } from "@/lib/date";
+import { sexLabel, matchesHerdStatus } from "@/lib/goats";
+import { COPPER_BOLUS_DOSES_G, doseUnit, famachaSuggestsDeworming } from "@/lib/health";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
-import { COPPER_BOLUS_DOSES_G, HEALTH_EVENT_TYPES, dateInputToIso, doseUnit } from "@/components/health-history";
-
-function todayInputValue(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+import { HEALTH_EVENT_TYPES } from "@/components/health-history";
 
 const STEPS = ["Select Goats", "Choose Tasks", "Goat Details & Review"] as const;
 
@@ -99,12 +94,7 @@ export default function HerdWorkDay() {
       if (q && !g.name.toLowerCase().includes(q)) return false;
       if (breedFilter && g.breed !== breedFilter) return false;
       if (sexFilter && g.sex !== sexFilter) return false;
-      if (herdStatusFilter) {
-        // Goats without a recorded herd status are treated as on-farm so the
-        // default filter never hides them.
-        const status = g.herdStatus ?? "on-farm";
-        if (status !== herdStatusFilter) return false;
-      }
+      if (!matchesHerdStatus(g, herdStatusFilter)) return false;
       return true;
     });
   }, [allGoats, search, breedFilter, sexFilter, herdStatusFilter]);
@@ -160,7 +150,7 @@ export default function HerdWorkDay() {
     const flagged = new Set<number>();
     for (const g of selectedGoats) {
       const score = Number(famachaScores[g.id]);
-      if (score >= famachaThreshold) flagged.add(g.id);
+      if (famachaSuggestsDeworming(score, famachaThreshold)) flagged.add(g.id);
     }
     return flagged;
   }, [famachaSelected, dewormingSelected, selectedGoats, famachaScores, famachaThreshold]);
@@ -411,7 +401,7 @@ export default function HerdWorkDay() {
                         <p className="font-medium text-sm text-foreground truncate">{goat.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {breedLabels[goat.breed] ?? goat.breed}
-                          {goat.sex ? ` · ${goat.sex === "doe" ? "Doe" : goat.sex === "buck" ? "Buck" : "Wether"}` : ""}
+                          {goat.sex ? ` · ${sexLabel(goat.sex)}` : ""}
                         </p>
                         {(dueByGoat.get(goat.id)?.length ?? 0) > 0 && (
                           <div className="mt-1.5 flex flex-wrap gap-1">

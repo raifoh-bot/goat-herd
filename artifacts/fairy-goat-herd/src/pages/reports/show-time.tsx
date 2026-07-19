@@ -17,21 +17,7 @@ import { formatDate } from "@/lib/date";
 import { formatAge } from "@/lib/age";
 import { breedLabel, BREED_CATALOG } from "@/lib/breeds";
 import { deriveKiddingRecord } from "@/lib/kidding";
-
-const herdStatusLabels: Record<string, string> = {
-  "on-farm": "On Farm",
-  leased: "Leased",
-  "sold-registered": "Sold-Registered",
-  "sold-not-registered": "Sold-Not Registered",
-  dead: "Dead",
-};
-
-function sexLabel(sex: string | null | undefined) {
-  if (sex === "doe") return "Doe";
-  if (sex === "buck") return "Buck";
-  if (sex === "wether") return "Wether";
-  return "—";
-}
+import { HERD_STATUS_LABELS, sexLabel } from "@/lib/goats";
 
 function shortDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -135,7 +121,7 @@ export default function ShowTime() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Herd Status</SelectItem>
-                {Object.entries(herdStatusLabels).map(([slug, label]) => (
+                {Object.entries(HERD_STATUS_LABELS).map(([slug, label]) => (
                   <SelectItem key={slug} value={slug}>{label}</SelectItem>
                 ))}
               </SelectContent>

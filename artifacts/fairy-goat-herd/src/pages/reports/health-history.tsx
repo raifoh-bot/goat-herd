@@ -11,41 +11,23 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportHeader } from "@/components/report-header";
-import { doseUnit, healthEventTypeConfig } from "@/components/health-history";
+import { healthEventTypeConfig } from "@/components/health-history";
 import { breedLabels, breedLabel } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
 import { formatDate } from "@/lib/date";
+import { LACTATION_LABELS, BREEDING_LABELS, sexLabel } from "@/lib/goats";
+import { doseUnit } from "@/lib/health";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import type {
   Goat,
   HealthEvent,
 } from "@workspace/api-client-react/src/generated/api.schemas";
 
-function sexLabel(sex: Goat["sex"]): string {
-  if (sex === "doe") return "Doe";
-  if (sex === "buck") return "Buck";
-  if (sex === "wether") return "Wether";
-  return "—";
-}
-
 const healthStatusLabels: Record<string, string> = {
   healthy: "Healthy",
   watch: "Watch",
   treatment: "In Treatment",
   dry: "Dry",
-};
-
-const lactationLabels: Record<string, string> = {
-  milking: "Milking",
-  dry: "Dry",
-  kid: "Kid",
-};
-
-const breedingLabels: Record<string, string> = {
-  exposed: "Exposed",
-  serviced: "Serviced",
-  pregnant: "Pregnant",
-  retired: "Retired",
 };
 
 function ReportSkeleton() {
@@ -81,13 +63,13 @@ function HealthRecord({
     {
       label: "Lactation Status",
       value: goat.lactationStatus
-        ? lactationLabels[goat.lactationStatus] ?? goat.lactationStatus
+        ? LACTATION_LABELS[goat.lactationStatus] ?? goat.lactationStatus
         : "—",
     },
     {
       label: "Breeding Status",
       value: goat.breedingStatus
-        ? breedingLabels[goat.breedingStatus] ?? goat.breedingStatus
+        ? BREEDING_LABELS[goat.breedingStatus] ?? goat.breedingStatus
         : "—",
     },
   ];

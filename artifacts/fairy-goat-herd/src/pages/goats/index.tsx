@@ -20,19 +20,7 @@ import { formatAge } from "@/lib/age";
 import { breedLabels } from "@/lib/breeds";
 import { downloadCsv, buildCsvFileName } from "@/lib/csvDownload";
 import { useToast } from "@/hooks/use-toast";
-
-const lactationLabels: Record<string, string> = {
-  milking: "Milking",
-  dry: "Dry",
-  kid: "Kid",
-};
-
-const breedingLabels: Record<string, string> = {
-  exposed: "Exposed",
-  serviced: "Serviced",
-  pregnant: "Pregnant",
-  retired: "Retired",
-};
+import { HERD_STATUS_LABELS, LACTATION_LABELS, BREEDING_LABELS, sexLabelWithSymbol } from "@/lib/goats";
 
 const healthStatusLabels: Record<string, string> = {
   healthy: "Healthy",
@@ -41,22 +29,7 @@ const healthStatusLabels: Record<string, string> = {
   dry: "Dry",
 };
 
-const herdStatusLabels: Record<string, string> = {
-  dead: "Dead",
-  leased: "Leased",
-  "on-farm": "On Farm",
-  "sold-registered": "Sold-Registered",
-  "sold-not-registered": "Sold-Not Registered",
-};
-
 type ViewMode = "grid" | "compact" | "list";
-
-function sexLabel(goat: Goat) {
-  if (goat.sex === "doe") return "Doe ♀";
-  if (goat.sex === "wether") return "Wether ⚬";
-  if (goat.sex === "buck") return goat.leasedBuck ? "Leased Buck ♂" : "Buck ♂";
-  return "—";
-}
 
 function GoatRow({ goat }: { goat: Goat }) {
   return (
@@ -77,19 +50,19 @@ function GoatRow({ goat }: { goat: Goat }) {
           <div className="hidden md:block">
             <Badge variant="outline" className="text-xs capitalize">{breedLabels[goat.breed] ?? goat.breed}</Badge>
           </div>
-          <div className="hidden md:block text-sm text-muted-foreground capitalize">{sexLabel(goat)}</div>
+          <div className="hidden md:block text-sm text-muted-foreground capitalize">{sexLabelWithSymbol(goat)}</div>
           <div className="hidden md:block text-sm text-muted-foreground">{formatAge(goat.dateOfBirth)} old</div>
           <div className="hidden md:block text-sm text-muted-foreground">
             {goat.lactationStatus || goat.breedingStatus
               ? [
-                  goat.lactationStatus ? (lactationLabels[goat.lactationStatus] ?? goat.lactationStatus) : null,
-                  goat.breedingStatus ? (breedingLabels[goat.breedingStatus] ?? goat.breedingStatus) : null,
+                  goat.lactationStatus ? (LACTATION_LABELS[goat.lactationStatus] ?? goat.lactationStatus) : null,
+                  goat.breedingStatus ? (BREEDING_LABELS[goat.breedingStatus] ?? goat.breedingStatus) : null,
                 ].filter(Boolean).join(" · ")
               : <span className="text-muted-foreground/40">—</span>}
           </div>
           <div className="hidden md:block">
             {goat.herdStatus
-              ? <Badge variant="secondary" className="text-xs">{herdStatusLabels[goat.herdStatus] ?? goat.herdStatus}</Badge>
+              ? <Badge variant="secondary" className="text-xs">{HERD_STATUS_LABELS[goat.herdStatus] ?? goat.herdStatus}</Badge>
               : <span className="text-xs text-muted-foreground/50">—</span>
             }
           </div>
@@ -112,8 +85,8 @@ function CompactCard({ goat }: { goat: Goat }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">{goat.name}</p>
-          <p className="text-sm sm:text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabel(goat)}</p>
-          <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${lactationLabels[goat.lactationStatus] ?? goat.lactationStatus}` : ""}{goat.breedingStatus ? ` · ${breedingLabels[goat.breedingStatus] ?? goat.breedingStatus}` : ""}</p>
+          <p className="text-sm sm:text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabelWithSymbol(goat)}</p>
+          <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${LACTATION_LABELS[goat.lactationStatus] ?? goat.lactationStatus}` : ""}{goat.breedingStatus ? ` · ${BREEDING_LABELS[goat.breedingStatus] ?? goat.breedingStatus}` : ""}</p>
         </div>
         {(goat.rightEarTattoo || goat.leftEarTattoo) && (
           <div className="text-right shrink-0">
@@ -211,7 +184,7 @@ export default function GoatsList() {
 
   const activeClientFilters = [
     healthFilter && { key: "health", label: `Health: ${healthStatusLabels[healthFilter] ?? healthFilter}`, clear: () => setHealthFilter(undefined) },
-    lactationFilter && { key: "lactation", label: `Lactation: ${lactationLabels[lactationFilter] ?? lactationFilter}`, clear: () => setLactationFilter(undefined) },
+    lactationFilter && { key: "lactation", label: `Lactation: ${LACTATION_LABELS[lactationFilter] ?? lactationFilter}`, clear: () => setLactationFilter(undefined) },
     breedFilter && { key: "breed", label: `Breed: ${breedLabels[breedFilter] ?? breedFilter}`, clear: () => setBreedFilter(undefined) },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 

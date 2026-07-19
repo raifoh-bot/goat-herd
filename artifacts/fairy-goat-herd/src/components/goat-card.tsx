@@ -5,6 +5,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { breedLabels } from "@/lib/breeds";
 import { formatAge } from "@/lib/age";
+import { sexLabelWithSymbol } from "@/lib/goats";
 
 function hasCompleteBreedingLines(goat: Goat): boolean {
   return !!(
@@ -68,7 +69,7 @@ export function GoatCard({ goat }: GoatCardProps) {
             {goat.sex && (
               <>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                <span className="capitalize">{goat.sex === "doe" ? "Doe ♀" : goat.sex === "wether" ? "Wether ⚬" : goat.leasedBuck ? "Leased Buck ♂" : "Buck ♂"}</span>
+                <span className="capitalize">{sexLabelWithSymbol(goat)}</span>
               </>
             )}
           </p>

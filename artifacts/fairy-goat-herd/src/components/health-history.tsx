@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/date";
+import { formatDate, todayInputValue, dateInputToIso } from "@/lib/date";
+import { COPPER_BOLUS_DOSES_G, doseUnit, famachaSuggestsDeworming } from "@/lib/health";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
 
@@ -48,27 +49,6 @@ export const HEALTH_EVENT_TYPES: {
 export const healthEventTypeConfig = Object.fromEntries(
   HEALTH_EVENT_TYPES.map((t) => [t.value, t]),
 ) as Record<HealthEventEventType, (typeof HEALTH_EVENT_TYPES)[number]>;
-
-/** Copper bolus doses are given in whole-gram boluses: 2g increments, 2–20g. */
-export const COPPER_BOLUS_DOSES_G = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
-
-/** The dose unit for an event type — copper boluses are grams, everything else mL. */
-export function doseUnit(eventType: HealthEventEventType): "g" | "mL" {
-  return eventType === "copper_bolus" ? "g" : "mL";
-}
-
-function todayInputValue(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-/** Convert a yyyy-mm-dd input value to an ISO timestamp at local noon. */
-export function dateInputToIso(value: string): string {
-  return new Date(`${value}T12:00:00`).toISOString();
-}
 
 interface AddHealthEventDialogProps {
   goatId: number;
@@ -99,7 +79,7 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
   const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
   const showDosage = showProduct;
   const scoreNum = famachaScore ? Number(famachaScore) : null;
-  const needsDeworming = eventType === "famacha" && scoreNum != null && scoreNum >= famachaThreshold;
+  const needsDeworming = eventType === "famacha" && scoreNum != null && famachaSuggestsDeworming(scoreNum, famachaThreshold);
 
   const reset = () => {
     setEventType("hoof_trim");
