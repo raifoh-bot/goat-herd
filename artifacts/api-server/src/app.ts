@@ -35,7 +35,24 @@ app.use(
     },
   }),
 );
-app.use(cors());
+// CORS: the Expo mobile preview is served from a different origin than the
+// API proxy, and the shared fetch layer sends `credentials: "include"`.
+// Credentialed requests are incompatible with the wildcard `*` origin, so we
+// reflect the caller's origin — but only for trusted Replit/localhost hosts.
+const TRUSTED_ORIGIN_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https:\/\/[^/]+\.(replit\.dev|replit\.app|repl\.co)$/;
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Same-origin/non-browser requests carry no Origin header — allow them.
+      if (!origin || TRUSTED_ORIGIN_RE.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
