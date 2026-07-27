@@ -5,8 +5,10 @@ import {
   getListGoatsQueryKey,
   getListShowsQueryKey,
   useCreateShowResults,
+  useDeleteShow,
   useGetShow,
   useListGoats,
+  useUpdateShow,
 } from "@workspace/api-client-react";
 import type {
   Goat,
@@ -28,7 +30,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Badge, Button, Card, EmptyState, LoadingState } from "@/components/ui";
-import { formatIsoDate } from "@/constants/domain";
+import { dateInputToIso, formatIsoDate, todayInputValue } from "@/constants/domain";
 import { useIsManager } from "@/context/auth";
 import { useColors } from "@/hooks/useColors";
 
@@ -81,10 +83,97 @@ export default function ShowDetailScreen() {
   );
 
   const createResults = useCreateShowResults();
+  const updateShow = useUpdateShow();
+  const deleteShow = useDeleteShow();
 
   const [drafts, setDrafts] = useState<DraftResult[]>([]);
   const [nextKey, setNextKey] = useState(1);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+
+  const openEdit = () => {
+    if (!show) return;
+    setEditName(show.name);
+    setEditLocation(show.location ?? "");
+    setEditDate(isoToDateInput(show.showDate));
+    setEditNotes(show.notes ?? "");
+    setEditOpen(true);
+  };
+
+  const editDateValid = /^\d{4}-\d{2}-\d{2}$/.test(editDate.trim());
+  const canSaveEdit = editName.trim().length > 0 && editDateValid;
+
+  const saveEdit = () => {
+    updateShow.mutate(
+      {
+        id: showId,
+        data: {
+          name: editName.trim(),
+          location: editLocation.trim() || null,
+          showDate: dateInputToIso(editDate.trim()),
+          notes: editNotes.trim() || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setEditOpen(false);
+          queryClient.invalidateQueries({ queryKey: getGetShowQueryKey(showId) });
+          queryClient.invalidateQueries({ queryKey: getListShowsQueryKey() });
+        },
+        onError: () =>
+          Alert.alert(
+            "Could not save",
+            "The show details could not be updated. Please try again.",
+          ),
+      },
+    );
+  };
+
+  const confirmDelete = () => {
+    if (!show) return;
+    const resultCount = show.results.length;
+    Alert.alert(
+      "Delete this show?",
+      resultCount > 0
+        ? `"${show.name}" and its ${resultCount} recorded result${resultCount === 1 ? "" : "s"} will be permanently deleted.`
+        : `"${show.name}" will be permanently deleted.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            deleteShow.mutate(
+              { id: showId },
+              {
+                onSuccess: () => {
+                  Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success,
+                  );
+                  queryClient.invalidateQueries({
+                    queryKey: getListShowsQueryKey(),
+                  });
+                  queryClient.removeQueries({
+                    queryKey: getGetShowQueryKey(showId),
+                  });
+                  router.back();
+                },
+                onError: () =>
+                  Alert.alert(
+                    "Could not delete",
+                    "The show could not be deleted. Please try again.",
+                  ),
+              },
+            ),
+        },
+      ],
+    );
+  };
 
   const addDraft = (goat: Goat) => {
     setDrafts((prev) => [
@@ -162,9 +251,36 @@ export default function ShowDetailScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[styles.h1, { color: colors.foreground }]}>
-          {show.name}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.h1, styles.titleText, { color: colors.foreground }]}>
+            {show.name}
+          </Text>
+          {isManager ? (
+            <View style={styles.titleActions}>
+              <Pressable
+                onPress={openEdit}
+                hitSlop={8}
+                testID="edit-show"
+                accessibilityLabel="Edit show"
+              >
+                <Feather name="edit-2" size={20} color={colors.mutedForeground} />
+              </Pressable>
+              <Pressable
+                onPress={confirmDelete}
+                hitSlop={8}
+                disabled={deleteShow.isPending}
+                testID="delete-show"
+                accessibilityLabel="Delete show"
+              >
+                <Feather
+                  name="trash-2"
+                  size={20}
+                  color={colors.destructive ?? "#b91c1c"}
+                />
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
         <Text style={[styles.sub, { color: colors.mutedForeground }]}>
           {show.location ? `${show.location} · ` : ""}
           {formatIsoDate(show.showDate)}
@@ -323,6 +439,143 @@ export default function ShowDetailScreen() {
         onPick={addDraft}
         onClose={() => setPickerOpen(false)}
       />
+
+      <Modal
+        visible={editOpen}
+        animationType="slide"
+        onRequestClose={() => setEditOpen(false)}
+      >
+        <View
+          style={[
+            styles.modalRoot,
+            { backgroundColor: colors.background, paddingTop: insets.top + 12 },
+          ]}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+              Edit show
+            </Text>
+            <Pressable onPress={() => setEditOpen(false)} hitSlop={8}>
+              <Feather name="x" size={24} color={colors.mutedForeground} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <EditField
+              label="Show name"
+              value={editName}
+              onChange={setEditName}
+              placeholder="e.g. County Fair Dairy Goat Show"
+              testID="edit-show-name"
+            />
+            <EditField
+              label="Location (optional)"
+              value={editLocation}
+              onChange={setEditLocation}
+              placeholder="e.g. Fairgrounds, Springfield"
+            />
+            <EditField
+              label="Date of show (YYYY-MM-DD)"
+              value={editDate}
+              onChange={setEditDate}
+              placeholder="YYYY-MM-DD"
+              autoCapitalize="none"
+              keyboardType="numbers-and-punctuation"
+              error={
+                !editDateValid && editDate.trim().length > 0
+                  ? `Use the YYYY-MM-DD format, e.g. ${todayInputValue()}`
+                  : undefined
+              }
+            />
+            <EditField
+              label="Notes (optional)"
+              value={editNotes}
+              onChange={setEditNotes}
+              placeholder="Anything worth remembering about this show"
+              multiline
+            />
+
+            <Button
+              label="Save Changes"
+              icon="check"
+              onPress={saveEdit}
+              disabled={!canSaveEdit}
+              loading={updateShow.isPending}
+              fullWidth
+              testID="save-show-edits"
+            />
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+/** Convert a stored ISO datetime back to a local `YYYY-MM-DD` input value. */
+function isoToDateInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  multiline,
+  autoCapitalize,
+  keyboardType,
+  error,
+  testID,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  multiline?: boolean;
+  autoCapitalize?: "none" | "sentences";
+  keyboardType?: "default" | "numbers-and-punctuation";
+  error?: string;
+  testID?: string;
+}) {
+  const colors = useColors();
+  return (
+    <View style={styles.editField}>
+      <Text style={[styles.fieldMini, { color: colors.mutedForeground }]}>
+        {label}
+      </Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={colors.mutedForeground}
+        multiline={multiline}
+        autoCapitalize={autoCapitalize}
+        keyboardType={keyboardType}
+        testID={testID}
+        style={[
+          styles.input,
+          multiline ? styles.multilineInput : null,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            color: colors.foreground,
+            borderRadius: colors.radius,
+          },
+        ]}
+      />
+      {error ? (
+        <Text style={[styles.fieldError, { color: colors.destructive ?? "#b91c1c" }]}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -497,6 +750,22 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { padding: 16 },
   h1: { fontFamily: "Inter_700Bold", fontSize: 24 },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  titleText: { flex: 1 },
+  titleActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    paddingTop: 4,
+  },
+  editField: { gap: 4, marginBottom: 14 },
+  multilineInput: { minHeight: 80, textAlignVertical: "top" },
+  fieldError: { fontFamily: "Inter_400Regular", fontSize: 12 },
   sub: { fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 2 },
   notes: { fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 6 },
   sectionTitle: { fontFamily: "Inter_600SemiBold", fontSize: 18, marginTop: 20 },
