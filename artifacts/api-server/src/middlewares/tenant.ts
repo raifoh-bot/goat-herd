@@ -61,6 +61,19 @@ export const resolveTenant: RequestHandler = async (req, res, next) => {
       res.status(403).json({ error: "This farm has been suspended" });
       return;
     }
+    if (farm.status === "pending") {
+      // Self-registered farm not yet approved by a super-admin: nobody can sign
+      // in or read data until approval. Distinct message so the UI can explain.
+      res.status(403).json({
+        error:
+          "This farm is awaiting approval. You'll be able to sign in once a platform admin approves it.",
+      });
+      return;
+    }
+    if (farm.status === "rejected") {
+      res.status(403).json({ error: "This farm's registration was not approved." });
+      return;
+    }
 
     req.farm = { id: farm.id, slug: farm.slug, name: farm.name, status: farm.status };
     next();

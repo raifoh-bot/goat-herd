@@ -6,6 +6,7 @@ import {
   usersTable,
   farmSettingsTable,
   farmsTable,
+  farmApprovalTokensTable,
   type Farm,
 } from "@workspace/db";
 import { RESERVED_SLUGS } from "@workspace/reserved-slugs";
@@ -50,6 +51,9 @@ async function farmBySlug(slug: string): Promise<Farm | undefined> {
 
 afterAll(async () => {
   if (createdFarmIds.length > 0) {
+    await db
+      .delete(farmApprovalTokensTable)
+      .where(inArray(farmApprovalTokensTable.farmId, createdFarmIds));
     await db.delete(usersTable).where(inArray(usersTable.farmId, createdFarmIds));
     await db
       .delete(farmSettingsTable)
@@ -69,7 +73,8 @@ describe("POST /api/farms/register", () => {
     expect(res.body).toMatchObject({
       slug: body.slug,
       name: body.farmName,
-      status: "active",
+      // Self-registered farms await super-admin approval before going live.
+      status: "pending",
     });
     expect(typeof res.body.id).toBe("number");
     createdFarmIds.push(res.body.id);
@@ -99,12 +104,25 @@ describe("POST /api/farms/register", () => {
     expect(users[0].passwordHash).not.toBe(body.password);
   });
 
-  it("lets the newly registered admin log in immediately", async () => {
+  it("blocks login until the farm is approved, then allows it", async () => {
     const body = validBody({ slug: uniqueSlug("login") });
     const reg = await request(app).post("/api/farms/register").send(body);
     expect(reg.status).toBe(201);
     createdFarmIds.push(reg.body.id);
 
+    // Pending farm: tenant resolution blocks login with the awaiting message.
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", body.slug)
+      .send({ username: body.username, password: body.password });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error).toMatch(/awaiting approval/i);
+
+    // Once approved (simulated directly), the admin can sign in normally.
+    await db
+      .update(farmsTable)
+      .set({ status: "active" })
+      .where(eq(farmsTable.id, reg.body.id));
     const login = await request(app)
       .post("/api/auth/login")
       .set("X-Farm-Slug", body.slug)

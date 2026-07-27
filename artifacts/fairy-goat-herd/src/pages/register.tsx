@@ -28,6 +28,8 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  // Set to the farm name once a registration is accepted and awaiting approval.
+  const [submitted, setSubmitted] = useState<string | null>(null);
 
   const register = useRegisterFarm();
 
@@ -74,6 +76,12 @@ export default function Register() {
       },
       {
         onSuccess: (farm) => {
+          if (farm.status === "pending") {
+            // Self-registered farms wait for a platform admin's approval before
+            // anyone can sign in — show the confirmation instead of the login.
+            setSubmitted(farm.name);
+            return;
+          }
           // Apply the new farm slug, then send the owner to their farm's own
           // sign-in URL. A full-page navigation mounts the app under /<slug>.
           storeFarmSlug(farm.slug);
@@ -94,6 +102,36 @@ export default function Register() {
   };
 
   const passwordTooShort = password.length > 0 && password.length < 8;
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+        <Card className="w-full max-w-md border-primary/10 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
+          <CardHeader className="text-center pt-10">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground shadow-inner mb-4">
+              <GoatIcon className="h-8 w-8" />
+            </div>
+            <CardTitle className="font-serif text-2xl">You're almost there!</CardTitle>
+            <CardDescription>{submitted} is awaiting approval.</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-10">
+            <p className="text-sm text-muted-foreground text-center leading-relaxed">
+              Thanks for registering. A platform admin will review your farm
+              shortly — you won't be able to sign in until it's approved. If you
+              provided an email, we'll let you know as soon as your farm is live.
+            </p>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              <Link href="/login" className="font-medium text-primary hover:underline">
+                Back to sign in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">

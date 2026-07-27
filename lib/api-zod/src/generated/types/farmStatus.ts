@@ -11,4 +11,6 @@ export type FarmStatus = (typeof FarmStatus)[keyof typeof FarmStatus];
 export const FarmStatus = {
   active: "active",
   suspended: "suspended",
+  pending: "pending",
+  rejected: "rejected",
 } as const;

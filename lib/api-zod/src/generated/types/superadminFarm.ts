@@ -25,4 +25,10 @@ export interface SuperadminFarm {
   deletedReason: string | null;
   /** Username of the super-admin who deleted the farm. */
   deletedByUsername: string | null;
+  /** When the farm's registration was rejected, or null. */
+  rejectedAt?: Date | null;
+  /** The reason recorded when the registration was rejected. */
+  rejectedReason?: string | null;
+  /** Username of the super-admin who rejected the registration. */
+  rejectedByUsername?: string | null;
 }

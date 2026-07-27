@@ -3446,6 +3446,7 @@ export const GetPlatformSummaryResponse = zod.object({
   totalFarms: zod.number(),
   activeFarms: zod.number(),
   suspendedFarms: zod.number(),
+  pendingFarms: zod.number().describe("Farms awaiting super-admin approval."),
   totalUsers: zod.number(),
   totalGoats: zod.number(),
   farmsThisMonth: zod
@@ -3551,7 +3552,7 @@ export const ListFarmsResponseItem = zod.object({
   id: zod.number(),
   slug: zod.string(),
   name: zod.string(),
-  status: zod.enum(["active", "suspended"]),
+  status: zod.enum(["active", "suspended", "pending", "rejected"]),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
   userCount: zod.number(),
@@ -3575,6 +3576,18 @@ export const ListFarmsResponseItem = zod.object({
     .string()
     .nullable()
     .describe("Username of the super-admin who deleted the farm."),
+  rejectedAt: zod.coerce
+    .date()
+    .nullish()
+    .describe("When the farm's registration was rejected, or null."),
+  rejectedReason: zod
+    .string()
+    .nullish()
+    .describe("The reason recorded when the registration was rejected."),
+  rejectedByUsername: zod
+    .string()
+    .nullish()
+    .describe("Username of the super-admin who rejected the registration."),
 });
 export const ListFarmsResponse = zod.array(ListFarmsResponseItem);
 
@@ -3610,7 +3623,7 @@ export const UpdateFarmResponse = zod.object({
   id: zod.number(),
   slug: zod.string(),
   name: zod.string(),
-  status: zod.enum(["active", "suspended"]),
+  status: zod.enum(["active", "suspended", "pending", "rejected"]),
 });
 
 /**
@@ -3623,6 +3636,46 @@ export const ViewFarmParams = zod.object({
 export const ViewFarmResponse = zod.object({
   slug: zod.string(),
   name: zod.string(),
+});
+
+/**
+ * @summary Approve a pending farm registration (superadmin only)
+ */
+export const ApproveFarmParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ApproveFarmResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  status: zod.enum(["active", "suspended", "pending", "rejected"]),
+});
+
+/**
+ * @summary Reject a pending farm registration with a recorded reason (superadmin only)
+ */
+export const RejectFarmParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const rejectFarmBodyReasonMax = 500;
+
+export const RejectFarmBody = zod.object({
+  reason: zod
+    .string()
+    .min(1)
+    .max(rejectFarmBodyReasonMax)
+    .describe(
+      "Why the registration is being rejected. Recorded for the audit trail.",
+    ),
+});
+
+export const RejectFarmResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  name: zod.string(),
+  status: zod.enum(["active", "suspended", "pending", "rejected"]),
 });
 
 /**
@@ -3678,7 +3731,7 @@ export const DeleteFarmResponse = zod.object({
   id: zod.number(),
   slug: zod.string(),
   name: zod.string(),
-  status: zod.enum(["active", "suspended"]),
+  status: zod.enum(["active", "suspended", "pending", "rejected"]),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
   userCount: zod.number(),
@@ -3702,6 +3755,18 @@ export const DeleteFarmResponse = zod.object({
     .string()
     .nullable()
     .describe("Username of the super-admin who deleted the farm."),
+  rejectedAt: zod.coerce
+    .date()
+    .nullish()
+    .describe("When the farm's registration was rejected, or null."),
+  rejectedReason: zod
+    .string()
+    .nullish()
+    .describe("The reason recorded when the registration was rejected."),
+  rejectedByUsername: zod
+    .string()
+    .nullish()
+    .describe("Username of the super-admin who rejected the registration."),
 });
 
 /**

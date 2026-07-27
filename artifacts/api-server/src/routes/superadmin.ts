@@ -6,6 +6,7 @@ import {
   pool,
   breedingsTable,
   farmsTable,
+  farmApprovalTokensTable,
   goatsTable,
   usersTable,
   type Farm,
@@ -14,6 +15,7 @@ import {
   CreateFarmBody,
   UpdateFarmBody,
   DeleteFarmBody,
+  RejectFarmBody,
   SetUserPasswordBody,
   CreateSuperadminUserBody,
   UpdateSuperadminUserBody,
@@ -23,6 +25,7 @@ import {
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { createFarm } from "../lib/createFarm";
+import { approveFarmById } from "../lib/approveFarm";
 import { getPlatformSettings, updatePlatformSettings } from "../lib/platformSettings";
 
 const router: IRouter = Router();
@@ -175,6 +178,7 @@ router.get("/superadmin/summary", async (_req, res): Promise<void> => {
     totalFarms: liveFarms.length,
     activeFarms: liveFarms.filter((f) => f.status === "active").length,
     suspendedFarms: liveFarms.filter((f) => f.status === "suspended").length,
+    pendingFarms: liveFarms.filter((f) => f.status === "pending").length,
     totalUsers,
     totalGoats,
     farmsThisMonth: liveFarms.filter((f) => f.createdAt && f.createdAt >= startOfMonth).length,
@@ -212,6 +216,88 @@ router.post("/superadmin/farms", async (req, res): Promise<void> => {
   res.status(201).json(result.farm);
 });
 
+/**
+ * Approves a pending self-registered farm from the panel. Farms created by a
+ * super-admin are active from the start and never pass through here.
+ */
+router.post("/superadmin/farms/:id/approve", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const [existing] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+  if (!existing || existing.deletedAt) {
+    res.status(404).json({ error: "Farm not found" });
+    return;
+  }
+
+  const result = await approveFarmById(req, id, `panel by ${req.authUser?.username}`);
+  if (!result.ok) {
+    res.status(409).json({ error: result.error });
+    return;
+  }
+
+  res.json(result.farm);
+});
+
+/**
+ * Rejects a pending farm registration with a recorded reason. The farm row
+ * (and its slug) are retained for auditing — a rejected slug is intentionally
+ * NOT reusable. Outstanding approval links are invalidated.
+ */
+router.post("/superadmin/farms/:id/reject", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = RejectFarmBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+  if (!existing || existing.deletedAt) {
+    res.status(404).json({ error: "Farm not found" });
+    return;
+  }
+
+  // Only a farm still awaiting approval can be rejected.
+  const [farm] = await db
+    .update(farmsTable)
+    .set({
+      status: "rejected",
+      rejectedAt: new Date(),
+      rejectedReason: parsed.data.reason.trim(),
+      rejectedByUsername: req.authUser?.username ?? null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(farmsTable.id, id), eq(farmsTable.status, "pending"), isNull(farmsTable.deletedAt)))
+    .returning();
+
+  if (!farm) {
+    res.status(409).json({ error: "This farm is not awaiting approval." });
+    return;
+  }
+
+  // Kill any outstanding one-click approval links.
+  await db
+    .update(farmApprovalTokensTable)
+    .set({ usedAt: new Date() })
+    .where(and(eq(farmApprovalTokensTable.farmId, id), isNull(farmApprovalTokensTable.usedAt)));
+
+  req.log.info(
+    { farmId: id, farmSlug: farm.slug, superadmin: req.authUser?.username },
+    "superadmin rejected a farm registration",
+  );
+
+  res.json(farm);
+});
+
 router.put("/superadmin/farms/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -228,6 +314,18 @@ router.put("/superadmin/farms/:id", async (req, res): Promise<void> => {
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name.trim();
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
+
+  // The approval lifecycle has its own endpoints — a pending or rejected farm
+  // can't be flipped active/suspended through the generic update path.
+  if (parsed.data.status !== undefined) {
+    const [current] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+    if (current && (current.status === "pending" || current.status === "rejected")) {
+      res.status(409).json({
+        error: "Use the approve or reject actions for farms awaiting approval.",
+      });
+      return;
+    }
+  }
 
   // Never modify a deleted farm through the ordinary update path.
   const [farm] = await db

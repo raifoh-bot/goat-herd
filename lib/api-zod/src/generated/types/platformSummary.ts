@@ -10,6 +10,8 @@ export interface PlatformSummary {
   totalFarms: number;
   activeFarms: number;
   suspendedFarms: number;
+  /** Farms awaiting super-admin approval. */
+  pendingFarms: number;
   totalUsers: number;
   totalGoats: number;
   /** Number of farms created in the current calendar month. */

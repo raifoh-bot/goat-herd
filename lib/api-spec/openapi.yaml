@@ -1792,6 +1792,80 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /superadmin/farms/{id}/approve:
+    post:
+      operationId: approveFarm
+      tags: [superadmin]
+      summary: Approve a pending farm registration (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The approved farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Farm is not awaiting approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms/{id}/reject:
+    post:
+      operationId: rejectFarm
+      tags: [superadmin]
+      summary: Reject a pending farm registration with a recorded reason (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectFarmBody"
+      responses:
+        "200":
+          description: The rejected farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Farm is not awaiting approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /superadmin/farms/{id}/users:
     get:
       operationId: listFarmUsers
@@ -4219,7 +4293,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, suspended]
+          enum: [active, suspended, pending, rejected]
       required:
         - id
         - slug
@@ -4237,7 +4311,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, suspended]
+          enum: [active, suspended, pending, rejected]
         createdAt:
           type: string
           format: date-time
@@ -4268,6 +4342,19 @@ components:
           type: string
           nullable: true
           description: Username of the super-admin who deleted the farm.
+        rejectedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the farm's registration was rejected, or null.
+        rejectedReason:
+          type: string
+          nullable: true
+          description: The reason recorded when the registration was rejected.
+        rejectedByUsername:
+          type: string
+          nullable: true
+          description: Username of the super-admin who rejected the registration.
       required:
         - id
         - slug
@@ -4290,6 +4377,9 @@ components:
           type: integer
         suspendedFarms:
           type: integer
+        pendingFarms:
+          type: integer
+          description: Farms awaiting super-admin approval.
         totalUsers:
           type: integer
         totalGoats:
@@ -4301,6 +4391,7 @@ components:
         - totalFarms
         - activeFarms
         - suspendedFarms
+        - pendingFarms
         - totalUsers
         - totalGoats
         - farmsThisMonth
@@ -4348,6 +4439,17 @@ components:
         - abandonedAfterDays
         - activeWithinDays
         - idleWithinDays
+
+    RejectFarmBody:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Why the registration is being rejected. Recorded for the audit trail.
+      required:
+        - reason
 
     DeleteFarmBody:
       type: object

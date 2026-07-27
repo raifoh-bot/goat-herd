@@ -12,4 +12,6 @@ export type SuperadminFarmStatus =
 export const SuperadminFarmStatus = {
   active: "active",
   suspended: "suspended",
+  pending: "pending",
+  rejected: "rejected",
 } as const;

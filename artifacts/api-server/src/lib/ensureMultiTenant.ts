@@ -246,6 +246,29 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 7c. Super-admin approval flow for self-registered farms. New columns record
+  //     the rejection audit trail; the tokens table stores HASHED one-click
+  //     approval tokens (never the raw token). Idempotent ALTERs mirror the
+  //     Drizzle schema so dev and prod both converge without a push.
+  await pool.query(`ALTER TABLE "farms" ADD COLUMN IF NOT EXISTS "rejected_at" timestamp;`);
+  await pool.query(`ALTER TABLE "farms" ADD COLUMN IF NOT EXISTS "rejected_reason" text;`);
+  await pool.query(
+    `ALTER TABLE "farms" ADD COLUMN IF NOT EXISTS "rejected_by_username" text;`,
+  );
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS "farm_approval_tokens" (
+      "id" serial PRIMARY KEY,
+      "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+      "token_hash" text NOT NULL UNIQUE,
+      "expires_at" timestamp NOT NULL,
+      "used_at" timestamp,
+      "created_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS "farm_approval_tokens_farm_id_idx" ON "farm_approval_tokens" ("farm_id");`,
+  );
+
   // 8. Goats can carry up to 4 photos. Add the image_urls array column and
   //    migrate any existing single image_url into it exactly once. The legacy
   //    image_url column is left in place (nullable) but no longer written to.

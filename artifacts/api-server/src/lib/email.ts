@@ -67,6 +67,8 @@ export type NewFarmNotification = {
   registeredAt: Date;
   /** Absolute link to the super-admin farms panel. */
   panelUrl: string;
+  /** Secure one-click approval link (token-based, expiring, single-use). */
+  approveUrl: string;
 };
 
 /**
@@ -112,9 +114,10 @@ function renderNewFarmEmailHtml(details: NewFarmNotification): string {
   const registered = details.registeredAt.toISOString();
   return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
-      <h1 style="font-size: 20px; margin-bottom: 8px;">New farm registered</h1>
+      <h1 style="font-size: 20px; margin-bottom: 8px;">New farm awaiting approval</h1>
       <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
-        A new farm just signed up on MyGoatHerd.
+        A new farm just signed up on MyGoatHerd and is waiting for your approval
+        before it goes live.
       </p>
       <table style="font-size: 14px; line-height: 1.8; color: #1f2937; border-collapse: collapse;">
         <tr><td style="padding-right: 12px; color: #6b7280;">Farm name</td><td>${escapeHtml(details.farmName)}</td></tr>
@@ -123,10 +126,15 @@ function renderNewFarmEmailHtml(details: NewFarmNotification): string {
         <tr><td style="padding-right: 12px; color: #6b7280;">Registered</td><td>${registered}</td></tr>
       </table>
       <p style="margin: 24px 0;">
-        <a href="${details.panelUrl}"
+        <a href="${details.approveUrl}"
            style="background: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
-          Open the super-admin panel
+          Approve this farm
         </a>
+      </p>
+      <p style="font-size: 12px; line-height: 1.6; color: #6b7280;">
+        The approval link expires in 7 days and can only be used once. To review
+        the registration first, or to reject it, open the
+        <a href="${details.panelUrl}" style="color: #16a34a;">super-admin panel</a>.
       </p>
     </div>
   `;
@@ -134,14 +142,87 @@ function renderNewFarmEmailHtml(details: NewFarmNotification): string {
 
 function renderNewFarmEmailText(details: NewFarmNotification): string {
   return [
-    "New farm registered on MyGoatHerd",
+    "New farm awaiting approval on MyGoatHerd",
     "",
     `Farm name: ${details.farmName}`,
     `Address: ${details.farmSlug}`,
     `First admin: ${details.adminUsername}`,
     `Registered: ${details.registeredAt.toISOString()}`,
     "",
-    `Open the super-admin panel: ${details.panelUrl}`,
+    `Approve this farm (expires in 7 days, single-use): ${details.approveUrl}`,
+    `Review or reject in the super-admin panel: ${details.panelUrl}`,
+  ].join("\n");
+}
+
+export type FarmApprovedNotification = {
+  farmName: string;
+  /** Absolute link to the farm's own sign-in page. */
+  loginUrl: string;
+};
+
+/**
+ * Tells the registrant their farm has been approved and they can sign in.
+ * Same degrade-gracefully contract: logs instead of sending when email isn't
+ * configured, and swallows delivery failures so approval always succeeds.
+ */
+export async function sendFarmApprovedEmail(
+  to: string,
+  details: FarmApprovedNotification,
+): Promise<void> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  if (!resend || !from) {
+    logger.warn(
+      { to, ...details },
+      "Email not configured (set RESEND_API_KEY and EMAIL_FROM_ADDRESS); logging farm-approved notification instead of sending",
+    );
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject: `${details.farmName} is approved on MyGoatHerd`,
+      html: renderFarmApprovedEmailHtml(details),
+      text: renderFarmApprovedEmailText(details),
+    });
+    if (error) {
+      logger.error({ err: error, to }, "Resend reported an error sending the farm-approved email");
+      return;
+    }
+    logger.info({ to }, "Sent farm-approved email");
+  } catch (err) {
+    logger.error({ err, to }, "Failed to send farm-approved email");
+  }
+}
+
+function renderFarmApprovedEmailHtml(details: FarmApprovedNotification): string {
+  return `
+    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+      <h1 style="font-size: 20px; margin-bottom: 8px;">Your farm is approved</h1>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        Good news — ${escapeHtml(details.farmName)} has been approved on
+        MyGoatHerd. You can now sign in and start managing your herd.
+      </p>
+      <p style="margin: 24px 0;">
+        <a href="${details.loginUrl}"
+           style="background: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
+          Sign in to your farm
+        </a>
+      </p>
+    </div>
+  `;
+}
+
+function renderFarmApprovedEmailText(details: FarmApprovedNotification): string {
+  return [
+    `${details.farmName} is approved on MyGoatHerd`,
+    "",
+    "Good news — your farm has been approved. You can now sign in and start managing your herd.",
+    "",
+    `Sign in: ${details.loginUrl}`,
   ].join("\n");
 }
 

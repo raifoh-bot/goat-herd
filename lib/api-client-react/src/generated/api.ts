@@ -71,6 +71,7 @@ import type {
   PlatformThresholds,
   PregnancyTest,
   RegisterFarmBody,
+  RejectFarmBody,
   ResetPasswordBody,
   SemenStraw,
   SemenTank,
@@ -6782,6 +6783,177 @@ export const useViewFarm = <
   TContext
 > => {
   return useMutation(getViewFarmMutationOptions(options));
+};
+
+/**
+ * @summary Approve a pending farm registration (superadmin only)
+ */
+export const getApproveFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/approve`;
+};
+
+export const approveFarm = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Farm> => {
+  return customFetch<Farm>(getApproveFarmUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getApproveFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["approveFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveFarm>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return approveFarm(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveFarm>>
+>;
+
+export type ApproveFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Approve a pending farm registration (superadmin only)
+ */
+export const useApproveFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getApproveFarmMutationOptions(options));
+};
+
+/**
+ * @summary Reject a pending farm registration with a recorded reason (superadmin only)
+ */
+export const getRejectFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/reject`;
+};
+
+export const rejectFarm = async (
+  id: number,
+  rejectFarmBody: RejectFarmBody,
+  options?: RequestInit,
+): Promise<Farm> => {
+  return customFetch<Farm>(getRejectFarmUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rejectFarmBody),
+  });
+};
+
+export const getRejectFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectFarm>>,
+    TError,
+    { id: number; data: BodyType<RejectFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectFarm>>,
+  TError,
+  { id: number; data: BodyType<RejectFarmBody> },
+  TContext
+> => {
+  const mutationKey = ["rejectFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectFarm>>,
+    { id: number; data: BodyType<RejectFarmBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rejectFarm(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectFarm>>
+>;
+export type RejectFarmMutationBody = BodyType<RejectFarmBody>;
+export type RejectFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reject a pending farm registration with a recorded reason (superadmin only)
+ */
+export const useRejectFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectFarm>>,
+    TError,
+    { id: number; data: BodyType<RejectFarmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectFarm>>,
+  TError,
+  { id: number; data: BodyType<RejectFarmBody> },
+  TContext
+> => {
+  return useMutation(getRejectFarmMutationOptions(options));
 };
 
 /**

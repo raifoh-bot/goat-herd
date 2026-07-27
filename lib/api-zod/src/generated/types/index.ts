@@ -121,6 +121,7 @@ export * from "./pregnancyTest";
 export * from "./pregnancyTestMethod";
 export * from "./pregnancyTestResult";
 export * from "./registerFarmBody";
+export * from "./rejectFarmBody";
 export * from "./resetPasswordBody";
 export * from "./semenStraw";
 export * from "./semenTank";

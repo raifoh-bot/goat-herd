@@ -1635,6 +1635,8 @@ export type FarmStatus = (typeof FarmStatus)[keyof typeof FarmStatus];
 export const FarmStatus = {
   active: "active",
   suspended: "suspended",
+  pending: "pending",
+  rejected: "rejected",
 } as const;
 
 export interface Farm {
@@ -1650,6 +1652,8 @@ export type SuperadminFarmStatus =
 export const SuperadminFarmStatus = {
   active: "active",
   suspended: "suspended",
+  pending: "pending",
+  rejected: "rejected",
 } as const;
 
 export interface SuperadminFarm {
@@ -1670,12 +1674,20 @@ export interface SuperadminFarm {
   deletedReason: string | null;
   /** Username of the super-admin who deleted the farm. */
   deletedByUsername: string | null;
+  /** When the farm's registration was rejected, or null. */
+  rejectedAt?: string | null;
+  /** The reason recorded when the registration was rejected. */
+  rejectedReason?: string | null;
+  /** Username of the super-admin who rejected the registration. */
+  rejectedByUsername?: string | null;
 }
 
 export interface PlatformSummary {
   totalFarms: number;
   activeFarms: number;
   suspendedFarms: number;
+  /** Farms awaiting super-admin approval. */
+  pendingFarms: number;
   totalUsers: number;
   totalGoats: number;
   /** Number of farms created in the current calendar month. */
@@ -1722,6 +1734,15 @@ export interface UpdatePlatformThresholdsBody {
    * @maximum 3650
    */
   idleWithinDays: number;
+}
+
+export interface RejectFarmBody {
+  /**
+   * Why the registration is being rejected. Recorded for the audit trail.
+   * @minLength 1
+   * @maxLength 500
+   */
+  reason: string;
 }
 
 export interface DeleteFarmBody {

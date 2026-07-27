@@ -9,6 +9,8 @@ import {
   useCreateFarm,
   useUpdateFarm,
   useDeleteFarm,
+  useApproveFarm,
+  useRejectFarm,
   useViewFarm,
   useLogout,
   useListFarmUsers,
@@ -556,6 +558,99 @@ function ThresholdsDialog({
   );
 }
 
+function RejectFarmDialog({ farm }: { farm: SuperadminFarm }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const rejectFarm = useRejectFarm();
+
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const canReject = reason.trim().length > 0;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!canReject) return;
+    rejectFarm.mutate(
+      { id: farm.id, data: { reason: reason.trim() } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
+          toast({
+            title: "Registration rejected",
+            description: `${farm.name} will not go live.`,
+          });
+          setOpen(false);
+          setReason("");
+        },
+        onError: () => {
+          toast({
+            title: "Could not reject registration",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setReason("");
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+        >
+          Reject
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Reject {farm.name}?</DialogTitle>
+            <DialogDescription>
+              The registration is declined and its users will never be able to
+              sign in. The farm is kept for auditing and its address (
+              <span className="font-mono">{farm.slug}</span>) stays reserved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor={`rejectReason-${farm.id}`}>Reason for rejection</Label>
+            <Textarea
+              id={`rejectReason-${farm.id}`}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={500}
+              placeholder="e.g. Spam signup, duplicate registration…"
+              required
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={rejectFarm.isPending || !canReject}
+            >
+              {rejectFarm.isPending ? "Rejecting…" : "Reject registration"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function DeleteFarmDialog({ farm }: { farm: SuperadminFarm }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -933,9 +1028,37 @@ function FarmRow({
   const queryClient = useQueryClient();
   const updateFarm = useUpdateFarm();
   const viewFarm = useViewFarm();
+  const approveFarm = useApproveFarm();
 
   const suspended = farm.status === "suspended";
-  const abandoned = isAbandoned(farm, thresholds);
+  const pending = farm.status === "pending";
+  const rejected = farm.status === "rejected";
+  const abandoned = !pending && !rejected && isAbandoned(farm, thresholds);
+
+  const handleApprove = () => {
+    approveFarm.mutate(
+      { id: farm.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
+          toast({
+            title: "Farm approved",
+            description: `${farm.name} is now live and its admin can sign in.`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Could not approve farm",
+            description: "It may have already been approved or rejected.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
 
   const handleView = () => {
     viewFarm.mutate(
@@ -1000,9 +1123,22 @@ function FarmRow({
         <div className="text-xs text-muted-foreground">{farm.slug}</div>
       </TableCell>
       <TableCell>
-        <Badge variant={suspended ? "destructive" : "secondary"}>
-          {farm.status}
-        </Badge>
+        {pending ? (
+          <Badge
+            variant="outline"
+            className="border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-500"
+          >
+            Awaiting approval
+          </Badge>
+        ) : rejected ? (
+          <Badge variant="destructive" title={farm.rejectedReason ?? undefined}>
+            Rejected
+          </Badge>
+        ) : (
+          <Badge variant={suspended ? "destructive" : "secondary"}>
+            {farm.status}
+          </Badge>
+        )}
       </TableCell>
       <TableCell className="tabular-nums">{farm.userCount}</TableCell>
       <TableCell className="tabular-nums">{farm.goatCount}</TableCell>
@@ -1015,28 +1151,41 @@ function FarmRow({
       <TableCell>{formatDate(farm.createdAt)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
-          {!suspended && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleView}
-              disabled={viewFarm.isPending}
-            >
-              <Eye className="mr-1.5 h-4 w-4" />
-              {viewFarm.isPending ? "Opening…" : "View"}
-            </Button>
+          {pending ? (
+            <>
+              <Button size="sm" onClick={handleApprove} disabled={approveFarm.isPending}>
+                {approveFarm.isPending ? "Approving…" : "Approve"}
+              </Button>
+              <RejectFarmDialog farm={farm} />
+            </>
+          ) : rejected ? (
+            <DeleteFarmDialog farm={farm} />
+          ) : (
+            <>
+              {!suspended && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleView}
+                  disabled={viewFarm.isPending}
+                >
+                  <Eye className="mr-1.5 h-4 w-4" />
+                  {viewFarm.isPending ? "Opening…" : "View"}
+                </Button>
+              )}
+              <FarmUsersDialog farm={farm} />
+              <ShareLoginDialog farm={farm} />
+              <Button
+                variant={suspended ? "default" : "outline"}
+                size="sm"
+                onClick={toggleStatus}
+                disabled={updateFarm.isPending}
+              >
+                {suspended ? "Reactivate" : "Suspend"}
+              </Button>
+              <DeleteFarmDialog farm={farm} />
+            </>
           )}
-          <FarmUsersDialog farm={farm} />
-          <ShareLoginDialog farm={farm} />
-          <Button
-            variant={suspended ? "default" : "outline"}
-            size="sm"
-            onClick={toggleStatus}
-            disabled={updateFarm.isPending}
-          >
-            {suspended ? "Reactivate" : "Suspend"}
-          </Button>
-          <DeleteFarmDialog farm={farm} />
         </div>
       </TableCell>
     </TableRow>
@@ -1192,9 +1341,21 @@ export default function SuperadminFarms() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground">
-              {summary
-                ? `${summary.activeFarms} active · ${summary.suspendedFarms} suspended`
-                : "\u00a0"}
+              {summary ? (
+                <>
+                  {summary.activeFarms} active · {summary.suspendedFarms} suspended
+                  {summary.pendingFarms > 0 && (
+                    <>
+                      {" · "}
+                      <span className="font-medium text-amber-600 dark:text-amber-500">
+                        {summary.pendingFarms} awaiting approval
+                      </span>
+                    </>
+                  )}
+                </>
+              ) : (
+                "\u00a0"
+              )}
             </CardContent>
           </Card>
           <Card>

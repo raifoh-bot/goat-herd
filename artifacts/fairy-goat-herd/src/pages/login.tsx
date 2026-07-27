@@ -100,10 +100,16 @@ export default function Login() {
             setLocation("/");
           }
         },
-        onError: () => {
+        onError: (err) => {
+          // A 403 carries a farm-status message (awaiting approval, suspended,
+          // rejected) — surface it verbatim so the user knows what's going on.
+          const e = err as { status?: number; data?: { error?: string } };
+          const farmBlocked = e?.status === 403 && e?.data?.error;
           toast({
-            title: "Login failed",
-            description: "That username and password don't match our records.",
+            title: farmBlocked ? "Can't sign in yet" : "Login failed",
+            description: farmBlocked
+              ? e.data!.error
+              : "That username and password don't match our records.",
             variant: "destructive",
           });
         },
