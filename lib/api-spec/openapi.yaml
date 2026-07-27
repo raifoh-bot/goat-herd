@@ -755,6 +755,25 @@ paths:
                 $ref: "#/components/schemas/GoatSale"
         "404":
           description: Sale record not found
+    delete:
+      operationId: deleteGoatSale
+      tags: [sales]
+      summary: Delete a sale record (Admin/Owner only)
+      description: >-
+        Removes a sale record from the sales log. If the goat is still marked
+        with a sold herd status, it is restored to on-farm in the same
+        transaction; a goat already moved back to another status is left as-is.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Sale record deleted
+        "404":
+          description: Sale record not found
 
   /goats/{id}/sale:
     get:

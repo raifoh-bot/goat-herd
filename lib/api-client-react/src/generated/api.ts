@@ -2792,6 +2792,91 @@ export const useUpdateGoatSale = <
 };
 
 /**
+ * Removes a sale record from the sales log. If the goat is still marked with a sold herd status, it is restored to on-farm in the same transaction; a goat already moved back to another status is left as-is.
+ * @summary Delete a sale record (Admin/Owner only)
+ */
+export const getDeleteGoatSaleUrl = (id: number) => {
+  return `/api/goat-sales/${id}`;
+};
+
+export const deleteGoatSale = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteGoatSaleUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteGoatSaleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGoatSale>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteGoatSale>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteGoatSale"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteGoatSale>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteGoatSale(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteGoatSaleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteGoatSale>>
+>;
+
+export type DeleteGoatSaleMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a sale record (Admin/Owner only)
+ */
+export const useDeleteGoatSale = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGoatSale>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteGoatSale>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteGoatSaleMutationOptions(options));
+};
+
+/**
  * @summary Get the sale record for a single goat
  */
 export const getGetGoatSaleUrl = (id: number) => {

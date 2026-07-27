@@ -37,7 +37,7 @@ export function formatSalePrice(price: number | null | undefined): string {
   return price.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-interface SaleFormValues {
+export interface SaleFormValues {
   saleDate: string; // yyyy-mm-dd from the date input
   buyerName: string;
   buyerContact: string;
@@ -57,7 +57,7 @@ function emptyForm(): SaleFormValues {
   };
 }
 
-function formFromSale(sale: GoatSale): SaleFormValues {
+export function formFromSale(sale: GoatSale): SaleFormValues {
   return {
     saleDate: sale.saleDate ? new Date(sale.saleDate).toISOString().slice(0, 10) : "",
     buyerName: sale.buyerName,
@@ -72,7 +72,7 @@ function formFromSale(sale: GoatSale): SaleFormValues {
  * Shared sale form fields for the record and edit dialogs. Only sale date and
  * buyer name are required; price, contact, and notes are optional.
  */
-function SaleFormFields({
+export function SaleFormFields({
   values,
   onChange,
 }: {

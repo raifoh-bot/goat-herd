@@ -1908,6 +1908,14 @@ export const UpdateGoatSaleResponse = zod.object({
 });
 
 /**
+ * Removes a sale record from the sales log. If the goat is still marked with a sold herd status, it is restored to on-farm in the same transaction; a goat already moved back to another status is left as-is.
+ * @summary Delete a sale record (Admin/Owner only)
+ */
+export const DeleteGoatSaleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get the sale record for a single goat
  */
 export const GetGoatSaleParams = zod.object({

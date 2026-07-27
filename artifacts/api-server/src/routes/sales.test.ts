@@ -64,6 +64,94 @@ afterAll(async () => {
   await pool.end();
 });
 
+describe("DELETE /api/goat-sales/:id", () => {
+  it("deletes the sale and restores a still-sold goat to on-farm", async () => {
+    const goatId = await createGoat();
+    const createRes = await agent.post("/api/goat-sales").send({
+      goatId,
+      saleDate: "2026-07-05T12:00:00.000Z",
+      buyerName: "Undo Buyer",
+      registrationTransferred: true,
+    });
+    expect(createRes.status).toBe(201);
+
+    const delRes = await agent.delete(`/api/goat-sales/${createRes.body.id}`);
+    expect(delRes.status).toBe(204);
+
+    const [goat] = await db.select().from(goatsTable).where(eq(goatsTable.id, goatId));
+    expect(goat.herdStatus).toBe("on-farm");
+
+    const saleRes = await agent.get(`/api/goats/${goatId}/sale`);
+    expect(saleRes.status).toBe(200);
+    expect(saleRes.body).toBeNull();
+  });
+
+  it("leaves a manually-changed herd status untouched when the sale is deleted", async () => {
+    const goatId = await createGoat();
+    const createRes = await agent.post("/api/goat-sales").send({
+      goatId,
+      saleDate: "2026-07-05T12:00:00.000Z",
+      buyerName: "Undo Buyer",
+      registrationTransferred: false,
+    });
+    expect(createRes.status).toBe(201);
+
+    // The user already moved the goat to a non-sold status by hand.
+    const putRes = await agent.put(`/api/goats/${goatId}`).send({ herdStatus: "leased" });
+    expect(putRes.status).toBe(200);
+
+    const delRes = await agent.delete(`/api/goat-sales/${createRes.body.id}`);
+    expect(delRes.status).toBe(204);
+
+    const [goat] = await db.select().from(goatsTable).where(eq(goatsTable.id, goatId));
+    expect(goat.herdStatus).toBe("leased");
+  });
+
+  it("returns 404 for a sale record that does not exist", async () => {
+    const res = await agent.delete("/api/goat-sales/999999");
+    expect(res.status).toBe(404);
+  });
+
+  it("forbids non-manager roles from deleting a sale record", async () => {
+    const goatId = await createGoat();
+    const createRes = await agent.post("/api/goat-sales").send({
+      goatId,
+      saleDate: "2026-07-06T12:00:00.000Z",
+      buyerName: "Role Test Buyer",
+      registrationTransferred: false,
+    });
+    expect(createRes.status).toBe(201);
+
+    const viewerUsername = `test-sales-viewer-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
+    const [defaultFarm] = await db.select().from(farmsTable).where(eq(farmsTable.slug, FARM_SLUG));
+    const [viewer] = await db
+      .insert(usersTable)
+      .values({ farmId: defaultFarm.id, username: viewerUsername, passwordHash, role: "farmhand", active: true })
+      .returning();
+    try {
+      const viewerAgent = request.agent(app);
+      const loginRes = await viewerAgent
+        .post("/api/auth/login")
+        .set("X-Farm-Slug", FARM_SLUG)
+        .send({ username: viewerUsername, password: TEST_PASSWORD });
+      expect(loginRes.status).toBe(200);
+
+      const delRes = await viewerAgent.delete(`/api/goat-sales/${createRes.body.id}`);
+      expect(delRes.status).toBe(403);
+
+      // Record must still exist.
+      const [sale] = await db
+        .select()
+        .from(goatSalesTable)
+        .where(eq(goatSalesTable.id, createRes.body.id));
+      expect(sale).toBeTruthy();
+    } finally {
+      await db.delete(usersTable).where(eq(usersTable.id, viewer.id));
+    }
+  });
+});
+
 describe("POST /api/goat-sales", () => {
   it("creates the sale and sets herdStatus to sold-registered when papers transferred", async () => {
     const goatId = await createGoat();

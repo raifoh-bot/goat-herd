@@ -196,6 +196,56 @@ router.put("/goat-sales/:id", requireManager, async (req, res): Promise<void> =>
   res.json(sale);
 });
 
+// Delete a sale record. If the goat still carries a sold herd status it is
+// restored to on-farm in the same transaction; if the user already moved the
+// goat to another status, that status is left untouched.
+router.delete("/goat-sales/:id", requireManager, async (req, res): Promise<void> => {
+  const params = GetGoatParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  // The delete and the status revert run in one transaction, and the revert
+  // is driven by the row the DELETE itself returned — so a concurrent request
+  // can never revert a goat based on stale pre-read data.
+  const deleted = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(goatSalesTable)
+      .where(and(eq(goatSalesTable.id, params.data.id), eq(goatSalesTable.farmId, farmId(req))))
+      .returning({ goatId: goatSalesTable.goatId });
+    if (!row) return false;
+
+    // Only restore to on-farm if the goat still carries a sold status AND has
+    // no other sale record (defensive: the unique goat_id index should make a
+    // second sale impossible, but the revert must never mask one).
+    const [replacement] = await tx
+      .select({ id: goatSalesTable.id })
+      .from(goatSalesTable)
+      .where(and(eq(goatSalesTable.goatId, row.goatId), eq(goatSalesTable.farmId, farmId(req))));
+    if (!replacement) {
+      const [goat] = await tx
+        .select({ herdStatus: goatsTable.herdStatus })
+        .from(goatsTable)
+        .where(and(eq(goatsTable.id, row.goatId), eq(goatsTable.farmId, farmId(req))));
+      if (goat && (goat.herdStatus === "sold-registered" || goat.herdStatus === "sold-not-registered")) {
+        await tx
+          .update(goatsTable)
+          .set({ herdStatus: "on-farm", updatedAt: new Date() })
+          .where(and(eq(goatsTable.id, row.goatId), eq(goatsTable.farmId, farmId(req))));
+      }
+    }
+    return true;
+  });
+
+  if (!deleted) {
+    res.status(404).json({ error: "Sale record not found" });
+    return;
+  }
+
+  res.status(204).end();
+});
+
 // Fetch the sale record for a single goat — null when the goat is unsold.
 router.get("/goats/:id/sale", async (req, res): Promise<void> => {
   const params = GetGoatParams.safeParse(req.params);
