@@ -31,6 +31,7 @@ import type {
   CreateBreedingEventBody,
   CreateFarmBody,
   CreateGoatBody,
+  CreateGoatSaleBody,
   CreateHealthEventBody,
   CreateHealthEventsBulk201,
   CreatePregnancyTestBody,
@@ -48,6 +49,8 @@ import type {
   ForgotPasswordBody,
   Goat,
   GoatAccolade,
+  GoatSale,
+  GoatSaleWithGoat,
   HealthDueResponse,
   HealthEvent,
   HealthStatus,
@@ -83,6 +86,7 @@ import type {
   UpdateFarmBody,
   UpdateFarmSettingsBody,
   UpdateGoatBody,
+  UpdateGoatSaleBody,
   UpdateHealthEventBody,
   UpdateKidBody,
   UpdateOwnEmailBody,
@@ -2461,6 +2465,418 @@ export const useDeleteShowResult = <
 > => {
   return useMutation(getDeleteShowResultMutationOptions(options));
 };
+
+/**
+ * @summary List the farm's goat sale records (newest sale first)
+ */
+export const getListGoatSalesUrl = () => {
+  return `/api/goat-sales`;
+};
+
+export const listGoatSales = async (
+  options?: RequestInit,
+): Promise<GoatSaleWithGoat[]> => {
+  return customFetch<GoatSaleWithGoat[]>(getListGoatSalesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListGoatSalesQueryKey = () => {
+  return [`/api/goat-sales`] as const;
+};
+
+export const getListGoatSalesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGoatSales>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGoatSales>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListGoatSalesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listGoatSales>>> = ({
+    signal,
+  }) => listGoatSales({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGoatSales>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGoatSalesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGoatSales>>
+>;
+export type ListGoatSalesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the farm's goat sale records (newest sale first)
+ */
+
+export function useListGoatSales<
+  TData = Awaited<ReturnType<typeof listGoatSales>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGoatSales>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGoatSalesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Creates the goat's sale record and atomically updates its herd status to sold-registered or sold-not-registered based on whether the registration was transferred. A goat can have at most one sale record.
+ * @summary Record a goat sale (Admin/Owner only)
+ */
+export const getCreateGoatSaleUrl = () => {
+  return `/api/goat-sales`;
+};
+
+export const createGoatSale = async (
+  createGoatSaleBody: CreateGoatSaleBody,
+  options?: RequestInit,
+): Promise<GoatSale> => {
+  return customFetch<GoatSale>(getCreateGoatSaleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createGoatSaleBody),
+  });
+};
+
+export const getCreateGoatSaleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGoatSale>>,
+    TError,
+    { data: BodyType<CreateGoatSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createGoatSale>>,
+  TError,
+  { data: BodyType<CreateGoatSaleBody> },
+  TContext
+> => {
+  const mutationKey = ["createGoatSale"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createGoatSale>>,
+    { data: BodyType<CreateGoatSaleBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createGoatSale(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateGoatSaleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createGoatSale>>
+>;
+export type CreateGoatSaleMutationBody = BodyType<CreateGoatSaleBody>;
+export type CreateGoatSaleMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a goat sale (Admin/Owner only)
+ */
+export const useCreateGoatSale = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGoatSale>>,
+    TError,
+    { data: BodyType<CreateGoatSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createGoatSale>>,
+  TError,
+  { data: BodyType<CreateGoatSaleBody> },
+  TContext
+> => {
+  return useMutation(getCreateGoatSaleMutationOptions(options));
+};
+
+/**
+ * @summary Export the farm's sales log as a CSV file
+ */
+export const getExportGoatSalesUrl = () => {
+  return `/api/goat-sales/export`;
+};
+
+export const exportGoatSales = async (
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getExportGoatSalesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportGoatSalesQueryKey = () => {
+  return [`/api/goat-sales/export`] as const;
+};
+
+export const getExportGoatSalesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportGoatSales>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoatSales>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportGoatSalesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportGoatSales>>> = ({
+    signal,
+  }) => exportGoatSales({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoatSales>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportGoatSalesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportGoatSales>>
+>;
+export type ExportGoatSalesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export the farm's sales log as a CSV file
+ */
+
+export function useExportGoatSales<
+  TData = Awaited<ReturnType<typeof exportGoatSales>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportGoatSales>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportGoatSalesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Edits an existing sale record. Changing the registration-transferred flag also updates the goat's sold herd status to match.
+ * @summary Update a sale record (Admin/Owner only)
+ */
+export const getUpdateGoatSaleUrl = (id: number) => {
+  return `/api/goat-sales/${id}`;
+};
+
+export const updateGoatSale = async (
+  id: number,
+  updateGoatSaleBody: UpdateGoatSaleBody,
+  options?: RequestInit,
+): Promise<GoatSale> => {
+  return customFetch<GoatSale>(getUpdateGoatSaleUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateGoatSaleBody),
+  });
+};
+
+export const getUpdateGoatSaleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGoatSale>>,
+    TError,
+    { id: number; data: BodyType<UpdateGoatSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateGoatSale>>,
+  TError,
+  { id: number; data: BodyType<UpdateGoatSaleBody> },
+  TContext
+> => {
+  const mutationKey = ["updateGoatSale"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateGoatSale>>,
+    { id: number; data: BodyType<UpdateGoatSaleBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateGoatSale(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateGoatSaleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateGoatSale>>
+>;
+export type UpdateGoatSaleMutationBody = BodyType<UpdateGoatSaleBody>;
+export type UpdateGoatSaleMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a sale record (Admin/Owner only)
+ */
+export const useUpdateGoatSale = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGoatSale>>,
+    TError,
+    { id: number; data: BodyType<UpdateGoatSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateGoatSale>>,
+  TError,
+  { id: number; data: BodyType<UpdateGoatSaleBody> },
+  TContext
+> => {
+  return useMutation(getUpdateGoatSaleMutationOptions(options));
+};
+
+/**
+ * @summary Get the sale record for a single goat
+ */
+export const getGetGoatSaleUrl = (id: number) => {
+  return `/api/goats/${id}/sale`;
+};
+
+export const getGoatSale = async (
+  id: number,
+  options?: RequestInit,
+): Promise<GoatSale | null> => {
+  return customFetch<GoatSale | null>(getGetGoatSaleUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGoatSaleQueryKey = (id: number) => {
+  return [`/api/goats/${id}/sale`] as const;
+};
+
+export const getGetGoatSaleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGoatSale>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGoatSale>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGoatSaleQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGoatSale>>> = ({
+    signal,
+  }) => getGoatSale(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGoatSale>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGoatSaleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGoatSale>>
+>;
+export type GetGoatSaleQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the sale record for a single goat
+ */
+
+export function useGetGoatSale<
+  TData = Awaited<ReturnType<typeof getGoatSale>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGoatSale>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGoatSaleQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List a goat's show accolades, grouped by show (newest first)

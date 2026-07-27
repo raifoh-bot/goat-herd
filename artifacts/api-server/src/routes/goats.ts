@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, arrayOverlaps, desc, eq, inArray, isNull, or } from "drizzle-orm";
-import { db, goatsTable, healthEventsTable } from "@workspace/db";
+import { db, goatSalesTable, goatsTable, healthEventsTable } from "@workspace/db";
 import {
   AddGoatPhotoBody,
   AddGoatPhotoParams,
@@ -406,6 +406,15 @@ router.delete("/goats/:id", requireManager, async (req, res): Promise<void> => {
         and(
           eq(healthEventsTable.goatId, params.data.id),
           eq(healthEventsTable.farmId, farmId(req)),
+        ),
+      );
+    // The sale record references the goat too; remove it alongside.
+    await tx
+      .delete(goatSalesTable)
+      .where(
+        and(
+          eq(goatSalesTable.goatId, params.data.id),
+          eq(goatSalesTable.farmId, farmId(req)),
         ),
       );
     const [deleted] = await tx

@@ -9,6 +9,7 @@ import healthEventsRouter from "./health-events";
 import semenRouter from "./semen";
 import semenTanksRouter from "./semenTanks";
 import showsRouter from "./shows";
+import salesRouter from "./sales";
 import storageRouter from "./storage";
 import usersRouter from "./users";
 import settingsRouter from "./settings";
@@ -52,6 +53,7 @@ router.use(healthEventsRouter);
 router.use(semenRouter);
 router.use(semenTanksRouter);
 router.use(showsRouter);
+router.use(salesRouter);
 router.use(usersRouter);
 router.use(settingsRouter);
 

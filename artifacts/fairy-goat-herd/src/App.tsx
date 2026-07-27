@@ -36,6 +36,7 @@ import PedigreeCertificate from "@/pages/reports/pedigree";
 import HealthHistoryReport from "@/pages/reports/health-history";
 import ShowTime from "@/pages/reports/show-time";
 import ShowResultsPage from "@/pages/reports/show-results";
+import SalesLogReport from "@/pages/reports/sales-log";
 import AdminSettings from "@/pages/admin/settings";
 
 const queryClient = new QueryClient();
@@ -109,6 +110,7 @@ function AuthenticatedRoutes() {
         <Route path="/reports/health-history" component={HealthHistoryReport} />
         <Route path="/reports/show-time" component={ShowTime} />
         <Route path="/reports/show-results" component={ShowResultsPage} />
+        <Route path="/reports/sales-log" component={SalesLogReport} />
         <Route path="/lineage">
           <Redirect to="/reports/lineage" replace />
         </Route>

@@ -19,6 +19,8 @@ export {
   CreateSemenStrawBody,
   CreateSemenTankBody,
   UpdateSemenTankBody,
+  CreateGoatSaleBody,
+  UpdateGoatSaleBody,
   CreateShowBody,
   CreateShowResultsBody,
   CreateSuperadminUserBody,

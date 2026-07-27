@@ -19,6 +19,8 @@ tags:
     description: Frozen semen straw inventory
   - name: shows
     description: Livestock show results and goat accolades
+  - name: sales
+    description: Goat sale records and the sales log
   - name: auth
     description: Authentication and current-user session
   - name: users
@@ -670,6 +672,112 @@ paths:
           description: Result row deleted
         "404":
           description: Show or result not found
+
+  /goat-sales:
+    get:
+      operationId: listGoatSales
+      tags: [sales]
+      summary: List the farm's goat sale records (newest sale first)
+      responses:
+        "200":
+          description: List of sale records with the sold goat's name joined
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GoatSaleWithGoat"
+    post:
+      operationId: createGoatSale
+      tags: [sales]
+      summary: Record a goat sale (Admin/Owner only)
+      description: >-
+        Creates the goat's sale record and atomically updates its herd status
+        to sold-registered or sold-not-registered based on whether the
+        registration was transferred. A goat can have at most one sale record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoatSaleBody"
+      responses:
+        "201":
+          description: Created sale record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoatSale"
+        "404":
+          description: Goat not found
+        "409":
+          description: The goat already has a sale record
+
+  /goat-sales/export:
+    get:
+      operationId: exportGoatSales
+      tags: [sales]
+      summary: Export the farm's sales log as a CSV file
+      responses:
+        "200":
+          description: CSV file of all sale records for the farm
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /goat-sales/{id}:
+    put:
+      operationId: updateGoatSale
+      tags: [sales]
+      summary: Update a sale record (Admin/Owner only)
+      description: >-
+        Edits an existing sale record. Changing the registration-transferred
+        flag also updates the goat's sold herd status to match.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGoatSaleBody"
+      responses:
+        "200":
+          description: Updated sale record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoatSale"
+        "404":
+          description: Sale record not found
+
+  /goats/{id}/sale:
+    get:
+      operationId: getGoatSale
+      tags: [sales]
+      summary: Get the sale record for a single goat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The goat's sale record, or null when the goat has not been sold
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/GoatSale"
+                  - type: "null"
+        "404":
+          description: Goat not found
 
   /goats/{id}/accolades:
     get:
@@ -2637,6 +2745,111 @@ components:
         - showDate
         - createdAt
         - updatedAt
+
+    GoatSale:
+      type: object
+      properties:
+        id:
+          type: integer
+        goatId:
+          type: integer
+        saleDate:
+          type: string
+          format: date-time
+        buyerName:
+          type: string
+        buyerContact:
+          type: string
+          nullable: true
+        salePrice:
+          type: number
+          nullable: true
+        registrationTransferred:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - goatId
+        - saleDate
+        - buyerName
+        - registrationTransferred
+        - createdAt
+        - updatedAt
+
+    GoatSaleWithGoat:
+      allOf:
+        - $ref: "#/components/schemas/GoatSale"
+        - type: object
+          properties:
+            goatName:
+              type: string
+          required:
+            - goatName
+
+    CreateGoatSaleBody:
+      type: object
+      properties:
+        goatId:
+          type: integer
+        saleDate:
+          type: string
+          format: date-time
+        buyerName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        buyerContact:
+          type: string
+          maxLength: 300
+          nullable: true
+        salePrice:
+          type: number
+          minimum: 0
+          nullable: true
+        registrationTransferred:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      required:
+        - goatId
+        - saleDate
+        - buyerName
+        - registrationTransferred
+
+    UpdateGoatSaleBody:
+      type: object
+      properties:
+        saleDate:
+          type: string
+          format: date-time
+        buyerName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        buyerContact:
+          type: string
+          maxLength: 300
+          nullable: true
+        salePrice:
+          type: number
+          minimum: 0
+          nullable: true
+        registrationTransferred:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
 
     CreateShowBody:
       type: object

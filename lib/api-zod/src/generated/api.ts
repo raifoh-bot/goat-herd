@@ -1825,6 +1825,112 @@ export const DeleteShowResultParams = zod.object({
 });
 
 /**
+ * @summary List the farm's goat sale records (newest sale first)
+ */
+export const ListGoatSalesResponseItem = zod
+  .object({
+    id: zod.number(),
+    goatId: zod.number(),
+    saleDate: zod.coerce.date(),
+    buyerName: zod.string(),
+    buyerContact: zod.string().nullish(),
+    salePrice: zod.number().nullish(),
+    registrationTransferred: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      goatName: zod.string(),
+    }),
+  );
+export const ListGoatSalesResponse = zod.array(ListGoatSalesResponseItem);
+
+/**
+ * Creates the goat's sale record and atomically updates its herd status to sold-registered or sold-not-registered based on whether the registration was transferred. A goat can have at most one sale record.
+ * @summary Record a goat sale (Admin/Owner only)
+ */
+export const createGoatSaleBodyBuyerNameMax = 200;
+
+export const createGoatSaleBodyBuyerContactMax = 300;
+
+export const createGoatSaleBodySalePriceMin = 0;
+
+export const createGoatSaleBodyNotesMax = 2000;
+
+export const CreateGoatSaleBody = zod.object({
+  goatId: zod.number(),
+  saleDate: zod.coerce.date(),
+  buyerName: zod.string().min(1).max(createGoatSaleBodyBuyerNameMax),
+  buyerContact: zod.string().max(createGoatSaleBodyBuyerContactMax).nullish(),
+  salePrice: zod.number().min(createGoatSaleBodySalePriceMin).nullish(),
+  registrationTransferred: zod.boolean(),
+  notes: zod.string().max(createGoatSaleBodyNotesMax).nullish(),
+});
+
+/**
+ * Edits an existing sale record. Changing the registration-transferred flag also updates the goat's sold herd status to match.
+ * @summary Update a sale record (Admin/Owner only)
+ */
+export const UpdateGoatSaleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateGoatSaleBodyBuyerNameMax = 200;
+
+export const updateGoatSaleBodyBuyerContactMax = 300;
+
+export const updateGoatSaleBodySalePriceMin = 0;
+
+export const updateGoatSaleBodyNotesMax = 2000;
+
+export const UpdateGoatSaleBody = zod.object({
+  saleDate: zod.coerce.date().optional(),
+  buyerName: zod.string().min(1).max(updateGoatSaleBodyBuyerNameMax).optional(),
+  buyerContact: zod.string().max(updateGoatSaleBodyBuyerContactMax).nullish(),
+  salePrice: zod.number().min(updateGoatSaleBodySalePriceMin).nullish(),
+  registrationTransferred: zod.boolean().optional(),
+  notes: zod.string().max(updateGoatSaleBodyNotesMax).nullish(),
+});
+
+export const UpdateGoatSaleResponse = zod.object({
+  id: zod.number(),
+  goatId: zod.number(),
+  saleDate: zod.coerce.date(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  salePrice: zod.number().nullish(),
+  registrationTransferred: zod.boolean(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get the sale record for a single goat
+ */
+export const GetGoatSaleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetGoatSaleResponse = zod.union([
+  zod.object({
+    id: zod.number(),
+    goatId: zod.number(),
+    saleDate: zod.coerce.date(),
+    buyerName: zod.string(),
+    buyerContact: zod.string().nullish(),
+    salePrice: zod.number().nullish(),
+    registrationTransferred: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  zod.null(),
+]);
+
+/**
  * @summary List a goat's show accolades, grouped by show (newest first)
  */
 export const GetGoatAccoladesParams = zod.object({

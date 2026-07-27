@@ -36,6 +36,7 @@ import { useIsManager } from "@/lib/auth";
 import { deriveKiddingHistory } from "@/lib/kidding";
 import { HealthHistoryCard } from "@/components/health-history";
 import { AccoladesCard } from "@/components/accolades";
+import { GoatSaleSection } from "@/components/goat-sale";
 
 const breedingStatusConfig = {
   bred: { label: "Bred", icon: Heart, className: "bg-secondary text-secondary-foreground" },
@@ -632,6 +633,8 @@ export default function GoatDetails() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
+              <GoatSaleSection goat={goat} isManager={isManager} />
+
               <Card className="border-primary/10 shadow-md">
                 <CardHeader>
                   <CardTitle className="font-serif text-lg">Breeding Lines</CardTitle>

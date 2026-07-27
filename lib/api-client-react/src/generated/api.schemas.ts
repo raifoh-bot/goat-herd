@@ -618,6 +618,56 @@ export interface Show {
   updatedAt: string;
 }
 
+export interface GoatSale {
+  id: number;
+  goatId: number;
+  saleDate: string;
+  buyerName: string;
+  buyerContact?: string | null;
+  salePrice?: number | null;
+  registrationTransferred: boolean;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type GoatSaleWithGoat = GoatSale & {
+  goatName: string;
+};
+
+export interface CreateGoatSaleBody {
+  goatId: number;
+  saleDate: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  buyerName: string;
+  /** @maxLength 300 */
+  buyerContact?: string | null;
+  /** @minimum 0 */
+  salePrice?: number | null;
+  registrationTransferred: boolean;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+export interface UpdateGoatSaleBody {
+  saleDate?: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  buyerName?: string;
+  /** @maxLength 300 */
+  buyerContact?: string | null;
+  /** @minimum 0 */
+  salePrice?: number | null;
+  registrationTransferred?: boolean;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
 export interface CreateShowBody {
   /**
    * @minLength 1

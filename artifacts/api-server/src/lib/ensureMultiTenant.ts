@@ -379,5 +379,32 @@ export async function ensureMultiTenant(): Promise<void> {
     );
   }
 
+  // 14. Goat sale records: buyer, price, date, and whether registration
+  //     papers were transferred. At most one sale per goat (unique index).
+  //     Created directly with farm_id NOT NULL — no legacy data to backfill.
+  if (presentTenantTables.includes("goats")) {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "goat_sales" (
+        "id" serial PRIMARY KEY,
+        "farm_id" integer NOT NULL REFERENCES "farms"("id"),
+        "goat_id" integer NOT NULL REFERENCES "goats"("id"),
+        "sale_date" timestamp NOT NULL,
+        "buyer_name" text NOT NULL,
+        "buyer_contact" text,
+        "sale_price" double precision,
+        "registration_transferred" boolean DEFAULT false NOT NULL,
+        "notes" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS "goat_sales_farm_id_idx" ON "goat_sales" ("farm_id");`,
+    );
+    await pool.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "goat_sales_goat_id_key" ON "goat_sales" ("goat_id");`,
+    );
+  }
+
   logger.info("Ensured multi-tenant schema (farms + farm_id scoping)");
 }

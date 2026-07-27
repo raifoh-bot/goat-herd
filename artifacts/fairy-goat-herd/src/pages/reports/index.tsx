@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Award, GitBranch, ClipboardList, ChevronRight, Eye, HeartPulse, PencilLine, Trophy, type LucideIcon } from "lucide-react";
+import { Award, GitBranch, ClipboardList, ChevronRight, Eye, HandCoins, HeartPulse, PencilLine, Trophy, type LucideIcon } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -56,6 +56,12 @@ const REPORTS: ReportEntry[] = [
     title: "Enter Show Results",
     description: "Record a show's results — which goats entered, how each judge placed them, and what they won.",
     icon: Trophy,
+  },
+  {
+    href: "/reports/sales-log",
+    title: "Sales Log",
+    description: "Every recorded goat sale — date, buyer, and price — with total sale revenue and CSV export.",
+    icon: HandCoins,
   },
   {
     href: "/reports/show-time",
