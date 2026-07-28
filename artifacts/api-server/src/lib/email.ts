@@ -157,6 +157,8 @@ function renderNewFarmEmailText(details: NewFarmNotification): string {
 export type FarmRegistrationReceivedNotification = {
   farmName: string;
   farmSlug: string;
+  /** Absolute URL to the farm's future home page, including the slug. */
+  farmUrl: string;
 };
 
 /**
@@ -209,7 +211,8 @@ function renderRegistrationReceivedEmailHtml(
       </p>
       <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
         You'll get another email as soon as a decision is made. Once approved,
-        your farm's address will be <strong>/${escapeHtml(details.farmSlug)}</strong>
+        your farm's address will be<br />
+        <a href="${details.farmUrl}" style="color: #16a34a; word-break: break-all;"><strong>${details.farmUrl}</strong></a><br />
         and you'll be able to sign in right away.
       </p>
       <p style="font-size: 12px; line-height: 1.6; color: #6b7280;">
@@ -228,7 +231,7 @@ function renderRegistrationReceivedEmailText(
     "",
     "Thanks for registering. Your registration is now waiting for review by an administrator.",
     "",
-    `You'll get another email as soon as a decision is made. Once approved, your farm's address will be /${details.farmSlug} and you'll be able to sign in right away.`,
+    `You'll get another email as soon as a decision is made. Once approved, your farm's address will be ${details.farmUrl} and you'll be able to sign in right away.`,
     "",
     "You can't sign in until your farm is approved. No action is needed from you in the meantime.",
   ].join("\n");

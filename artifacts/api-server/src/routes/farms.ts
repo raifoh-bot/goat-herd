@@ -122,6 +122,7 @@ router.post("/farms/register", async (req, res): Promise<void> => {
   void sendFarmRegistrationReceivedEmail(email, {
     farmName: result.farm.name,
     farmSlug: result.farm.slug,
+    farmUrl: `${requestOrigin(req)}/${result.farm.slug}`,
   }).catch((err) =>
     logger.error({ err, farmSlug: result.farm.slug }, "Failed to send registration-received email"),
   );
