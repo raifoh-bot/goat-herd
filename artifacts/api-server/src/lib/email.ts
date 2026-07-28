@@ -154,6 +154,158 @@ function renderNewFarmEmailText(details: NewFarmNotification): string {
   ].join("\n");
 }
 
+export type FarmRegistrationReceivedNotification = {
+  farmName: string;
+  farmSlug: string;
+};
+
+/**
+ * Confirms to the registrant that their farm registration was received and is
+ * awaiting super-admin approval. Degrades gracefully: logs instead of sending
+ * when email isn't configured, and swallows delivery failures.
+ */
+export async function sendFarmRegistrationReceivedEmail(
+  to: string,
+  details: FarmRegistrationReceivedNotification,
+): Promise<void> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  if (!resend || !from) {
+    logger.warn(
+      { to, ...details },
+      "Email not configured (set RESEND_API_KEY and EMAIL_FROM_ADDRESS); logging registration-received notification instead of sending",
+    );
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject: `We received your MyGoatHerd registration for ${details.farmName}`,
+      html: renderRegistrationReceivedEmailHtml(details),
+      text: renderRegistrationReceivedEmailText(details),
+    });
+    if (error) {
+      logger.error({ err: error, to }, "Resend reported an error sending the registration-received email");
+      return;
+    }
+    logger.info({ to, farmSlug: details.farmSlug }, "Sent registration-received email");
+  } catch (err) {
+    logger.error({ err, to }, "Failed to send registration-received email");
+  }
+}
+
+function renderRegistrationReceivedEmailHtml(
+  details: FarmRegistrationReceivedNotification,
+): string {
+  return `
+    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+      <h1 style="font-size: 20px; margin-bottom: 8px;">Registration received</h1>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        Thanks for registering ${escapeHtml(details.farmName)} on MyGoatHerd.
+        Your registration is now waiting for review by an administrator.
+      </p>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        You'll get another email as soon as a decision is made. Once approved,
+        your farm's address will be <strong>/${escapeHtml(details.farmSlug)}</strong>
+        and you'll be able to sign in right away.
+      </p>
+      <p style="font-size: 12px; line-height: 1.6; color: #6b7280;">
+        You can't sign in until your farm is approved. No action is needed from
+        you in the meantime.
+      </p>
+    </div>
+  `;
+}
+
+function renderRegistrationReceivedEmailText(
+  details: FarmRegistrationReceivedNotification,
+): string {
+  return [
+    `We received your MyGoatHerd registration for ${details.farmName}`,
+    "",
+    "Thanks for registering. Your registration is now waiting for review by an administrator.",
+    "",
+    `You'll get another email as soon as a decision is made. Once approved, your farm's address will be /${details.farmSlug} and you'll be able to sign in right away.`,
+    "",
+    "You can't sign in until your farm is approved. No action is needed from you in the meantime.",
+  ].join("\n");
+}
+
+export type FarmRejectedNotification = {
+  farmName: string;
+  /** Reason the super-admin recorded for the rejection. */
+  reason: string;
+};
+
+/**
+ * Tells the registrant their farm registration was not approved, including the
+ * recorded reason. Same degrade-gracefully contract as the other emails.
+ */
+export async function sendFarmRejectedEmail(
+  to: string,
+  details: FarmRejectedNotification,
+): Promise<void> {
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  if (!resend || !from) {
+    logger.warn(
+      { to, farmName: details.farmName },
+      "Email not configured (set RESEND_API_KEY and EMAIL_FROM_ADDRESS); logging farm-rejected notification instead of sending",
+    );
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject: `Your MyGoatHerd registration for ${details.farmName} was not approved`,
+      html: renderFarmRejectedEmailHtml(details),
+      text: renderFarmRejectedEmailText(details),
+    });
+    if (error) {
+      logger.error({ err: error, to }, "Resend reported an error sending the farm-rejected email");
+      return;
+    }
+    logger.info({ to }, "Sent farm-rejected email");
+  } catch (err) {
+    logger.error({ err, to }, "Failed to send farm-rejected email");
+  }
+}
+
+function renderFarmRejectedEmailHtml(details: FarmRejectedNotification): string {
+  return `
+    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2937;">
+      <h1 style="font-size: 20px; margin-bottom: 8px;">Registration not approved</h1>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        Unfortunately, your MyGoatHerd registration for
+        ${escapeHtml(details.farmName)} was not approved.
+      </p>
+      <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+        <strong>Reason:</strong> ${escapeHtml(details.reason)}
+      </p>
+      <p style="font-size: 12px; line-height: 1.6; color: #6b7280;">
+        If you believe this was a mistake, simply reply to this email or contact
+        the administrator who manages MyGoatHerd.
+      </p>
+    </div>
+  `;
+}
+
+function renderFarmRejectedEmailText(details: FarmRejectedNotification): string {
+  return [
+    `Your MyGoatHerd registration for ${details.farmName} was not approved`,
+    "",
+    `Reason: ${details.reason}`,
+    "",
+    "If you believe this was a mistake, reply to this email or contact the administrator who manages MyGoatHerd.",
+  ].join("\n");
+}
+
 export type FarmApprovedNotification = {
   farmName: string;
   /** Absolute link to the farm's own sign-in page. */

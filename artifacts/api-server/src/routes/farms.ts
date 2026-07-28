@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { db, farmsTable, farmApprovalTokensTable, usersTable } from "@workspace/db";
 import { RegisterFarmBody } from "@workspace/api-zod";
 import { createFarm } from "../lib/createFarm";
-import { sendNewFarmNotificationEmail } from "../lib/email";
+import { sendNewFarmNotificationEmail, sendFarmRegistrationReceivedEmail } from "../lib/email";
 import { approveFarmById } from "../lib/approveFarm";
 import { logger } from "../lib/logger";
 
@@ -116,6 +116,15 @@ router.post("/farms/register", async (req, res): Promise<void> => {
   // Fire-and-forget notification; deliberately not awaited so a slow or failed
   // email can never delay or break the registration response.
   void notifySuperadminsOfNewFarm(req, result.farm, parsed.data.username.trim());
+
+  // Fire-and-forget confirmation to the registrant that their submission is in
+  // review. Same contract: a failed email never affects the registration.
+  void sendFarmRegistrationReceivedEmail(email, {
+    farmName: result.farm.name,
+    farmSlug: result.farm.slug,
+  }).catch((err) =>
+    logger.error({ err, farmSlug: result.farm.slug }, "Failed to send registration-received email"),
+  );
 
   res.status(201).json({
     id: result.farm.id,

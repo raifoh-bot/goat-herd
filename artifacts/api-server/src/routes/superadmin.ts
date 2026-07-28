@@ -26,6 +26,8 @@ import {
 import { requireRole } from "../middlewares/auth";
 import { createFarm } from "../lib/createFarm";
 import { approveFarmById } from "../lib/approveFarm";
+import { sendFarmRejectedEmail } from "../lib/email";
+import { logger } from "../lib/logger";
 import { getPlatformSettings, updatePlatformSettings } from "../lib/platformSettings";
 
 const router: IRouter = Router();
@@ -294,6 +296,25 @@ router.post("/superadmin/farms/:id/reject", async (req, res): Promise<void> => {
     { farmId: id, farmSlug: farm.slug, superadmin: req.authUser?.username },
     "superadmin rejected a farm registration",
   );
+
+  // Fire-and-forget: tell the registrant their farm was not approved. A broken
+  // email must never affect the rejection itself.
+  void (async () => {
+    try {
+      const [admin] = await db
+        .select()
+        .from(usersTable)
+        .where(and(eq(usersTable.farmId, farm.id), eq(usersTable.role, "admin")));
+      if (admin?.email) {
+        await sendFarmRejectedEmail(admin.email, {
+          farmName: farm.name,
+          reason: farm.rejectedReason ?? "No reason provided.",
+        });
+      }
+    } catch (err) {
+      logger.error({ err, farmSlug: farm.slug }, "Failed to send farm-rejected email");
+    }
+  })();
 
   res.json(farm);
 });
