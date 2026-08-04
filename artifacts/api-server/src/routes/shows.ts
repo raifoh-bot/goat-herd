@@ -236,9 +236,24 @@ router.put(
     }
 
     const data = parsed.data;
+
+    // If the result is being moved to another goat, the target goat must
+    // belong to this farm.
+    if (data.goatId !== undefined) {
+      const [goat] = await db
+        .select({ id: goatsTable.id })
+        .from(goatsTable)
+        .where(and(eq(goatsTable.farmId, farmId(req)), eq(goatsTable.id, data.goatId)));
+      if (!goat) {
+        res.status(404).json({ error: "Goat not found in this farm" });
+        return;
+      }
+    }
+
     const [updated] = await db
       .update(showResultsTable)
       .set({
+        ...(data.goatId !== undefined ? { goatId: data.goatId } : {}),
         ...(data.judgeName !== undefined ? { judgeName: data.judgeName?.trim() || null } : {}),
         ...(data.classDivision !== undefined
           ? { classDivision: data.classDivision?.trim() || null }

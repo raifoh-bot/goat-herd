@@ -75,6 +75,7 @@ interface DraftResult {
 
 interface EditResultState {
   resultId: number;
+  goatId: number;
   judgeName: string;
   classDivision: string;
   placement: string;
@@ -83,13 +84,28 @@ interface EditResultState {
 }
 
 /** Searchable picker of the farm's on-farm goats. */
-function GoatPicker({ goats, onPick, disabled }: { goats: Goat[]; onPick: (goat: Goat) => void; disabled?: boolean }) {
+function GoatPicker({
+  goats,
+  onPick,
+  disabled,
+  triggerLabel,
+}: {
+  goats: Goat[];
+  onPick: (goat: Goat) => void;
+  disabled?: boolean;
+  /** Custom trigger text; defaults to the "add a result" affordance. */
+  triggerLabel?: string;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" disabled={disabled} className="w-full sm:w-72 justify-between">
-          <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add a goat's result…</span>
+          {triggerLabel ? (
+            <span className="truncate">{triggerLabel}</span>
+          ) : (
+            <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add a goat's result…</span>
+          )}
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -250,6 +266,7 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
   const startEditResult = (r: ShowResult) => {
     setEditingResult({
       resultId: r.id,
+      goatId: r.goatId,
       judgeName: r.judgeName ?? "",
       classDivision: r.classDivision ?? "",
       placement: r.placement ?? "",
@@ -269,6 +286,7 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
         id: showId,
         resultId: editingResult.resultId,
         data: {
+          goatId: editingResult.goatId,
           judgeName: editingResult.judgeName.trim() || null,
           classDivision: editingResult.classDivision.trim() || null,
           placement: editingResult.placement.trim() || null,
@@ -401,7 +419,15 @@ function ShowEditor({ showId, onBack }: { showId: number; onBack: () => void }) 
               {show.results.map((r) =>
                 editingResult && editingResult.resultId === r.id ? (
                   <div key={r.id} className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                    <span className="font-medium text-sm">{r.goatName}</span>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Goat</Label>
+                      <GoatPicker
+                        goats={sortedGoats}
+                        onPick={(goat) => updateEditing({ goatId: goat.id })}
+                        disabled={updateResult.isPending}
+                        triggerLabel={goatName(editingResult.goatId)}
+                      />
+                    </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       <div className="space-y-1">
                         <Label className="text-xs">Judge Name</Label>

@@ -7,6 +7,8 @@
  */
 
 export interface UpdateShowResultBody {
+  /** Move this result to a different goat (must belong to the same farm). */
+  goatId?: number;
   /** @maxLength 200 */
   judgeName?: string | null;
   /** @maxLength 200 */

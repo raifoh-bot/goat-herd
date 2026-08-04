@@ -1793,6 +1793,12 @@ export const updateShowResultBodyAwardRibbonMax = 200;
 export const updateShowResultBodyNotesMax = 2000;
 
 export const UpdateShowResultBody = zod.object({
+  goatId: zod
+    .number()
+    .optional()
+    .describe(
+      "Move this result to a different goat (must belong to the same farm).",
+    ),
   judgeName: zod.string().max(updateShowResultBodyJudgeNameMax).nullish(),
   classDivision: zod
     .string()

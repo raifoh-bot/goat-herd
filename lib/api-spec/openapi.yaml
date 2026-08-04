@@ -3080,6 +3080,9 @@ components:
     UpdateShowResultBody:
       type: object
       properties:
+        goatId:
+          type: integer
+          description: Move this result to a different goat (must belong to the same farm).
         judgeName:
           type: string
           maxLength: 200
