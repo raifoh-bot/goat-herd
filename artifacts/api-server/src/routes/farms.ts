@@ -34,6 +34,7 @@ async function notifySuperadminsOfNewFarm(
   req: Request,
   farm: { id: number; name: string; slug: string },
   adminUsername: string,
+  adminEmail: string,
 ): Promise<void> {
   try {
     // Single-use, expiring approval token. Only its hash is persisted; the raw
@@ -50,6 +51,7 @@ async function notifySuperadminsOfNewFarm(
       farmName: farm.name,
       farmSlug: farm.slug,
       adminUsername,
+      adminEmail,
       registeredAt: new Date(),
       panelUrl: `${origin}/superadmin/farms`,
       // Fixed, same-origin path with only the token as a parameter — the link
@@ -115,7 +117,7 @@ router.post("/farms/register", async (req, res): Promise<void> => {
 
   // Fire-and-forget notification; deliberately not awaited so a slow or failed
   // email can never delay or break the registration response.
-  void notifySuperadminsOfNewFarm(req, result.farm, parsed.data.username.trim());
+  void notifySuperadminsOfNewFarm(req, result.farm, parsed.data.username.trim(), email);
 
   // Fire-and-forget confirmation to the registrant that their submission is in
   // review. Same contract: a failed email never affects the registration.

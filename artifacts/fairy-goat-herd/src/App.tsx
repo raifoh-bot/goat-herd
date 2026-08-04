@@ -12,6 +12,8 @@ import ResetPassword from "@/pages/reset-password";
 import Register from "@/pages/register";
 import SuperadminFarms from "@/pages/superadmin/farms";
 import SuperadminUsers from "@/pages/superadmin/users";
+import SuperadminSuspendedFarms from "@/pages/superadmin/suspended-farms";
+import SuperadminDeletedFarms from "@/pages/superadmin/deleted-farms";
 import SuperadminForgotPassword from "@/pages/superadmin/forgot-password";
 import SuperadminResetPassword from "@/pages/superadmin/reset-password";
 import { SuperadminViewBanner } from "@/components/superadmin-view-banner";
@@ -147,6 +149,16 @@ function GlobalRouter() {
       <Route path="/superadmin/farms">
         <AuthGuard>
           <SuperadminRoute component={SuperadminFarms} />
+        </AuthGuard>
+      </Route>
+      <Route path="/superadmin/suspended-farms">
+        <AuthGuard>
+          <SuperadminRoute component={SuperadminSuspendedFarms} />
+        </AuthGuard>
+      </Route>
+      <Route path="/superadmin/deleted-farms">
+        <AuthGuard>
+          <SuperadminRoute component={SuperadminDeletedFarms} />
         </AuthGuard>
       </Route>
       <Route path="/superadmin/users">

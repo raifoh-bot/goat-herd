@@ -1,18 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListSuperadminUsers,
   useCreateSuperadminUser,
   useUpdateSuperadminUser,
-  useLogout,
   useGetCurrentUser,
   getListSuperadminUsersQueryKey,
   getGetCurrentUserQueryKey,
   type User,
 } from "@workspace/api-client-react";
-import { GoatIcon } from "@/components/goat-icon";
-import { SuperadminNav } from "@/components/superadmin-nav";
+import { SuperadminLayout } from "@/components/superadmin-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,8 +39,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { storeFarmSlug } from "@/lib/farm";
-import { storeAuthToken } from "@/lib/token";
 
 function formatDate(value?: string | null): string {
   if (!value) return "—";
@@ -348,10 +343,6 @@ function SuperadminUserRow({
 }
 
 export default function SuperadminUsers() {
-  const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
-  const logout = useLogout();
-
   const { data: currentUser } = useGetCurrentUser({
     query: { queryKey: getGetCurrentUserQueryKey() },
   });
@@ -364,49 +355,9 @@ export default function SuperadminUsers() {
     query: { queryKey: getListSuperadminUsersQueryKey() },
   });
 
-  const handleLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => {
-        storeFarmSlug(null);
-        storeAuthToken(null);
-        queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
-        setLocation("/login");
-      },
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-                <GoatIcon className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="font-serif text-lg font-semibold">
-                  Platform admin
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Manage every farm on MyGoatHerd
-                </p>
-              </div>
-            </div>
-            <SuperadminNav />
-          </div>
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            disabled={logout.isPending}
-          >
-            Sign out
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <Card>
+    <SuperadminLayout>
+      <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <div>
               <CardTitle>Super-admin accounts</CardTitle>
@@ -451,9 +402,8 @@ export default function SuperadminUsers() {
                 </TableBody>
               </Table>
             )}
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+        </CardContent>
+      </Card>
+    </SuperadminLayout>
   );
 }

@@ -64,6 +64,7 @@ export type NewFarmNotification = {
   farmName: string;
   farmSlug: string;
   adminUsername: string;
+  adminEmail: string;
   registeredAt: Date;
   /** Absolute link to the super-admin farms panel. */
   panelUrl: string;
@@ -123,6 +124,7 @@ function renderNewFarmEmailHtml(details: NewFarmNotification): string {
         <tr><td style="padding-right: 12px; color: #6b7280;">Farm name</td><td>${escapeHtml(details.farmName)}</td></tr>
         <tr><td style="padding-right: 12px; color: #6b7280;">Address</td><td>${escapeHtml(details.farmSlug)}</td></tr>
         <tr><td style="padding-right: 12px; color: #6b7280;">First admin</td><td>${escapeHtml(details.adminUsername)}</td></tr>
+        <tr><td style="padding-right: 12px; color: #6b7280;">Email</td><td><a href="mailto:${escapeHtml(details.adminEmail)}" style="color: #16a34a;">${escapeHtml(details.adminEmail)}</a></td></tr>
         <tr><td style="padding-right: 12px; color: #6b7280;">Registered</td><td>${registered}</td></tr>
       </table>
       <p style="margin: 24px 0;">
@@ -147,6 +149,7 @@ function renderNewFarmEmailText(details: NewFarmNotification): string {
     `Farm name: ${details.farmName}`,
     `Address: ${details.farmSlug}`,
     `First admin: ${details.adminUsername}`,
+    `Email: ${details.adminEmail}`,
     `Registered: ${details.registeredAt.toISOString()}`,
     "",
     `Approve this farm (expires in 7 days, single-use): ${details.approveUrl}`,
