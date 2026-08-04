@@ -231,13 +231,110 @@ describe("super-admin panel approve/reject", () => {
     expect(login.status).toBe(403);
     expect(login.body.error).toMatch(/not approved/i);
 
-    // A rejected farm can no longer be approved.
-    const approve = await agent.post(`/api/superadmin/farms/${id}/approve`);
-    expect(approve.status).toBe(409);
-
     // The rejected slug stays reserved: re-registering it conflicts.
     const rereg = await request(app).post("/api/farms/register").send(regBody(slug));
     expect(rereg.status).toBe(409);
+  });
+
+  it("lets a super-admin approve a previously rejected farm, clearing rejection metadata", async () => {
+    const { id, slug } = await registerFarm("unrj");
+    const agent = await loginSuperadmin();
+
+    const reject = await agent
+      .post(`/api/superadmin/farms/${id}/reject`)
+      .send({ reason: "Mistake" });
+    expect(reject.status).toBe(200);
+
+    // Change of mind: approve anyway.
+    const approve = await agent.post(`/api/superadmin/farms/${id}/approve`);
+    expect(approve.status).toBe(200);
+    expect(approve.body.status).toBe("active");
+
+    const [farm] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+    expect(farm.status).toBe("active");
+    expect(farm.rejectedAt).toBeNull();
+    expect(farm.rejectedReason).toBeNull();
+    expect(farm.rejectedByUsername).toBeNull();
+
+    // Its admin can now sign in.
+    const login = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", slug)
+      .send({ username: "pending-admin", password: "pending-admin-1" });
+    expect(login.status).toBe(200);
+
+    // But an already-active farm still can't be re-approved.
+    const again = await agent.post(`/api/superadmin/farms/${id}/approve`);
+    expect(again.status).toBe(409);
+  });
+
+  it("permanently purges a rejected farm so its slug can be registered again", async () => {
+    const { id, slug } = await registerFarm("purge");
+    const agent = await loginSuperadmin();
+
+    // Purge is refused while the farm is still pending.
+    const early = await agent.post(`/api/superadmin/farms/${id}/purge`);
+    expect(early.status).toBe(409);
+
+    const reject = await agent
+      .post(`/api/superadmin/farms/${id}/reject`)
+      .send({ reason: "Spam signup" });
+    expect(reject.status).toBe(200);
+
+    const purge = await agent.post(`/api/superadmin/farms/${id}/purge`);
+    expect(purge.status).toBe(204);
+
+    // The farm row and its users are gone.
+    const rows = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+    expect(rows).toHaveLength(0);
+    const orphanUsers = await db.select().from(usersTable).where(eq(usersTable.farmId, id));
+    expect(orphanUsers).toHaveLength(0);
+
+    // The slug is free again: registering it now succeeds.
+    const rereg = await request(app).post("/api/farms/register").send(regBody(slug));
+    expect(rereg.status).toBe(201);
+    createdFarmIds.push(rereg.body.id);
+
+    // Purging a now-missing farm is a 404; anonymous purge is a 401.
+    const gone = await agent.post(`/api/superadmin/farms/${id}/purge`);
+    expect(gone.status).toBe(404);
+    const anon = await request(app).post(`/api/superadmin/farms/${rereg.body.id}/purge`);
+    expect(anon.status).toBe(401);
+  });
+
+  it("never purges a farm that wins a concurrent approve (race safety)", async () => {
+    const { id } = await registerFarm("race");
+    const agent = await loginSuperadmin();
+
+    const reject = await agent
+      .post(`/api/superadmin/farms/${id}/reject`)
+      .send({ reason: "Racing" });
+    expect(reject.status).toBe(200);
+
+    // Fire approve and purge concurrently. Exactly one of the two outcomes is
+    // legal: either the farm ends up fully active (approve won, purge 409) or
+    // fully gone (purge won, approve 409) — never a half-purged active farm.
+    const [approve, purge] = await Promise.all([
+      agent.post(`/api/superadmin/farms/${id}/approve`),
+      agent.post(`/api/superadmin/farms/${id}/purge`),
+    ]);
+
+    const outcomes = [approve.status, purge.status].sort();
+    if (approve.status === 200) {
+      // Approve won: purge must have been refused and everything intact.
+      expect(purge.status).toBe(409);
+      const [farm] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+      expect(farm?.status).toBe("active");
+      const users = await db.select().from(usersTable).where(eq(usersTable.farmId, id));
+      expect(users.length).toBeGreaterThan(0);
+    } else {
+      // Purge won: approve must have found nothing to approve and the farm is gone.
+      expect(purge.status).toBe(204);
+      expect([404, 409]).toContain(approve.status);
+      const rows = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
+      expect(rows).toHaveLength(0);
+    }
+    expect(outcomes.some((s) => s === 404 || s === 409)).toBe(true);
   });
 
   it("requires a reason to reject and superadmin auth for both endpoints", async () => {

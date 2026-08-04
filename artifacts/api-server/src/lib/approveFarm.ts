@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, farmsTable, farmApprovalTokensTable, usersTable, type Farm } from "@workspace/db";
 import { sendFarmApprovedEmail } from "./email";
 import { logger } from "./logger";
@@ -12,11 +12,14 @@ function requestOrigin(req: Request): string {
 }
 
 /**
- * Activates a pending farm. Shared by the one-click email link and the
- * super-admin panel endpoint. Only a live farm in the `pending` state can be
- * approved; everything else returns a typed error. On success every remaining
- * approval token for the farm is invalidated, and (fire-and-forget) the
- * registrant admin is notified by email if they provided an address.
+ * Activates a pending — or previously rejected — farm. Shared by the one-click
+ * email link and the super-admin panel endpoint. Only a live farm in the
+ * `pending` or `rejected` state can be approved; everything else returns a
+ * typed error. Approving a rejected farm clears its rejection audit metadata
+ * (the super-admin changed their mind, so the record must not keep saying
+ * "rejected"). On success every remaining approval token for the farm is
+ * invalidated, and (fire-and-forget) the registrant admin is notified by email
+ * if they provided an address.
  */
 export async function approveFarmById(
   req: Request,
@@ -25,11 +28,17 @@ export async function approveFarmById(
 ): Promise<ApproveFarmResult> {
   const [farm] = await db
     .update(farmsTable)
-    .set({ status: "active", updatedAt: new Date() })
+    .set({
+      status: "active",
+      rejectedAt: null,
+      rejectedReason: null,
+      rejectedByUsername: null,
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(farmsTable.id, farmId),
-        eq(farmsTable.status, "pending"),
+        inArray(farmsTable.status, ["pending", "rejected"]),
         isNull(farmsTable.deletedAt),
       ),
     )

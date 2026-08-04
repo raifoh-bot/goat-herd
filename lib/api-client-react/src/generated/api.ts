@@ -6786,7 +6786,7 @@ export const useViewFarm = <
 };
 
 /**
- * @summary Approve a pending farm registration (superadmin only)
+ * @summary Approve a pending or previously rejected farm registration (superadmin only)
  */
 export const getApproveFarmUrl = (id: number) => {
   return `/api/superadmin/farms/${id}/approve`;
@@ -6847,7 +6847,7 @@ export type ApproveFarmMutationResult = NonNullable<
 export type ApproveFarmMutationError = ErrorType<ErrorEnvelope>;
 
 /**
- * @summary Approve a pending farm registration (superadmin only)
+ * @summary Approve a pending or previously rejected farm registration (superadmin only)
  */
 export const useApproveFarm = <
   TError = ErrorType<ErrorEnvelope>,
@@ -7133,6 +7133,90 @@ export const useSuperadminResetUserPassword = <
   TContext
 > => {
   return useMutation(getSuperadminResetUserPasswordMutationOptions(options));
+};
+
+/**
+ * @summary Permanently delete a rejected farm registration, freeing its slug (superadmin only)
+ */
+export const getPurgeFarmUrl = (id: number) => {
+  return `/api/superadmin/farms/${id}/purge`;
+};
+
+export const purgeFarm = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getPurgeFarmUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPurgeFarmMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof purgeFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof purgeFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["purgeFarm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof purgeFarm>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return purgeFarm(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PurgeFarmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof purgeFarm>>
+>;
+
+export type PurgeFarmMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Permanently delete a rejected farm registration, freeing its slug (superadmin only)
+ */
+export const usePurgeFarm = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof purgeFarm>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof purgeFarm>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPurgeFarmMutationOptions(options));
 };
 
 /**

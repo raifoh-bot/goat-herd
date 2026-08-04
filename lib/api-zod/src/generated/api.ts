@@ -3645,7 +3645,7 @@ export const ViewFarmResponse = zod.object({
 });
 
 /**
- * @summary Approve a pending farm registration (superadmin only)
+ * @summary Approve a pending or previously rejected farm registration (superadmin only)
  */
 export const ApproveFarmParams = zod.object({
   id: zod.coerce.number(),
@@ -3714,6 +3714,13 @@ export const superadminResetUserPasswordBodyPasswordMin = 8;
 
 export const SuperadminResetUserPasswordBody = zod.object({
   password: zod.string().min(superadminResetUserPasswordBodyPasswordMin),
+});
+
+/**
+ * @summary Permanently delete a rejected farm registration, freeing its slug (superadmin only)
+ */
+export const PurgeFarmParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

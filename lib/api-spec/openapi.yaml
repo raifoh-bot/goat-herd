@@ -1796,7 +1796,7 @@ paths:
     post:
       operationId: approveFarm
       tags: [superadmin]
-      summary: Approve a pending farm registration (superadmin only)
+      summary: Approve a pending or previously rejected farm registration (superadmin only)
       parameters:
         - name: id
           in: path
@@ -1926,6 +1926,33 @@ paths:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: User not found in this farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /superadmin/farms/{id}/purge:
+    post:
+      operationId: purgeFarm
+      tags: [superadmin]
+      summary: Permanently delete a rejected farm registration, freeing its slug (superadmin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: The farm and all of its associated records were permanently removed
+        "404":
+          description: Farm not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: The farm is not a rejected registration
           content:
             application/json:
               schema:

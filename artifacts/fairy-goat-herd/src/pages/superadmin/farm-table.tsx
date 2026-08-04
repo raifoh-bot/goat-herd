@@ -5,6 +5,7 @@ import {
   useDeleteFarm,
   useApproveFarm,
   useRejectFarm,
+  usePurgeFarm,
   useViewFarm,
   useListFarmUsers,
   useSuperadminResetUserPassword,
@@ -253,6 +254,106 @@ function RejectFarmDialog({ farm }: { farm: SuperadminFarm }) {
               disabled={rejectFarm.isPending || !canReject}
             >
               {rejectFarm.isPending ? "Rejecting…" : "Reject registration"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Permanent removal of a REJECTED registration. Unlike DeleteFarmDialog (soft
+ * delete, kept for auditing), purging erases the farm and its users so the
+ * address (slug) can be registered again.
+ */
+function PurgeFarmDialog({ farm }: { farm: SuperadminFarm }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const purgeFarm = usePurgeFarm();
+
+  const [open, setOpen] = useState(false);
+  const [confirmSlug, setConfirmSlug] = useState("");
+
+  const canPurge = confirmSlug.trim() === farm.slug;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!canPurge) return;
+    purgeFarm.mutate(
+      { id: farm.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListFarmsQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getGetPlatformSummaryQueryKey(),
+          });
+          toast({
+            title: "Registration deleted permanently",
+            description: `${farm.name} was removed and ${farm.slug} can be registered again.`,
+          });
+          setOpen(false);
+          setConfirmSlug("");
+        },
+        onError: () => {
+          toast({
+            title: "Could not delete registration",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setConfirmSlug("");
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+        >
+          Delete permanently
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Permanently delete {farm.name}?</DialogTitle>
+            <DialogDescription>
+              This erases the rejected registration, its user accounts, and the
+              recorded rejection. The address (
+              <span className="font-mono">{farm.slug}</span>) becomes available
+              for a new registration. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor={`purgeConfirmSlug-${farm.id}`}>
+              Type <span className="font-mono font-semibold">{farm.slug}</span>{" "}
+              to confirm
+            </Label>
+            <Input
+              id={`purgeConfirmSlug-${farm.id}`}
+              value={confirmSlug}
+              onChange={(e) => setConfirmSlug(e.target.value)}
+              autoComplete="off"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={purgeFarm.isPending || !canPurge}
+            >
+              {purgeFarm.isPending ? "Deleting…" : "Delete permanently"}
             </Button>
           </DialogFooter>
         </form>
@@ -769,7 +870,17 @@ function FarmRow({
               <RejectFarmDialog farm={farm} />
             </>
           ) : rejected ? (
-            <DeleteFarmDialog farm={farm} />
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleApprove}
+                disabled={approveFarm.isPending}
+              >
+                {approveFarm.isPending ? "Approving…" : "Approve anyway"}
+              </Button>
+              <PurgeFarmDialog farm={farm} />
+            </>
           ) : (
             <>
               {!suspended && (
