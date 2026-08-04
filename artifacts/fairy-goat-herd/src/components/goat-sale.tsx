@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BadgeCheck, BadgeX, DollarSign, Edit3, HandCoins } from "lucide-react";
+import { BadgeCheck, BadgeX, DollarSign, Edit3, HandCoins, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,6 +35,7 @@ import {
   getListGoatSalesQueryKey,
   getListGoatsQueryKey,
   useCreateGoatSale,
+  useDeleteGoatSale,
   useGetGoatSale,
   useUpdateGoatSale,
 } from "@workspace/api-client-react";
@@ -166,6 +177,7 @@ export function GoatSaleSection({ goat, isManager }: { goat: Goat; isManager: bo
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [isEditingSale, setIsEditingSale] = useState(false);
   const [form, setForm] = useState<SaleFormValues>(emptyForm());
   const [formError, setFormError] = useState<string | null>(null);
@@ -176,6 +188,7 @@ export function GoatSaleSection({ goat, isManager }: { goat: Goat; isManager: bo
 
   const createSale = useCreateGoatSale();
   const updateSale = useUpdateGoatSale();
+  const deleteSale = useDeleteGoatSale();
   const isSaving = createSale.isPending || updateSale.isPending;
 
   const isSold = goat.herdStatus === "sold-registered" || goat.herdStatus === "sold-not-registered";
@@ -202,6 +215,30 @@ export function GoatSaleSection({ goat, isManager }: { goat: Goat; isManager: bo
     setForm(formFromSale(sale));
     setFormError(null);
     setIsDialogOpen(true);
+  };
+
+  const handleRemoveSale = () => {
+    if (!sale) return;
+    deleteSale.mutate(
+      { id: sale.id },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Sale removed",
+            description: `${goat.name}'s sale record was removed and the goat is back On Farm.`,
+          });
+          setIsRemoveDialogOpen(false);
+          refreshAfterSale();
+        },
+        onError: () => {
+          toast({
+            title: "Remove failed",
+            description: "Could not remove the sale record.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
   };
 
   const handleSubmit = () => {
@@ -272,9 +309,19 @@ export function GoatSaleSection({ goat, isManager }: { goat: Goat; isManager: bo
               <HandCoins className="h-5 w-5 text-primary" /> Sale
             </CardTitle>
             {isManager && (
-              <Button variant="outline" size="sm" className="no-print" onClick={openEditDialog}>
-                <Edit3 className="mr-2 h-4 w-4" /> Edit
-              </Button>
+              <div className="flex items-center gap-2 no-print">
+                <Button variant="outline" size="sm" onClick={openEditDialog}>
+                  <Edit3 className="mr-2 h-4 w-4" /> Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setIsRemoveDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Remove Sale
+                </Button>
+              </div>
             )}
           </CardHeader>
           <CardContent className="space-y-3">
@@ -350,6 +397,31 @@ export function GoatSaleSection({ goat, isManager }: { goat: Goat; isManager: bo
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">Remove Sale — {goat.name}</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the sale record and moves {goat.name} back to On Farm. Use
+              this if the sale was recorded on the wrong goat. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteSale.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteSale.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleRemoveSale();
+              }}
+            >
+              {deleteSale.isPending ? "Removing..." : "Remove Sale"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
