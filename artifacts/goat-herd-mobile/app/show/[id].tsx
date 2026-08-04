@@ -29,8 +29,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DateField } from "@/components/DateField";
 import { Badge, Button, Card, EmptyState, LoadingState } from "@/components/ui";
-import { dateInputToIso, formatIsoDate, todayInputValue } from "@/constants/domain";
+import { dateInputToIso, formatIsoDate } from "@/constants/domain";
 import { useIsManager } from "@/context/auth";
 import { useColors } from "@/hooks/useColors";
 
@@ -104,8 +105,7 @@ export default function ShowDetailScreen() {
     setEditOpen(true);
   };
 
-  const editDateValid = /^\d{4}-\d{2}-\d{2}$/.test(editDate.trim());
-  const canSaveEdit = editName.trim().length > 0 && editDateValid;
+  const canSaveEdit = editName.trim().length > 0 && editDate.trim().length > 0;
 
   const saveEdit = () => {
     updateShow.mutate(
@@ -477,19 +477,14 @@ export default function ShowDetailScreen() {
               onChange={setEditLocation}
               placeholder="e.g. Fairgrounds, Springfield"
             />
-            <EditField
-              label="Date of show (YYYY-MM-DD)"
-              value={editDate}
-              onChange={setEditDate}
-              placeholder="YYYY-MM-DD"
-              autoCapitalize="none"
-              keyboardType="numbers-and-punctuation"
-              error={
-                !editDateValid && editDate.trim().length > 0
-                  ? `Use the YYYY-MM-DD format, e.g. ${todayInputValue()}`
-                  : undefined
-              }
-            />
+            <View style={styles.editField}>
+              <DateField
+                label="Date of show"
+                value={editDate}
+                onChange={setEditDate}
+                testID="edit-show-date"
+              />
+            </View>
             <EditField
               label="Notes (optional)"
               value={editNotes}

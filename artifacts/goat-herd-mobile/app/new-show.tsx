@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DateField } from "@/components/DateField";
 import { Button } from "@/components/ui";
 import { dateInputToIso, todayInputValue } from "@/constants/domain";
 import { useColors } from "@/hooks/useColors";
@@ -33,8 +34,7 @@ export default function NewShowScreen() {
 
   const createShow = useCreateShow();
 
-  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(showDate.trim());
-  const canSave = name.trim().length > 0 && dateValid;
+  const canSave = name.trim().length > 0 && showDate.trim().length > 0;
 
   const save = () => {
     createShow.mutate(
@@ -115,23 +115,12 @@ export default function NewShowScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.mutedForeground }]}>
-            Date of show (YYYY-MM-DD)
-          </Text>
-          <TextInput
+          <DateField
+            label="Date of show"
             value={showDate}
-            onChangeText={setShowDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.mutedForeground}
-            style={inputStyle}
-            autoCapitalize="none"
-            keyboardType="numbers-and-punctuation"
+            onChange={setShowDate}
+            testID="show-date"
           />
-          {!dateValid && showDate.trim().length > 0 ? (
-            <Text style={[styles.fieldError, { color: colors.destructive ?? "#b91c1c" }]}>
-              Use the YYYY-MM-DD format, e.g. {todayInputValue()}
-            </Text>
-          ) : null}
         </View>
 
         <View style={styles.field}>
@@ -192,7 +181,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   notesInput: { minHeight: 80, textAlignVertical: "top" },
-  fieldError: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 4 },
   footer: {
     position: "absolute",
     left: 0,
