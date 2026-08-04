@@ -18,6 +18,33 @@ function getResendClient(): Resend | undefined {
   return apiKey ? new Resend(apiKey) : undefined;
 }
 
+/**
+ * Real delivery is restricted to the published production app. Development and
+ * test runs (including automated test agents exercising the sign-up flow) log
+ * the would-be email instead of sending it.
+ *
+ * NOTE: tests run with NODE_ENV=production, so the gate keys off
+ * REPLIT_DEPLOYMENT (set only in the deployed environment). Set
+ * EMAIL_DELIVERY_OVERRIDE=true to deliberately send real emails from dev.
+ */
+function isEmailDeliveryEnabled(): boolean {
+  if (process.env.EMAIL_DELIVERY_OVERRIDE?.trim().toLowerCase() === "true") return true;
+  return Boolean(process.env.REPLIT_DEPLOYMENT?.trim());
+}
+
+/**
+ * Returns true when the email should actually be sent. Otherwise logs the
+ * would-be email (recipient + subject + any extra context) and returns false.
+ */
+function shouldDeliver(to: string, subject: string, extra: Record<string, unknown> = {}): boolean {
+  if (isEmailDeliveryEnabled()) return true;
+  logger.info(
+    { to, subject, ...extra },
+    "Email delivery disabled outside production (set EMAIL_DELIVERY_OVERRIDE=true to send from dev); logging instead of sending",
+  );
+  return false;
+}
+
 /** True when Resend delivery is fully configured (API key + from-address). */
 export function isEmailConfigured(): boolean {
   return getResendClient() !== undefined && getFromAddress() !== undefined;
@@ -41,6 +68,8 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
     );
     return;
   }
+
+  if (!shouldDeliver(to, "Reset your MyGoatHerd password", { resetUrl })) return;
 
   try {
     const { error } = await resend.emails.send({
@@ -92,6 +121,8 @@ export async function sendNewFarmNotificationEmail(
     );
     return;
   }
+
+  if (!shouldDeliver(to, `New farm registered: ${details.farmName}`, { farmSlug: details.farmSlug })) return;
 
   try {
     const { error } = await resend.emails.send({
@@ -184,6 +215,8 @@ export async function sendFarmRegistrationReceivedEmail(
     return;
   }
 
+  if (!shouldDeliver(to, `We received your MyGoatHerd registration for ${details.farmName}`, { farmSlug: details.farmSlug })) return;
+
   try {
     const { error } = await resend.emails.send({
       from,
@@ -265,6 +298,8 @@ export async function sendFarmRejectedEmail(
     return;
   }
 
+  if (!shouldDeliver(to, `Your MyGoatHerd registration for ${details.farmName} was not approved`)) return;
+
   try {
     const { error } = await resend.emails.send({
       from,
@@ -337,6 +372,8 @@ export async function sendFarmApprovedEmail(
     );
     return;
   }
+
+  if (!shouldDeliver(to, `${details.farmName} is approved on MyGoatHerd`, { loginUrl: details.loginUrl })) return;
 
   try {
     const { error } = await resend.emails.send({
