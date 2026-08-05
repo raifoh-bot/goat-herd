@@ -22,4 +22,5 @@
 - [Storage cleanup IDOR guard](storage-cleanup-idor.md) — deleting objects from user-controllable URL fields needs a strict path pattern + "unreferenced by any row" ownership check, or it's a cross-tenant destructive IDOR.
 - [Superadmin read-only & side-effecting GETs](superadmin-readonly-side-effecting-gets.md) — method-based read-only guard misses GETs that upsert (e.g. get-or-create settings); branch to in-memory defaults for the read-only role.
 - [Resend email delivery](resend-email-delivery.md) — onboarding@resend.dev only delivers to the Resend account owner; verify stored secret actually changed before re-testing.
+- [Task-merge file corruption](task-merge-file-corruption.md) — merges can paste duplicated blocks into unrelated routes; restore from last good commit + re-apply legit additions.
 - [react-grid-layout v1 vs v2](react-grid-layout-v1-vs-v2.md) — pin v1 (^1.5); v2 is an incompatible rewrite with no WidthProvider and a different Layout type.

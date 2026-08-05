@@ -130,12 +130,12 @@ async function enrichFarms(farms: Farm[]) {
 }
 
 router.get("/superadmin/settings", async (_req, res): Promise<void> => {
-  const settings = await updatePlatformSettings(parsed.data);
+  const settings = await getPlatformSettings();
   res.json(GetPlatformSettingsResponse.parse(settings));
 });
 
 router.put("/superadmin/settings", async (req, res): Promise<void> => {
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = UpdatePlatformSettingsBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -151,7 +151,7 @@ router.put("/superadmin/settings", async (req, res): Promise<void> => {
 });
 
 router.get("/superadmin/summary", async (_req, res): Promise<void> => {
-  const farms = await db.select().from(farmsTable).orderBy(asc(farmsTable.createdAt));
+  const farms = await db.select().from(farmsTable);
   // Deleted farms are excluded from every platform total; they live only in the
   // deleted-farms record, not the active platform footprint.
   const liveFarms = farms.filter((f) => f.deletedAt === null);
@@ -199,37 +199,39 @@ router.get("/superadmin/farms", async (_req, res): Promise<void> => {
 });
 
 router.post("/superadmin/farms", async (req, res): Promise<void> => {
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = CreateFarmBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const result = await approveFarmById(req, id, `panel by ${req.authUser?.username}`);
+  const result = await createFarm({
+    slug: parsed.data.slug,
+    name: parsed.data.name,
+    adminUsername: parsed.data.adminUsername,
+    adminPassword: parsed.data.adminPassword,
+  });
+
   if (!result.ok) {
-    res.status(409).json({ error: result.error });
+    res.status(result.status).json({ error: result.error });
     return;
   }
 
-  res.json(result.farm);
+  res.status(201).json(result.farm);
 });
 
 /**
- * Rejects a pending farm registration with a recorded reason. The farm row
- * (and its slug) are retained for auditing — a rejected slug is intentionally
- * NOT reusable. Outstanding approval links are invalidated.
+ * Approves a pending self-registered farm from the panel. Farms created by a
+ * super-admin are active from the start and never pass through here.
  */
-router.post("/superadmin/farms/:id/reject", async (req, res): Promise<void> => {
+router.post("/superadmin/farms/:id/approve", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     res.status(400).json({ error: "Invalid ID" });
     return;
   }
 
-  const [existing] = await db
-    .select()
-    .from(usersTable)
-    .where(and(eq(usersTable.username, username), isNull(usersTable.farmId)));
+  const [existing] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
   if (!existing || existing.deletedAt) {
     res.status(404).json({ error: "Farm not found" });
     return;
@@ -256,16 +258,13 @@ router.post("/superadmin/farms/:id/reject", async (req, res): Promise<void> => {
     return;
   }
 
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = RejectFarmBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const [existing] = await db
-    .select()
-    .from(usersTable)
-    .where(and(eq(usersTable.username, username), isNull(usersTable.farmId)));
+  const [existing] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
   if (!existing || existing.deletedAt) {
     res.status(404).json({ error: "Farm not found" });
     return;
@@ -275,18 +274,14 @@ router.post("/superadmin/farms/:id/reject", async (req, res): Promise<void> => {
   const [farm] = await db
     .update(farmsTable)
     .set({
-      deletedAt: new Date(),
-      deletedReason: parsed.data.reason.trim(),
-      deletedByUsername: req.authUser?.username ?? null,
+      status: "rejected",
+      rejectedAt: new Date(),
+      rejectedReason: parsed.data.reason.trim(),
+      rejectedByUsername: req.authUser?.username ?? null,
       updatedAt: new Date(),
     })
-    .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)))
+    .where(and(eq(farmsTable.id, id), eq(farmsTable.status, "pending"), isNull(farmsTable.deletedAt)))
     .returning();
-
-    const farmUsers = await tx
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.farmId, id));
 
   if (!farm) {
     res.status(409).json({ error: "This farm is not awaiting approval." });
@@ -333,20 +328,13 @@ router.put("/superadmin/farms/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = UpdateFarmBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  // A super-admin can never deactivate their own account — that could lock the
-  // platform out of all operator access.
-  if (req.authUser?.id === id && parsed.data.active === false) {
-    res.status(400).json({ error: "You cannot deactivate your own account" });
-    return;
-  }
-
-  const updateData: Partial<typeof usersTable.$inferInsert> = { updatedAt: new Date() };
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name.trim();
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
 
@@ -365,19 +353,9 @@ router.put("/superadmin/farms/:id", async (req, res): Promise<void> => {
   // Never modify a deleted farm through the ordinary update path.
   const [farm] = await db
     .update(farmsTable)
-    .set({
-      deletedAt: new Date(),
-      deletedReason: parsed.data.reason.trim(),
-      deletedByUsername: req.authUser?.username ?? null,
-      updatedAt: new Date(),
-    })
+    .set(updateData)
     .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)))
     .returning();
-
-    const farmUsers = await tx
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.farmId, id));
 
   if (!farm) {
     res.status(404).json({ error: "Farm not found" });
@@ -394,21 +372,13 @@ router.post("/superadmin/farms/:id/view", async (req, res): Promise<void> => {
     return;
   }
 
+  // Only live (non-deleted) farms can be viewed. Suspended farms are still
+  // viewable for support, but resolveTenant blocks tenant reads for them, so the
+  // client only offers "view" for active farms.
   const [farm] = await db
-    .update(farmsTable)
-    .set({
-      deletedAt: new Date(),
-      deletedReason: parsed.data.reason.trim(),
-      deletedByUsername: req.authUser?.username ?? null,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)))
-    .returning();
-
-    const farmUsers = await tx
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.farmId, id));
+    .select()
+    .from(farmsTable)
+    .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)));
 
   if (!farm) {
     res.status(404).json({ error: "Farm not found" });
@@ -445,21 +415,7 @@ router.get("/superadmin/farms/:id/users", async (req, res): Promise<void> => {
     return;
   }
 
-  const [farm] = await db
-    .update(farmsTable)
-    .set({
-      deletedAt: new Date(),
-      deletedReason: parsed.data.reason.trim(),
-      deletedByUsername: req.authUser?.username ?? null,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)))
-    .returning();
-
-    const farmUsers = await tx
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.farmId, id));
+  const [farm] = await db.select().from(farmsTable).where(eq(farmsTable.id, id));
   if (!farm) {
     res.status(404).json({ error: "Farm not found" });
     return;
@@ -469,7 +425,7 @@ router.get("/superadmin/farms/:id/users", async (req, res): Promise<void> => {
   const users = await db
     .select()
     .from(usersTable)
-    .where(and(isNull(usersTable.farmId), eq(usersTable.role, "superadmin")))
+    .where(eq(usersTable.farmId, id))
     .orderBy(desc(usersTable.createdAt));
 
   res.json(users.map(toPublicUser));
@@ -478,32 +434,29 @@ router.get("/superadmin/farms/:id/users", async (req, res): Promise<void> => {
 router.post(
   "/superadmin/farms/:id/users/:userId/reset-password",
   async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
+    const id = Number(req.params.id);
     const userId = Number(req.params.userId);
     if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(userId) || userId <= 0) {
       res.status(400).json({ error: "Invalid ID" });
       return;
     }
 
-  const parsed = DeleteFarmBody.safeParse(req.body);
+    const parsed = SetUserPasswordBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
 
-  const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+    const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
-  const [user] = await db
-    .update(usersTable)
-    .set(updateData)
-    .where(
-      and(
-        eq(usersTable.id, id),
-        isNull(usersTable.farmId),
-        eq(usersTable.role, "superadmin"),
-      ),
-    )
-    .returning();
+    // Scoping the update to (id = userId AND farm_id = :id) guarantees both
+    // that the user belongs to the farm in the URL and that a superadmin
+    // (farm_id NULL) can never be targeted through this endpoint.
+    const [user] = await db
+      .update(usersTable)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(and(eq(usersTable.id, userId), eq(usersTable.farmId, id)))
+      .returning();
 
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -531,7 +484,7 @@ router.get("/superadmin/users", async (_req, res): Promise<void> => {
 });
 
 router.post("/superadmin/users", async (req, res): Promise<void> => {
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = CreateSuperadminUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -542,7 +495,7 @@ router.post("/superadmin/users", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Username is required" });
     return;
   }
-    const email = parsed.data.email.trim();
+  const email = parsed.data.email.trim();
   if (!email) {
     res.status(400).json({ error: "Email is required" });
     return;
@@ -562,46 +515,33 @@ router.post("/superadmin/users", async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
   const [user] = await db
-    .update(usersTable)
-    .set(updateData)
-    .where(
-      and(
-        eq(usersTable.id, id),
-        isNull(usersTable.farmId),
-        eq(usersTable.role, "superadmin"),
-      ),
-    )
+    .insert(usersTable)
+    .values({
+      farmId: null,
+      username,
+      email,
+      passwordHash,
+      role: "superadmin",
+      active: true,
+    })
     .returning();
 
-  if (!user) {
-    res.status(404).json({ error: "Super-admin not found" });
-    return;
-  }
-
   req.log.info(
-    { targetSuperadmin: user.username, active: user.active, updatedBy: req.authUser?.username },
-    "superadmin updated a super-admin account",
+    { newSuperadmin: user.username, createdBy: req.authUser?.username },
+    "superadmin created a new super-admin account",
   );
 
-  res.json(toPublicUser(user));
+  res.status(201).json(toPublicUser(user));
 });
 
-/**
- * Permanently purges a REJECTED farm so its slug becomes available for a fresh
- * registration. Unlike the soft delete below, this removes the farm row and
- * everything hanging off it (users and their reset tokens, settings, approval
- * tokens). It is deliberately restricted to rejected registrations — they never
- * went live, so there is no tenant data worth auditing beyond the rejection
- * itself, and freeing the address is the whole point.
- */
-router.post("/superadmin/farms/:id/purge", async (req, res): Promise<void> => {
+router.put("/superadmin/users/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     res.status(400).json({ error: "Invalid ID" });
     return;
   }
 
-  const parsed = DeleteFarmBody.safeParse(req.body);
+  const parsed = UpdateSuperadminUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -745,11 +685,6 @@ router.post("/superadmin/farms/:id/delete", async (req, res): Promise<void> => {
     .where(and(eq(farmsTable.id, id), isNull(farmsTable.deletedAt)))
     .returning();
 
-    const farmUsers = await tx
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.farmId, id));
-
   if (!farm) {
     res.status(404).json({ error: "Farm not found" });
     return;
@@ -760,5 +695,3 @@ router.post("/superadmin/farms/:id/delete", async (req, res): Promise<void> => {
 });
 
 export default router;
-
-    const userIds = farmUsers.map((u) => u.id);
