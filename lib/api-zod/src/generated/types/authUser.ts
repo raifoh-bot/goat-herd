@@ -16,6 +16,8 @@ export interface AuthUser {
   farmSlug?: string | null;
   /** The user's contact email, used by the forgot-password flow. Null for accounts created before email became required. */
   email?: string | null;
+  /** The user's display name (e.g. "Jane Smith"). Null for accounts that have not set one. */
+  fullName?: string | null;
   /** The user's personal dashboard layout override. Null means the user uses the farm-wide default layout. */
   dashboardLayout?: DashboardWidget[] | null;
 }

@@ -26,6 +26,7 @@ export default function Register() {
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   // Set to the farm name once a registration is accepted and awaiting approval.
@@ -72,6 +73,7 @@ export default function Register() {
           username: username.trim(),
           password,
           email: email.trim(),
+          ...(fullName.trim() ? { fullName: fullName.trim() } : {}),
         },
       },
       {
@@ -178,6 +180,16 @@ export default function Register() {
               <p className="text-xs text-muted-foreground">
                 Used in your sign-in address. Letters, numbers and dashes only.
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Your name</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
+                placeholder="Jane Smith"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Admin username</Label>

@@ -18,6 +18,10 @@ export const usersTable = pgTable("users", {
   // look up an account and deliver the reset link. Nullable (not every account
   // has an email on file) and not enforced unique.
   email: text("email"),
+  // Optional display name for the person behind the account (e.g. "Jane
+  // Smith"). Collected at signup and editable afterwards; nullable because
+  // accounts created before it existed have no name on file.
+  fullName: text("full_name"),
   passwordHash: text("password_hash").notNull(),
   role: text("role", { enum: userRoles }).notNull().default("farmhand"),
   active: boolean("active").notNull().default(true),

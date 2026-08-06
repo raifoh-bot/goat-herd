@@ -17,5 +17,7 @@ export interface CreateUserBody {
    * @minLength 1
    */
   email: string;
+  /** Optional display name for the person behind the account. */
+  fullName?: string;
   role: CreateUserBodyRole;
 }

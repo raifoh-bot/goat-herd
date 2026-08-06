@@ -41,6 +41,7 @@ export {
   SetUserPasswordBody,
   UpdateDashboardLayoutBody,
   UpdateOwnEmailBody,
+  UpdateOwnNameBody,
   UpdatePlatformSettingsBody,
   UpdateBreedingBody,
   UpdateBreedingEventBody,

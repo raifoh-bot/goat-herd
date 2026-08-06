@@ -3377,6 +3377,12 @@ export const GetCurrentUserResponse = zod.object({
     .describe(
       "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
     ),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The user\'s display name (e.g. \"Jane Smith\"). Null for accounts that have not set one.',
+    ),
   dashboardLayout: zod
     .array(
       zod
@@ -3443,6 +3449,10 @@ export const RegisterFarmBody = zod.object({
     .describe(
       "Contact email for the first admin user, required for the forgot-password flow.",
     ),
+  fullName: zod
+    .string()
+    .optional()
+    .describe("Optional display name of the admin registering the farm."),
 });
 
 /**
@@ -3695,6 +3705,10 @@ export const ListFarmUsersResponseItem = zod.object({
   id: zod.number(),
   username: zod.string(),
   email: zod.string().nullable(),
+  fullName: zod
+    .string()
+    .nullable()
+    .describe("The user's display name. Null when no name is on file."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -3789,6 +3803,10 @@ export const ListSuperadminUsersResponseItem = zod.object({
   id: zod.number(),
   username: zod.string(),
   email: zod.string().nullable(),
+  fullName: zod
+    .string()
+    .nullable()
+    .describe("The user's display name. Null when no name is on file."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -3841,6 +3859,10 @@ export const UpdateSuperadminUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
   email: zod.string().nullable(),
+  fullName: zod
+    .string()
+    .nullable()
+    .describe("The user's display name. Null when no name is on file."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -3854,6 +3876,10 @@ export const ListUsersResponseItem = zod.object({
   id: zod.number(),
   username: zod.string(),
   email: zod.string().nullable(),
+  fullName: zod
+    .string()
+    .nullable()
+    .describe("The user's display name. Null when no name is on file."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -3875,6 +3901,10 @@ export const CreateUserBody = zod.object({
     .email()
     .min(1)
     .describe("Contact email, required for the forgot-password flow."),
+  fullName: zod
+    .string()
+    .optional()
+    .describe("Optional display name for the person behind the account."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
 });
 
@@ -3896,12 +3926,22 @@ export const UpdateUserBody = zod.object({
     .describe(
       "Contact email, used for the forgot-password flow. When provided it must be non-blank; omit the field to leave the email unchanged.",
     ),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's display name. Send a non-blank string to set it, or an empty string\/null to clear it; omit the field to leave it unchanged.",
+    ),
 });
 
 export const UpdateUserResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
   email: zod.string().nullable(),
+  fullName: zod
+    .string()
+    .nullable()
+    .describe("The user's display name. Null when no name is on file."),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   active: zod.boolean(),
   createdAt: zod.coerce.date(),
@@ -4383,6 +4423,92 @@ export const ChangeOwnPasswordBody = zod.object({
 });
 
 /**
+ * Self-service endpoint so any signed-in user can change the name shown on their account. Sending a blank string clears the name.
+ * @summary Set, update, or clear the current user's own display name
+ */
+export const updateOwnNameBodyFullNameMax = 120;
+
+export const UpdateOwnNameBody = zod.object({
+  fullName: zod
+    .string()
+    .max(updateOwnNameBodyFullNameMax)
+    .describe(
+      "The user's display name. A blank string clears the stored name.",
+    ),
+});
+
+export const updateOwnNameResponseDashboardLayoutItemXMin = 0;
+
+export const updateOwnNameResponseDashboardLayoutItemYMin = 0;
+
+export const UpdateOwnNameResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
+  farmSlug: zod
+    .string()
+    .nullish()
+    .describe(
+      "The slug of the farm this user belongs to. Null for platform superadmins.",
+    ),
+  email: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The user\'s display name (e.g. \"Jane Smith\"). Null for accounts that have not set one.',
+    ),
+  dashboardLayout: zod
+    .array(
+      zod
+        .object({
+          id: zod
+            .string()
+            .describe(
+              "The widget identifier (e.g. total-goats, health-status).",
+            ),
+          visible: zod
+            .boolean()
+            .describe("Whether the widget is shown on the dashboard."),
+          x: zod
+            .number()
+            .min(updateOwnNameResponseDashboardLayoutItemXMin)
+            .optional()
+            .describe(
+              "Column index (0-11) of the widget's top-left corner on the 12-column grid.",
+            ),
+          y: zod
+            .number()
+            .min(updateOwnNameResponseDashboardLayoutItemYMin)
+            .optional()
+            .describe("Row index of the widget's top-left corner on the grid."),
+          w: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Width of the widget in grid columns."),
+          h: zod
+            .number()
+            .min(1)
+            .optional()
+            .describe("Height of the widget in grid rows."),
+        })
+        .describe(
+          "A single dashboard widget's visibility and grid placement. The x\/y\/w\/h fields describe the widget's position and size on a 12-column snap grid. They are optional so layouts saved before drag-and-resize shipped (which only carried id + visible) are forward-migrated with default coordinates on the next save.",
+        ),
+    )
+    .nullish()
+    .describe(
+      "The user's personal dashboard layout override. Null means the user uses the farm-wide default layout.",
+    ),
+});
+
+/**
  * Self-service endpoint so any signed-in user can add or change the email address used by the forgot-password flow, without needing an admin.
  * @summary Set or update the current user's own contact email
  */
@@ -4416,6 +4542,12 @@ export const UpdateOwnEmailResponse = zod.object({
     .nullish()
     .describe(
       "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The user\'s display name (e.g. \"Jane Smith\"). Null for accounts that have not set one.',
     ),
   dashboardLayout: zod
     .array(
@@ -4541,6 +4673,12 @@ export const UpdateDashboardLayoutResponse = zod.object({
     .nullish()
     .describe(
       "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The user\'s display name (e.g. \"Jane Smith\"). Null for accounts that have not set one.',
     ),
   dashboardLayout: zod
     .array(

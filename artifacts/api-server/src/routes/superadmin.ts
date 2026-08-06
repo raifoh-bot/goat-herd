@@ -401,6 +401,7 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
     id: user.id,
     username: user.username,
     email: user.email ?? null,
+    fullName: user.fullName ?? null,
     role: user.role,
     active: user.active,
     createdAt: user.createdAt,

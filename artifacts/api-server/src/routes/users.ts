@@ -16,6 +16,7 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
     id: user.id,
     username: user.username,
     email: user.email ?? null,
+    fullName: user.fullName ?? null,
     role: user.role,
     active: user.active,
     createdAt: user.createdAt,
@@ -69,11 +70,15 @@ router.post("/users", async (req, res): Promise<void> => {
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
+  // Optional display name; blank collapses to null (no name on file).
+  const fullName = parsed.data.fullName?.trim() || null;
+
   const [user] = await db
     .insert(usersTable)
     .values({
       username,
       email,
+      fullName,
       passwordHash,
       role: parsed.data.role,
       farmId: farmId(req),
@@ -106,6 +111,10 @@ router.put("/users/:id", async (req, res): Promise<void> => {
       return;
     }
     updateData.email = email;
+  }
+  if (parsed.data.fullName !== undefined) {
+    // A blank or null name clears it; Drizzle needs an explicit null to clear.
+    updateData.fullName = parsed.data.fullName?.trim() || null;
   }
 
   // Prevent an admin/owner from deactivating or demoting their own account,

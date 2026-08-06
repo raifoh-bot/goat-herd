@@ -8,6 +8,7 @@ import {
   ChangeOwnPasswordBody,
   UpdateDashboardLayoutBody,
   UpdateOwnEmailBody,
+  UpdateOwnNameBody,
   ForgotPasswordBody,
   ResetPasswordBody,
 } from "@workspace/api-zod";
@@ -421,6 +422,33 @@ router.put("/auth/email", requireAuth, async (req, res): Promise<void> => {
   res.json({
     ...req.authUser,
     email,
+    farmSlug: req.session.farmSlug ?? null,
+    dashboardLayout: normalizePersonalDashboardLayout(req.authUser!.dashboardLayout),
+  });
+});
+
+/**
+ * Self-service: sets, updates, or clears the current user's own display name.
+ * A blank string clears the stored name (explicit null so the column is
+ * actually cleared).
+ */
+router.put("/auth/name", requireAuth, async (req, res): Promise<void> => {
+  const parsed = UpdateOwnNameBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter a valid name" });
+    return;
+  }
+
+  const fullName = parsed.data.fullName.trim() || null;
+
+  await db
+    .update(usersTable)
+    .set({ fullName, updatedAt: new Date() })
+    .where(eq(usersTable.id, req.authUser!.id));
+
+  res.json({
+    ...req.authUser,
+    fullName,
     farmSlug: req.session.farmSlug ?? null,
     dashboardLayout: normalizePersonalDashboardLayout(req.authUser!.dashboardLayout),
   });

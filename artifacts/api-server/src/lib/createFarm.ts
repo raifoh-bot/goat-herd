@@ -42,6 +42,8 @@ export type CreateFarmInput = {
   adminPassword: string;
   /** Contact email for the first admin user (required for self-registration). */
   adminEmail?: string;
+  /** Optional display name of the first admin user. */
+  adminFullName?: string;
   status?: FarmStatus;
 };
 
@@ -74,6 +76,8 @@ export async function createFarm(input: CreateFarmInput): Promise<CreateFarmResu
   // Trimmed contact email for the first admin; stored as null when not given
   // (superadmin-created farms may omit it).
   const adminEmail = input.adminEmail?.trim() || null;
+  // Optional display name; blank collapses to null (no name on file).
+  const adminFullName = input.adminFullName?.trim() || null;
   if (input.adminPassword.length < 8) {
     return { ok: false, status: 400, error: "Password must be at least 8 characters." };
   }
@@ -106,6 +110,7 @@ export async function createFarm(input: CreateFarmInput): Promise<CreateFarmResu
         farmId: farm.id,
         username,
         email: adminEmail,
+        fullName: adminFullName,
         passwordHash,
         role: "admin",
         active: true,

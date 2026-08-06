@@ -474,6 +474,35 @@ describe("self-service email update", () => {
     expect(row.email).toBe("farmhand@example.com");
   });
 
+  it("lets a signed-in user set and clear their own display name", async () => {
+    const username = `auth-name-${suffix}`;
+    const user = await seedUser(username, "first-password-1", "farmhand");
+    const agent = await login({ username, password: "first-password-1" });
+
+    const set = await agent.put("/api/auth/name").send({ fullName: "  Jane Smith  " });
+    expect(set.status).toBe(200);
+    expect(set.body.fullName).toBe("Jane Smith");
+
+    const me = await agent.get("/api/auth/me");
+    expect(me.body.fullName).toBe("Jane Smith");
+
+    const [row] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    expect(row.fullName).toBe("Jane Smith");
+
+    // A blank name clears the stored value.
+    const clear = await agent.put("/api/auth/name").send({ fullName: "   " });
+    expect(clear.status).toBe(200);
+    expect(clear.body.fullName).toBeNull();
+
+    const [cleared] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    expect(cleared.fullName).toBeNull();
+  });
+
+  it("requires authentication to change the display name", async () => {
+    const res = await request(app).put("/api/auth/name").send({ fullName: "Nobody" });
+    expect(res.status).toBe(401);
+  });
+
   it("rejects a malformed email on self-service update", async () => {
     const username = `auth-email-bad-${suffix}`;
     await seedUser(username, "first-password-1", "farmhand");

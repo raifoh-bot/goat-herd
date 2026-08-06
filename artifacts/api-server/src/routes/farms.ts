@@ -106,6 +106,7 @@ router.post("/farms/register", async (req, res): Promise<void> => {
     adminUsername: parsed.data.username,
     adminPassword: parsed.data.password,
     adminEmail: email,
+    adminFullName: parsed.data.fullName,
     // Self-registered farms wait for super-admin approval before going live.
     status: "pending",
   });

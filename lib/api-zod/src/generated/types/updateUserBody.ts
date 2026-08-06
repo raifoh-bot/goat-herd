@@ -15,4 +15,6 @@ export interface UpdateUserBody {
    * @minLength 1
    */
   email?: string;
+  /** The user's display name. Send a non-blank string to set it, or an empty string/null to clear it; omit the field to leave it unchanged. */
+  fullName?: string | null;
 }

@@ -2231,6 +2231,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /auth/name:
+    put:
+      operationId: updateOwnName
+      tags: [auth]
+      summary: Set, update, or clear the current user's own display name
+      description: >-
+        Self-service endpoint so any signed-in user can change the name shown
+        on their account. Sending a blank string clears the name.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOwnNameBody"
+      responses:
+        "200":
+          description: The updated current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /auth/email:
     put:
       operationId: updateOwnEmail
@@ -4087,6 +4115,12 @@ components:
           description: >-
             The user's contact email, used by the forgot-password flow. Null for
             accounts created before email became required.
+        fullName:
+          type: string
+          nullable: true
+          description: >-
+            The user's display name (e.g. "Jane Smith"). Null for accounts that
+            have not set one.
         dashboardLayout:
           type: array
           nullable: true
@@ -4140,6 +4174,10 @@ components:
         email:
           type: string
           nullable: true
+        fullName:
+          type: string
+          nullable: true
+          description: The user's display name. Null when no name is on file.
         role:
           type: string
           enum: [admin, owner, farmhand, superadmin]
@@ -4155,6 +4193,7 @@ components:
         - id
         - username
         - email
+        - fullName
         - role
         - active
         - createdAt
@@ -4187,6 +4226,9 @@ components:
           format: email
           minLength: 1
           description: Contact email, required for the forgot-password flow.
+        fullName:
+          type: string
+          description: Optional display name for the person behind the account.
         role:
           type: string
           enum: [admin, owner, farmhand, superadmin]
@@ -4245,6 +4287,12 @@ components:
           description: >-
             Contact email, used for the forgot-password flow. When provided it
             must be non-blank; omit the field to leave the email unchanged.
+        fullName:
+          type: string
+          nullable: true
+          description: >-
+            The user's display name. Send a non-blank string to set it, or an
+            empty string/null to clear it; omit the field to leave it unchanged.
 
     UpdateOwnEmailBody:
       type: object
@@ -4258,6 +4306,17 @@ components:
             forgot-password flow. Must be non-blank.
       required:
         - email
+
+    UpdateOwnNameBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+          maxLength: 120
+          description: >-
+            The user's display name. A blank string clears the stored name.
+      required:
+        - fullName
 
     ForgotPasswordBody:
       type: object
@@ -4513,6 +4572,9 @@ components:
           format: email
           minLength: 1
           description: Contact email for the first admin user, required for the forgot-password flow.
+        fullName:
+          type: string
+          description: Optional display name of the admin registering the farm.
       required:
         - farmName
         - slug

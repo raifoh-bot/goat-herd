@@ -21,6 +21,8 @@ declare global {
         // Contact email used by the forgot-password flow; null for legacy
         // accounts created before email became required.
         email: string | null;
+        // Optional display name; null when no name is on file.
+        fullName: string | null;
         // The user's personal dashboard layout override, or null to use the
         // farm-wide default.
         dashboardLayout: DashboardWidgetLayout[] | null;

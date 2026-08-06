@@ -11,6 +11,8 @@ export interface User {
   id: number;
   username: string;
   email: string | null;
+  /** The user's display name. Null when no name is on file. */
+  fullName: string | null;
   role: UserRole;
   active: boolean;
   createdAt: Date;

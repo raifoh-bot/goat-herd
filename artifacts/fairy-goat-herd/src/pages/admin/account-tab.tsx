@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, Mail } from "lucide-react";
+import { KeyRound, Mail, UserRound } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useChangeOwnPassword,
   useUpdateOwnEmail,
+  useUpdateOwnName,
   getGetCurrentUserQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +19,75 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+
+function NameCard() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateName = useUpdateOwnName();
+
+  const [fullName, setFullName] = useState(user.fullName ?? "");
+
+  const savedName = user.fullName ?? "";
+  const trimmed = fullName.trim();
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    updateName.mutate(
+      { data: { fullName: trimmed } },
+      {
+        onSuccess: (updated) => {
+          queryClient.setQueryData(getGetCurrentUserQueryKey(), updated);
+          toast({
+            title: trimmed ? "Name saved" : "Name cleared",
+            description: trimmed
+              ? "Your name is now on your account."
+              : "Your account no longer has a name on file.",
+          });
+        },
+        onError: () =>
+          toast({
+            title: "Could not save name",
+            description: "That change could not be saved. Please try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  return (
+    <Card className="border-primary/10 shadow-lg">
+      <CardHeader>
+        <CardTitle className="font-serif flex items-center gap-2">
+          <UserRound className="h-4 w-4 text-primary" /> Your Name
+        </CardTitle>
+        <CardDescription>
+          {savedName
+            ? "The name shown on your account."
+            : "Add your name so others know who this account belongs to."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="account-full-name">Full name</Label>
+            <Input
+              id="account-full-name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete="name"
+              placeholder="Jane Smith"
+              maxLength={120}
+            />
+          </div>
+          <Button type="submit" disabled={updateName.isPending || trimmed === savedName}>
+            {updateName.isPending ? "Saving…" : savedName ? "Update Name" : "Save Name"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 function EmailCard() {
   const { user } = useAuth();
@@ -211,6 +281,7 @@ function PasswordCard() {
 export function AccountTab() {
   return (
     <div className="space-y-8">
+      <NameCard />
       <EmailCard />
       <PasswordCard />
     </div>

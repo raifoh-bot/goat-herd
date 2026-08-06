@@ -76,6 +76,8 @@ export async function ensureMultiTenant(): Promise<void> {
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dashboard_layout" jsonb;`);
     // Optional contact email, used by the self-service forgot-password flow.
     await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email" text;`);
+    // Optional display name for the person behind the account.
+    await pool.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "full_name" text;`);
   }
   const presentTenantTables: string[] = [];
   for (const table of TENANT_TABLES) {

@@ -91,6 +91,7 @@ import type {
   UpdateHealthEventBody,
   UpdateKidBody,
   UpdateOwnEmailBody,
+  UpdateOwnNameBody,
   UpdatePlatformThresholdsBody,
   UpdatePregnancyTestBody,
   UpdateSemenStrawBody,
@@ -8126,6 +8127,93 @@ export const useChangeOwnPassword = <
   TContext
 > => {
   return useMutation(getChangeOwnPasswordMutationOptions(options));
+};
+
+/**
+ * Self-service endpoint so any signed-in user can change the name shown on their account. Sending a blank string clears the name.
+ * @summary Set, update, or clear the current user's own display name
+ */
+export const getUpdateOwnNameUrl = () => {
+  return `/api/auth/name`;
+};
+
+export const updateOwnName = async (
+  updateOwnNameBody: UpdateOwnNameBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getUpdateOwnNameUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateOwnNameBody),
+  });
+};
+
+export const getUpdateOwnNameMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnName>>,
+    TError,
+    { data: BodyType<UpdateOwnNameBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOwnName>>,
+  TError,
+  { data: BodyType<UpdateOwnNameBody> },
+  TContext
+> => {
+  const mutationKey = ["updateOwnName"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOwnName>>,
+    { data: BodyType<UpdateOwnNameBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateOwnName(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOwnNameMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOwnName>>
+>;
+export type UpdateOwnNameMutationBody = BodyType<UpdateOwnNameBody>;
+export type UpdateOwnNameMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Set, update, or clear the current user's own display name
+ */
+export const useUpdateOwnName = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnName>>,
+    TError,
+    { data: BodyType<UpdateOwnNameBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOwnName>>,
+  TError,
+  { data: BodyType<UpdateOwnNameBody> },
+  TContext
+> => {
+  return useMutation(getUpdateOwnNameMutationOptions(options));
 };
 
 /**

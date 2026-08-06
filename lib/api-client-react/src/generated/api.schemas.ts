@@ -1475,6 +1475,8 @@ export interface AuthUser {
   farmSlug?: string | null;
   /** The user's contact email, used by the forgot-password flow. Null for accounts created before email became required. */
   email?: string | null;
+  /** The user's display name (e.g. "Jane Smith"). Null for accounts that have not set one. */
+  fullName?: string | null;
   /** The user's personal dashboard layout override. Null means the user uses the farm-wide default layout. */
   dashboardLayout?: DashboardWidget[] | null;
 }
@@ -1514,6 +1516,8 @@ export interface User {
   id: number;
   username: string;
   email: string | null;
+  /** The user's display name. Null when no name is on file. */
+  fullName: string | null;
   role: UserRole;
   active: boolean;
   createdAt: string;
@@ -1547,6 +1551,8 @@ export interface CreateUserBody {
    * @minLength 1
    */
   email: string;
+  /** Optional display name for the person behind the account. */
+  fullName?: string;
   role: CreateUserBodyRole;
 }
 
@@ -1591,6 +1597,8 @@ export interface UpdateUserBody {
    * @minLength 1
    */
   email?: string;
+  /** The user's display name. Send a non-blank string to set it, or an empty string/null to clear it; omit the field to leave it unchanged. */
+  fullName?: string | null;
 }
 
 export interface UpdateOwnEmailBody {
@@ -1599,6 +1607,14 @@ export interface UpdateOwnEmailBody {
    * @minLength 1
    */
   email: string;
+}
+
+export interface UpdateOwnNameBody {
+  /**
+   * The user's display name. A blank string clears the stored name.
+   * @maxLength 120
+   */
+  fullName: string;
 }
 
 export interface ForgotPasswordBody {
@@ -1773,6 +1789,8 @@ export interface RegisterFarmBody {
    * @minLength 1
    */
   email: string;
+  /** Optional display name of the admin registering the farm. */
+  fullName?: string;
 }
 
 export interface CreateFarmBody {

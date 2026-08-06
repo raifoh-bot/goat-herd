@@ -158,6 +158,7 @@ export * from "./updateKidBody";
 export * from "./updateKidBodyKidStatus";
 export * from "./updateKidBodySex";
 export * from "./updateOwnEmailBody";
+export * from "./updateOwnNameBody";
 export * from "./updatePlatformThresholdsBody";
 export * from "./updatePregnancyTestBody";
 export * from "./updatePregnancyTestBodyMethod";

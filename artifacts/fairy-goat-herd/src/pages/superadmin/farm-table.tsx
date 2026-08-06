@@ -700,6 +700,8 @@ function FarmUsersDialog({ farm }: { farm: SuperadminFarm }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Username</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -709,6 +711,12 @@ function FarmUsersDialog({ farm }: { farm: SuperadminFarm }) {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.fullName ?? <span className="text-muted-foreground/70">—</span>}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.email ?? <span className="text-muted-foreground/70">—</span>}
+                  </TableCell>
                   <TableCell className="capitalize">{user.role}</TableCell>
                   <TableCell>
                     <Badge variant={user.active ? "secondary" : "destructive"}>

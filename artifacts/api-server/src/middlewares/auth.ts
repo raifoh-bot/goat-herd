@@ -45,6 +45,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     role: user.role,
     farmId: user.farmId,
     email: user.email ?? null,
+    fullName: user.fullName ?? null,
     dashboardLayout: user.dashboardLayout ?? null,
   };
   next();

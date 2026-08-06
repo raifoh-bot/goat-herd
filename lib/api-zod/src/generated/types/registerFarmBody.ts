@@ -23,4 +23,6 @@ export interface RegisterFarmBody {
    * @minLength 1
    */
   email: string;
+  /** Optional display name of the admin registering the farm. */
+  fullName?: string;
 }
