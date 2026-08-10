@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import {
   db,
@@ -33,6 +33,17 @@ import { logger } from "../lib/logger";
 import { getPlatformSettings, updatePlatformSettings } from "../lib/platformSettings";
 
 const router: IRouter = Router();
+
+/**
+ * "On Farm" inclusion rule shared with the herd list (routes/goats.ts): a goat
+ * counts as on the farm when its herd status is on-farm, on-farm-boarding, or
+ * null (legacy rows recorded before herd status existed). Sold, deceased, and
+ * otherwise departed goats are excluded from platform counts.
+ */
+const goatOnFarmCondition = or(
+  isNull(goatsTable.herdStatus),
+  inArray(goatsTable.herdStatus, ["on-farm", "on-farm-boarding"]),
+)!;
 
 // The entire superadmin surface is restricted to platform superadmins.
 router.use("/superadmin", requireRole("superadmin"));
@@ -94,9 +105,11 @@ async function enrichFarms(farms: Farm[]) {
     .select({ farmId: usersTable.farmId, value: count() })
     .from(usersTable)
     .groupBy(usersTable.farmId);
+  // Only goats currently on the farm count toward a farm's herd size.
   const goatCounts = await db
     .select({ farmId: goatsTable.farmId, value: count() })
     .from(goatsTable)
+    .where(goatOnFarmCondition)
     .groupBy(goatsTable.farmId);
   const breedingCounts = await db
     .select({ farmId: breedingsTable.farmId, value: count() })
@@ -173,7 +186,7 @@ router.get("/superadmin/summary", async (_req, res): Promise<void> => {
       : await db
           .select({ value: count() })
           .from(goatsTable)
-          .where(inArray(goatsTable.farmId, liveFarmIds));
+          .where(and(inArray(goatsTable.farmId, liveFarmIds), goatOnFarmCondition));
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

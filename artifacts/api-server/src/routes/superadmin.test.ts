@@ -7,6 +7,7 @@ import {
   usersTable,
   farmSettingsTable,
   farmsTable,
+  goatsTable,
   type Farm,
 } from "@workspace/db";
 import { RESERVED_SLUGS } from "@workspace/reserved-slugs";
@@ -114,6 +115,7 @@ afterAll(async () => {
   // Remove users created within the farms this suite created (the API's
   // createFarm also seeds an admin per farm), then the settings and farms.
   if (createdFarmIds.length > 0) {
+    await db.delete(goatsTable).where(inArray(goatsTable.farmId, createdFarmIds));
     await db.delete(usersTable).where(inArray(usersTable.farmId, createdFarmIds));
     await db.delete(farmSettingsTable).where(inArray(farmSettingsTable.farmId, createdFarmIds));
   }
@@ -400,5 +402,53 @@ describe("super-admin farm management: suspension blocks login", () => {
       .set("X-Farm-Slug", body.slug)
       .send({ username: body.adminUsername, password: body.adminPassword });
     expect(after.status).toBe(403);
+  });
+});
+
+describe("super-admin goat counts: on-farm only", () => {
+  it("counts only on-farm, boarding, and legacy-null goats in farm counts and platform totals", async () => {
+    const agent = await loginSuperadmin();
+
+    // Create a dedicated farm for goat counting.
+    const body = newFarmBody({ slug: uniqueSlug("goat-count") });
+    const created = await agent.post("/api/superadmin/farms").send(body);
+    expect(created.status).toBe(201);
+    createdFarmIds.push(created.body.id);
+    const farmId = created.body.id as number;
+
+    // Baseline platform total before adding goats.
+    const summaryBefore = await agent.get("/api/superadmin/summary");
+    expect(summaryBefore.status).toBe(200);
+    const baseline = summaryBefore.body.totalGoats as number;
+
+    // Three goats that should count (on-farm, boarding, legacy null status)
+    // and four that must not (sold x2, dead, leased).
+    const goat = (name: string, herdStatus: string | null) => ({
+      farmId,
+      name,
+      breed: "nubian" as const,
+      herdStatus: herdStatus as never,
+    });
+    await db.insert(goatsTable).values([
+      goat("counted-on-farm", "on-farm"),
+      goat("counted-boarding", "on-farm-boarding"),
+      goat("counted-legacy", null),
+      goat("excluded-sold-reg", "sold-registered"),
+      goat("excluded-sold-unreg", "sold-not-registered"),
+      goat("excluded-dead", "dead"),
+      goat("excluded-leased", "leased"),
+    ]);
+
+    // Per-farm count in the farms list follows the On Farm rule.
+    const farmsRes = await agent.get("/api/superadmin/farms");
+    expect(farmsRes.status).toBe(200);
+    const row = (farmsRes.body as Array<Record<string, unknown>>).find((f) => f.id === farmId);
+    expect(row).toBeDefined();
+    expect(row!.goatCount).toBe(3);
+
+    // Platform total grew by exactly the three on-farm goats.
+    const summaryAfter = await agent.get("/api/superadmin/summary");
+    expect(summaryAfter.status).toBe(200);
+    expect(summaryAfter.body.totalGoats).toBe(baseline + 3);
   });
 });
