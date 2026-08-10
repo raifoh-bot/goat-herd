@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateHealthEventBodyEventType } from "./updateHealthEventBodyEventType";
+import type { UpdateHealthEventBodyParasiteType } from "./updateHealthEventBodyParasiteType";
 
 /**
  * Fields to change on a health event. Omitted fields are left as-is; nullable fields can be cleared by sending null.
@@ -37,4 +38,16 @@ export interface UpdateHealthEventBody {
    * @maxLength 2000
    */
   coTreatments?: string | null;
+  /** Parasites only — which parasite was found. */
+  parasiteType?: UpdateHealthEventBodyParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number | null;
+  /**
+   * Parasites only — treatment regimen (product, dosing schedule/duration).
+   * @maxLength 2000
+   */
+  treatmentRegimen?: string | null;
 }

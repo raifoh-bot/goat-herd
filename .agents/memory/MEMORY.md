@@ -25,3 +25,4 @@
 - [Task-merge file corruption](task-merge-file-corruption.md) — merges can paste duplicated blocks into unrelated routes; restore from last good commit + re-apply legit additions.
 - [react-grid-layout v1 vs v2](react-grid-layout-v1-vs-v2.md) — pin v1 (^1.5); v2 is an incompatible rewrite with no WidthProvider and a different Layout type.
 - [Hoisted zod breaks resolvers](hoisted-zod-types-resolvers.md) — mass zodResolver TS2345 ($ZodTypeInternals) = resolvers typing against hoisted zod v4; fix via pnpm packageExtensions peer dep.
+- [Orval zod const ordering](orval-zod-const-ordering.md) — codegen can emit `.max()` consts after use → TDZ crash at import; grep new `*Max` consts' line order and rerun codegen if misplaced.

@@ -13,6 +13,7 @@ import { SCHEDULABLE_EVENT_TYPES, normalizeHealthScheduleIntervals } from "../li
 
 const router: IRouter = Router();
 
+
 // Farmhands log health events during herd work, so creation is open to any
 // authenticated farm member. Deleting a record is Admin/Owner only.
 const requireManager = requireRole("admin", "owner");
@@ -79,7 +80,17 @@ router.post("/goats/:id/health-events", async (req, res): Promise<void> => {
     notes,
     treatmentDays,
     coTreatments,
+    parasiteType,
+    eggCount,
+    treatmentRegimen,
   } = parsed.data;
+  // A parasite finding always names the parasite; the load and regimen only
+  // make sense for the parasite they belong to.
+  if (eventType === "parasites" && !parasiteType) {
+    res.status(400).json({ error: "parasiteType is required for parasites events" });
+    return;
+  }
+  const isParasites = eventType === "parasites";
   const [created] = await db
     .insert(healthEventsTable)
     .values({
@@ -96,6 +107,12 @@ router.post("/goats/:id/health-events", async (req, res): Promise<void> => {
       // 12-day protocol; other event types never carry them.
       treatmentDays: eventType === "cidr" ? treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS : null,
       coTreatments: eventType === "cidr" ? coTreatments?.trim() || null : null,
+      // Parasites-only fields: egg count is a barber-pole load; the treatment
+      // regimen applies to coccidia/other treated parasites.
+      parasiteType: isParasites ? parasiteType ?? null : null,
+      eggCount: isParasites && parasiteType === "barber_pole" ? eggCount ?? null : null,
+      treatmentRegimen:
+        isParasites && parasiteType !== "barber_pole" ? treatmentRegimen?.trim() || null : null,
     })
     .returning();
   res.status(201).json(created);
@@ -146,6 +163,9 @@ router.put("/goats/:id/health-events/:eventId", async (req, res): Promise<void> 
   if (body.notes !== undefined) set.notes = body.notes?.trim() || null;
   if (body.treatmentDays !== undefined) set.treatmentDays = body.treatmentDays;
   if (body.coTreatments !== undefined) set.coTreatments = body.coTreatments?.trim() || null;
+  if (body.parasiteType !== undefined) set.parasiteType = body.parasiteType;
+  if (body.eggCount !== undefined) set.eggCount = body.eggCount;
+  if (body.treatmentRegimen !== undefined) set.treatmentRegimen = body.treatmentRegimen?.trim() || null;
 
   // FAMACHA scores only make sense on famacha/deworming events — keep the
   // same invariant the create paths enforce, based on the resulting type.
@@ -165,6 +185,26 @@ router.put("/goats/:id/health-events/:eventId", async (req, res): Promise<void> 
     // A CIDR event always has a treatment length: sending null (or changing
     // the type to CIDR without one) falls back to the standard protocol.
     set.treatmentDays = DEFAULT_CIDR_TREATMENT_DAYS;
+  }
+  // Parasites fields only make sense on parasites events (same invariant the
+  // create path enforces): a parasites event always names its parasite, egg
+  // count is barber-pole-only, and the regimen belongs to other parasites.
+  if (nextType !== "parasites") {
+    set.parasiteType = null;
+    set.eggCount = null;
+    set.treatmentRegimen = null;
+  } else {
+    const nextParasite =
+      set.parasiteType !== undefined ? set.parasiteType : existing.parasiteType;
+    if (!nextParasite) {
+      res.status(400).json({ error: "parasiteType is required for parasites events" });
+      return;
+    }
+    if (nextParasite === "barber_pole") {
+      set.treatmentRegimen = null;
+    } else {
+      set.eggCount = null;
+    }
   }
 
   if (Object.keys(set).length === 0) {

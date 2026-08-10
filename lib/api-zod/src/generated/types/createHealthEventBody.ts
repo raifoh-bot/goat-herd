@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateHealthEventBodyEventType } from "./createHealthEventBodyEventType";
+import type { CreateHealthEventBodyParasiteType } from "./createHealthEventBodyParasiteType";
 
 export interface CreateHealthEventBody {
   eventType: CreateHealthEventBodyEventType;
@@ -34,4 +35,16 @@ export interface CreateHealthEventBody {
    * @maxLength 2000
    */
   coTreatments?: string;
+  /** Parasites only — which parasite was found (required for parasites events). */
+  parasiteType?: CreateHealthEventBodyParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number;
+  /**
+   * Parasites only — treatment regimen (product, dosing schedule/duration).
+   * @maxLength 2000
+   */
+  treatmentRegimen?: string;
 }

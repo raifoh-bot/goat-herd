@@ -6,7 +6,11 @@ import type {
 
 export type FeatherIconName = keyof typeof Feather.glyphMap;
 
-/** The health tasks a farmer can record on a work day, in wizard order. */
+/**
+ * The health tasks a farmer can record on a work day, in wizard order.
+ * CIDR and Parasites are deliberately excluded: they are per-goat entries and
+ * the bulk endpoint does not accept them.
+ */
 export const HEALTH_EVENT_TYPES: {
   value: HealthEventEventType;
   label: string;

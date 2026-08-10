@@ -470,7 +470,10 @@ export default function HerdWorkDay() {
               </div>
 
               <div className="space-y-2">
-                {HEALTH_EVENT_TYPES.filter((t) => t.value !== "cidr").map((t) => {
+                {/* CIDR and Parasites are per-goat entries (the bulk endpoint
+                    doesn't accept them), so they're never offered as herd
+                    work-day tasks. */}
+                {HEALTH_EVENT_TYPES.filter((t) => t.value !== "cidr" && t.value !== "parasites").map((t) => {
                   const Icon = t.icon;
                   const active = selectedTypes.has(t.value);
                   const showProductInputs =

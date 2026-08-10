@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { HealthEventEventType } from "./healthEventEventType";
+import type { HealthEventParasiteType } from "./healthEventParasiteType";
 
 export interface HealthEvent {
   id: number;
@@ -26,6 +27,15 @@ export interface HealthEvent {
   treatmentDays?: number | null;
   /** CIDR only — co-treatments given at insertion. */
   coTreatments?: string | null;
+  /** Parasites only — which parasite was found. */
+  parasiteType?: HealthEventParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number | null;
+  /** Parasites only — treatment regimen (product, dosing schedule/duration). */
+  treatmentRegimen?: string | null;
   /** Dose administered, in mL. */
   dosageMl?: number | null;
   /** The goat's body weight at the time of the event (farm weight unit). */

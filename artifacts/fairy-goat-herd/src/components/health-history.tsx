@@ -11,7 +11,7 @@ import type {
   HealthEvent,
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
-import { AlertTriangle, Bug, CalendarPlus, ChevronDown, ChevronUp, Download, Droplets, Eye, Footprints, HeartPulse, Loader2, Pencil, Plus, Scissors, Syringe, Timer, Trash2 } from "lucide-react";
+import { AlertTriangle, Bug, CalendarPlus, ChevronDown, ChevronUp, Download, Droplets, Eye, Footprints, HeartPulse, Loader2, Microscope, Pencil, Plus, Scissors, Syringe, Timer, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,8 +45,19 @@ export const HEALTH_EVENT_TYPES: {
   { value: "famacha", label: "FAMACHA Score", icon: Eye },
   { value: "deworming", label: "Deworming", icon: Bug },
   { value: "cidr", label: "CIDR", icon: Timer },
+  { value: "parasites", label: "Parasites", icon: Microscope },
   { value: "other", label: "Other", icon: HeartPulse },
 ];
+
+/** The parasite kinds a Parasites event can record, in picker order. */
+export const PARASITE_TYPES: { value: "barber_pole" | "coccidia" | "other"; label: string }[] = [
+  { value: "barber_pole", label: "Barber pole worm" },
+  { value: "coccidia", label: "Coccidia" },
+  { value: "other", label: "Other" },
+];
+
+export const parasiteTypeLabel = (value: string | null | undefined): string =>
+  PARASITE_TYPES.find((p) => p.value === value)?.label ?? value ?? "";
 
 export const healthEventTypeConfig = Object.fromEntries(
   HEALTH_EVENT_TYPES.map((t) => [t.value, t]),
@@ -116,6 +127,9 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
   const [notes, setNotes] = useState("");
   const [treatmentDays, setTreatmentDays] = useState(String(DEFAULT_CIDR_TREATMENT_DAYS));
   const [coTreatments, setCoTreatments] = useState("");
+  const [parasiteType, setParasiteType] = useState<"barber_pole" | "coccidia" | "other" | "">("");
+  const [eggCount, setEggCount] = useState("");
+  const [treatmentRegimen, setTreatmentRegimen] = useState("");
   // After a CIDR event is saved, the dialog shows a reminder step with
   // add-to-calendar actions for the computed removal date.
   const [savedRemovalDate, setSavedRemovalDate] = useState<Date | null>(null);
@@ -124,6 +138,11 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
   const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
   const showDosage = showProduct;
   const showCidr = eventType === "cidr";
+  const showParasites = eventType === "parasites";
+  const showEggCount = showParasites && parasiteType === "barber_pole";
+  const showRegimen = showParasites && (parasiteType === "coccidia" || parasiteType === "other");
+  const eggCountNum = eggCount ? Number(eggCount) : null;
+  const validEggCount = eggCount === "" || (Number.isInteger(eggCountNum) && (eggCountNum as number) >= 0);
   const scoreNum = famachaScore ? Number(famachaScore) : null;
   const needsDeworming = eventType === "famacha" && scoreNum != null && famachaSuggestsDeworming(scoreNum, famachaThreshold);
   const treatmentDaysNum = Number(treatmentDays);
@@ -144,6 +163,9 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
     setNotes("");
     setTreatmentDays(String(DEFAULT_CIDR_TREATMENT_DAYS));
     setCoTreatments("");
+    setParasiteType("");
+    setEggCount("");
+    setTreatmentRegimen("");
     setSavedRemovalDate(null);
   };
 
@@ -156,6 +178,22 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
       toast({
         title: "Check the treatment length",
         description: "Days of treatment must be a whole number between 1 and 60.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (showParasites && !parasiteType) {
+      toast({
+        title: "Pick a parasite",
+        description: "Choose which parasite was found (barber pole, coccidia, or other).",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (showEggCount && !validEggCount) {
+      toast({
+        title: "Check the egg count",
+        description: "Egg count must be a whole number of eggs per gram (0 or more).",
         variant: "destructive",
       });
       return;
@@ -173,6 +211,9 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
           ...(notes.trim() ? { notes: notes.trim() } : {}),
           ...(showCidr ? { treatmentDays: treatmentDaysNum } : {}),
           ...(showCidr && coTreatments.trim() ? { coTreatments: coTreatments.trim() } : {}),
+          ...(showParasites && parasiteType ? { parasiteType } : {}),
+          ...(showEggCount && eggCount !== "" ? { eggCount: Number(eggCount) } : {}),
+          ...(showRegimen && treatmentRegimen.trim() ? { treatmentRegimen: treatmentRegimen.trim() } : {}),
         },
       },
       {
@@ -343,6 +384,48 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
             </>
           )}
 
+          {showParasites && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Parasite found</Label>
+                <Select value={parasiteType || undefined} onValueChange={(v) => setParasiteType(v as typeof parasiteType)}>
+                  <SelectTrigger aria-label="Parasite type"><SelectValue placeholder="Select parasite" /></SelectTrigger>
+                  <SelectContent>
+                    {PARASITE_TYPES.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {showEggCount && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-egg-count">Egg count (eggs per gram, optional)</Label>
+                  <Input
+                    id="he-egg-count"
+                    type="number"
+                    min={0}
+                    step="1"
+                    placeholder="e.g. 1200"
+                    value={eggCount}
+                    onChange={(e) => setEggCount(e.target.value)}
+                  />
+                </div>
+              )}
+              {showRegimen && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-regimen">Treatment regimen (optional)</Label>
+                  <Textarea
+                    id="he-regimen"
+                    rows={2}
+                    placeholder="e.g. Toltrazuril 1 mL/5 lb once, repeat in 10 days"
+                    value={treatmentRegimen}
+                    onChange={(e) => setTreatmentRegimen(e.target.value)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="he-weight">Body weight in {weightUnitLabel(weightUnit)} (optional)</Label>
             <Input id="he-weight" type="number" min={0} step="0.1" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} />
@@ -404,6 +487,11 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
     String(event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS),
   );
   const [coTreatments, setCoTreatments] = useState(event.coTreatments ?? "");
+  const [parasiteType, setParasiteType] = useState<"barber_pole" | "coccidia" | "other" | "">(
+    (event.parasiteType as "barber_pole" | "coccidia" | "other" | null) ?? "",
+  );
+  const [eggCount, setEggCount] = useState(event.eggCount != null ? String(event.eggCount) : "");
+  const [treatmentRegimen, setTreatmentRegimen] = useState(event.treatmentRegimen ?? "");
 
   // Re-prime the form whenever the dialog opens for a (possibly different) event.
   useEffect(() => {
@@ -417,12 +505,20 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
     setNotes(event.notes ?? "");
     setTreatmentDays(String(event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS));
     setCoTreatments(event.coTreatments ?? "");
+    setParasiteType((event.parasiteType as "barber_pole" | "coccidia" | "other" | null) ?? "");
+    setEggCount(event.eggCount != null ? String(event.eggCount) : "");
+    setTreatmentRegimen(event.treatmentRegimen ?? "");
   }, [open, event]);
 
   const showFamacha = eventType === "famacha" || eventType === "deworming";
   const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
   const showDosage = showProduct;
   const showCidr = eventType === "cidr";
+  const showParasites = eventType === "parasites";
+  const showEggCount = showParasites && parasiteType === "barber_pole";
+  const showRegimen = showParasites && (parasiteType === "coccidia" || parasiteType === "other");
+  const eggCountNum = eggCount ? Number(eggCount) : null;
+  const validEggCount = eggCount === "" || (Number.isInteger(eggCountNum) && (eggCountNum as number) >= 0);
   const treatmentDaysNum = Number(treatmentDays);
   const validTreatmentDays = Number.isInteger(treatmentDaysNum) && treatmentDaysNum >= 1 && treatmentDaysNum <= 60;
   const removalDate =
@@ -443,6 +539,22 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
       });
       return;
     }
+    if (showParasites && !parasiteType) {
+      toast({
+        title: "Pick a parasite",
+        description: "Choose which parasite was found (barber pole, coccidia, or other).",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (showEggCount && !validEggCount) {
+      toast({
+        title: "Check the egg count",
+        description: "Egg count must be a whole number of eggs per gram (0 or more).",
+        variant: "destructive",
+      });
+      return;
+    }
     const scoreNum = famachaScore ? Number(famachaScore) : null;
     updateEvent.mutate(
       {
@@ -458,6 +570,9 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
           notes: notes.trim() ? notes.trim() : null,
           treatmentDays: showCidr ? treatmentDaysNum : null,
           coTreatments: showCidr && coTreatments.trim() ? coTreatments.trim() : null,
+          parasiteType: showParasites && parasiteType ? parasiteType : null,
+          eggCount: showEggCount && eggCount !== "" ? Number(eggCount) : null,
+          treatmentRegimen: showRegimen && treatmentRegimen.trim() ? treatmentRegimen.trim() : null,
         },
       },
       {
@@ -589,6 +704,48 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
             </>
           )}
 
+          {showParasites && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Parasite found</Label>
+                <Select value={parasiteType || undefined} onValueChange={(v) => setParasiteType(v as typeof parasiteType)}>
+                  <SelectTrigger aria-label="Parasite type"><SelectValue placeholder="Select parasite" /></SelectTrigger>
+                  <SelectContent>
+                    {PARASITE_TYPES.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {showEggCount && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-edit-egg-count">Egg count (eggs per gram, optional)</Label>
+                  <Input
+                    id="he-edit-egg-count"
+                    type="number"
+                    min={0}
+                    step="1"
+                    placeholder="e.g. 1200"
+                    value={eggCount}
+                    onChange={(e) => setEggCount(e.target.value)}
+                  />
+                </div>
+              )}
+              {showRegimen && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-edit-regimen">Treatment regimen (optional)</Label>
+                  <Textarea
+                    id="he-edit-regimen"
+                    rows={2}
+                    placeholder="e.g. Toltrazuril 1 mL/5 lb once, repeat in 10 days"
+                    value={treatmentRegimen}
+                    onChange={(e) => setTreatmentRegimen(e.target.value)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="he-edit-weight">Body weight in {weightUnitLabel(weightUnit)} (optional)</Label>
             <Input id="he-edit-weight" type="number" min={0} step="0.1" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} />
@@ -627,6 +784,11 @@ function EventRow({ event, goatId, goatName, weightUnit }: { event: HealthEvent;
     : null;
 
   const details: string[] = [];
+  if (event.eventType === "parasites") {
+    if (event.parasiteType) details.push(parasiteTypeLabel(event.parasiteType));
+    if (event.eggCount != null) details.push(`${event.eggCount} epg`);
+    if (event.treatmentRegimen) details.push(`Treatment: ${event.treatmentRegimen}`);
+  }
   if (event.famachaScore != null) details.push(`FAMACHA ${event.famachaScore}`);
   if (event.productName) details.push(event.productName);
   if (event.dosageMl != null) details.push(`${event.dosageMl} ${doseUnit(event.eventType)}`);

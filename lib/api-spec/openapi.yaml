@@ -3182,7 +3182,7 @@ components:
           type: integer
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, parasites, other]
         eventDate:
           type: string
           format: date-time
@@ -3204,6 +3204,20 @@ components:
           type: string
           nullable: true
           description: CIDR only — co-treatments given at insertion.
+        parasiteType:
+          type: string
+          nullable: true
+          enum: [barber_pole, coccidia, other]
+          description: Parasites only — which parasite was found.
+        eggCount:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Parasites only — fecal egg count load in eggs per gram (barber pole).
+        treatmentRegimen:
+          type: string
+          nullable: true
+          description: Parasites only — treatment regimen (product, dosing schedule/duration).
         dosageMl:
           type: number
           nullable: true
@@ -3238,7 +3252,7 @@ components:
       properties:
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, parasites, other]
         eventDate:
           type: string
           format: date-time
@@ -3267,6 +3281,18 @@ components:
           type: string
           maxLength: 2000
           description: CIDR only — co-treatments given at insertion.
+        parasiteType:
+          type: string
+          enum: [barber_pole, coccidia, other]
+          description: Parasites only — which parasite was found (required for parasites events).
+        eggCount:
+          type: integer
+          minimum: 0
+          description: Parasites only — fecal egg count load in eggs per gram (barber pole).
+        treatmentRegimen:
+          type: string
+          maxLength: 2000
+          description: Parasites only — treatment regimen (product, dosing schedule/duration).
       required:
         - eventType
         - eventDate
@@ -3279,7 +3305,7 @@ components:
       properties:
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, parasites, other]
         eventDate:
           type: string
           format: date-time
@@ -3315,6 +3341,21 @@ components:
           nullable: true
           maxLength: 2000
           description: CIDR only — co-treatments given at insertion.
+        parasiteType:
+          type: string
+          nullable: true
+          enum: [barber_pole, coccidia, other]
+          description: Parasites only — which parasite was found.
+        eggCount:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Parasites only — fecal egg count load in eggs per gram (barber pole).
+        treatmentRegimen:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: Parasites only — treatment regimen (product, dosing schedule/duration).
 
     BulkHealthEventItem:
       type: object

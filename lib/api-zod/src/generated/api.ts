@@ -1036,6 +1036,8 @@ export const listGoatHealthEventsResponseFamachaScoreMax = 5;
 
 export const listGoatHealthEventsResponseTreatmentDaysMax = 60;
 
+export const listGoatHealthEventsResponseEggCountMin = 0;
+
 export const ListGoatHealthEventsResponseItem = zod.object({
   id: zod.number(),
   goatId: zod.number(),
@@ -1046,6 +1048,7 @@ export const ListGoatHealthEventsResponseItem = zod.object({
     "famacha",
     "deworming",
     "cidr",
+    "parasites",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1067,6 +1070,23 @@ export const ListGoatHealthEventsResponseItem = zod.object({
     .string()
     .nullish()
     .describe("CIDR only — co-treatments given at insertion."),
+  parasiteType: zod
+    .enum(["barber_pole", "coccidia", "other"])
+    .nullish()
+    .describe("Parasites only — which parasite was found."),
+  eggCount: zod
+    .number()
+    .min(listGoatHealthEventsResponseEggCountMin)
+    .nullish()
+    .describe(
+      "Parasites only — fecal egg count load in eggs per gram (barber pole).",
+    ),
+  treatmentRegimen: zod
+    .string()
+    .nullish()
+    .describe(
+      "Parasites only — treatment regimen (product, dosing schedule\/duration).",
+    ),
   dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
   bodyWeight: zod
     .number()
@@ -1107,6 +1127,10 @@ export const createGoatHealthEventBodyTreatmentDaysMax = 60;
 
 export const createGoatHealthEventBodyCoTreatmentsMax = 2000;
 
+export const createGoatHealthEventBodyEggCountMin = 0;
+
+export const createGoatHealthEventBodyTreatmentRegimenMax = 2000;
+
 export const CreateGoatHealthEventBody = zod.object({
   eventType: zod.enum([
     "hoof_trim",
@@ -1115,6 +1139,7 @@ export const CreateGoatHealthEventBody = zod.object({
     "famacha",
     "deworming",
     "cidr",
+    "parasites",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1144,6 +1169,26 @@ export const CreateGoatHealthEventBody = zod.object({
     .max(createGoatHealthEventBodyCoTreatmentsMax)
     .optional()
     .describe("CIDR only — co-treatments given at insertion."),
+  parasiteType: zod
+    .enum(["barber_pole", "coccidia", "other"])
+    .optional()
+    .describe(
+      "Parasites only — which parasite was found (required for parasites events).",
+    ),
+  eggCount: zod
+    .number()
+    .min(createGoatHealthEventBodyEggCountMin)
+    .optional()
+    .describe(
+      "Parasites only — fecal egg count load in eggs per gram (barber pole).",
+    ),
+  treatmentRegimen: zod
+    .string()
+    .max(createGoatHealthEventBodyTreatmentRegimenMax)
+    .optional()
+    .describe(
+      "Parasites only — treatment regimen (product, dosing schedule\/duration).",
+    ),
 });
 
 /**
@@ -1168,6 +1213,10 @@ export const updateGoatHealthEventBodyTreatmentDaysMax = 60;
 
 export const updateGoatHealthEventBodyCoTreatmentsMax = 2000;
 
+export const updateGoatHealthEventBodyEggCountMin = 0;
+
+export const updateGoatHealthEventBodyTreatmentRegimenMax = 2000;
+
 export const UpdateGoatHealthEventBody = zod
   .object({
     eventType: zod
@@ -1178,6 +1227,7 @@ export const UpdateGoatHealthEventBody = zod
         "famacha",
         "deworming",
         "cidr",
+        "parasites",
         "other",
       ])
       .optional(),
@@ -1208,6 +1258,24 @@ export const UpdateGoatHealthEventBody = zod
       .max(updateGoatHealthEventBodyCoTreatmentsMax)
       .nullish()
       .describe("CIDR only — co-treatments given at insertion."),
+    parasiteType: zod
+      .enum(["barber_pole", "coccidia", "other"])
+      .nullish()
+      .describe("Parasites only — which parasite was found."),
+    eggCount: zod
+      .number()
+      .min(updateGoatHealthEventBodyEggCountMin)
+      .nullish()
+      .describe(
+        "Parasites only — fecal egg count load in eggs per gram (barber pole).",
+      ),
+    treatmentRegimen: zod
+      .string()
+      .max(updateGoatHealthEventBodyTreatmentRegimenMax)
+      .nullish()
+      .describe(
+        "Parasites only — treatment regimen (product, dosing schedule\/duration).",
+      ),
   })
   .describe(
     "Fields to change on a health event. Omitted fields are left as-is; nullable fields can be cleared by sending null.",
@@ -1216,6 +1284,8 @@ export const UpdateGoatHealthEventBody = zod
 export const updateGoatHealthEventResponseFamachaScoreMax = 5;
 
 export const updateGoatHealthEventResponseTreatmentDaysMax = 60;
+
+export const updateGoatHealthEventResponseEggCountMin = 0;
 
 export const UpdateGoatHealthEventResponse = zod.object({
   id: zod.number(),
@@ -1227,6 +1297,7 @@ export const UpdateGoatHealthEventResponse = zod.object({
     "famacha",
     "deworming",
     "cidr",
+    "parasites",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1248,6 +1319,23 @@ export const UpdateGoatHealthEventResponse = zod.object({
     .string()
     .nullish()
     .describe("CIDR only — co-treatments given at insertion."),
+  parasiteType: zod
+    .enum(["barber_pole", "coccidia", "other"])
+    .nullish()
+    .describe("Parasites only — which parasite was found."),
+  eggCount: zod
+    .number()
+    .min(updateGoatHealthEventResponseEggCountMin)
+    .nullish()
+    .describe(
+      "Parasites only — fecal egg count load in eggs per gram (barber pole).",
+    ),
+  treatmentRegimen: zod
+    .string()
+    .nullish()
+    .describe(
+      "Parasites only — treatment regimen (product, dosing schedule\/duration).",
+    ),
   dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
   bodyWeight: zod
     .number()

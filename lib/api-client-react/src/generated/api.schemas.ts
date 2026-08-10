@@ -770,6 +770,20 @@ export const HealthEventEventType = {
   famacha: "famacha",
   deworming: "deworming",
   cidr: "cidr",
+  parasites: "parasites",
+  other: "other",
+} as const;
+
+/**
+ * Parasites only — which parasite was found.
+ */
+export type HealthEventParasiteType =
+  | (typeof HealthEventParasiteType)[keyof typeof HealthEventParasiteType]
+  | null;
+
+export const HealthEventParasiteType = {
+  barber_pole: "barber_pole",
+  coccidia: "coccidia",
   other: "other",
 } as const;
 
@@ -792,6 +806,15 @@ export interface HealthEvent {
   treatmentDays?: number | null;
   /** CIDR only — co-treatments given at insertion. */
   coTreatments?: string | null;
+  /** Parasites only — which parasite was found. */
+  parasiteType?: HealthEventParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number | null;
+  /** Parasites only — treatment regimen (product, dosing schedule/duration). */
+  treatmentRegimen?: string | null;
   /** Dose administered, in mL. */
   dosageMl?: number | null;
   /** The goat's body weight at the time of the event (farm weight unit). */
@@ -813,6 +836,19 @@ export const CreateHealthEventBodyEventType = {
   famacha: "famacha",
   deworming: "deworming",
   cidr: "cidr",
+  parasites: "parasites",
+  other: "other",
+} as const;
+
+/**
+ * Parasites only — which parasite was found (required for parasites events).
+ */
+export type CreateHealthEventBodyParasiteType =
+  (typeof CreateHealthEventBodyParasiteType)[keyof typeof CreateHealthEventBodyParasiteType];
+
+export const CreateHealthEventBodyParasiteType = {
+  barber_pole: "barber_pole",
+  coccidia: "coccidia",
   other: "other",
 } as const;
 
@@ -843,6 +879,18 @@ export interface CreateHealthEventBody {
    * @maxLength 2000
    */
   coTreatments?: string;
+  /** Parasites only — which parasite was found (required for parasites events). */
+  parasiteType?: CreateHealthEventBodyParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number;
+  /**
+   * Parasites only — treatment regimen (product, dosing schedule/duration).
+   * @maxLength 2000
+   */
+  treatmentRegimen?: string;
 }
 
 export type UpdateHealthEventBodyEventType =
@@ -855,6 +903,20 @@ export const UpdateHealthEventBodyEventType = {
   famacha: "famacha",
   deworming: "deworming",
   cidr: "cidr",
+  parasites: "parasites",
+  other: "other",
+} as const;
+
+/**
+ * Parasites only — which parasite was found.
+ */
+export type UpdateHealthEventBodyParasiteType =
+  | (typeof UpdateHealthEventBodyParasiteType)[keyof typeof UpdateHealthEventBodyParasiteType]
+  | null;
+
+export const UpdateHealthEventBodyParasiteType = {
+  barber_pole: "barber_pole",
+  coccidia: "coccidia",
   other: "other",
 } as const;
 
@@ -888,6 +950,18 @@ export interface UpdateHealthEventBody {
    * @maxLength 2000
    */
   coTreatments?: string | null;
+  /** Parasites only — which parasite was found. */
+  parasiteType?: UpdateHealthEventBodyParasiteType;
+  /**
+   * Parasites only — fecal egg count load in eggs per gram (barber pole).
+   * @minimum 0
+   */
+  eggCount?: number | null;
+  /**
+   * Parasites only — treatment regimen (product, dosing schedule/duration).
+   * @maxLength 2000
+   */
+  treatmentRegimen?: string | null;
 }
 
 export type BulkHealthEventItemEventType =

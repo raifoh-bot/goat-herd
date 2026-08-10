@@ -236,6 +236,17 @@ export async function ensureMultiTenant(): Promise<void> {
     await pool.query(
       `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "co_treatments" text;`,
     );
+    // Parasites support: additive columns for existing databases (mirrors the
+    // Drizzle schema — never applied via db push).
+    await pool.query(
+      `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "parasite_type" text;`,
+    );
+    await pool.query(
+      `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "egg_count" integer;`,
+    );
+    await pool.query(
+      `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "treatment_regimen" text;`,
+    );
   }
 
   // 8c. Password reset tokens (self-service forgot-password flow). Single-use,

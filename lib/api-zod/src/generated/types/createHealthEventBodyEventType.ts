@@ -16,5 +16,6 @@ export const CreateHealthEventBodyEventType = {
   famacha: "famacha",
   deworming: "deworming",
   cidr: "cidr",
+  parasites: "parasites",
   other: "other",
 } as const;

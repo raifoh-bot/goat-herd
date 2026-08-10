@@ -212,6 +212,74 @@ describe("POST /api/goats/:id/health-events", () => {
     expect(res.body.coTreatments).toBeNull();
   });
 
+  it("records a barber pole parasite finding with an egg count", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      parasiteType: "barber_pole",
+      eggCount: 1200,
+      notes: "fecal test after pale eyelids",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.eventType).toBe("parasites");
+    expect(res.body.parasiteType).toBe("barber_pole");
+    expect(res.body.eggCount).toBe(1200);
+    expect(res.body.treatmentRegimen).toBeNull();
+  });
+
+  it("records a coccidia finding with a treatment regimen (and drops the egg count)", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      parasiteType: "coccidia",
+      eggCount: 500,
+      treatmentRegimen: "  Toltrazuril 1 mL/5 lb, repeat in 10 days  ",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.parasiteType).toBe("coccidia");
+    expect(res.body.eggCount).toBeNull();
+    expect(res.body.treatmentRegimen).toBe("Toltrazuril 1 mL/5 lb, repeat in 10 days");
+  });
+
+  it("requires a parasite type on a parasites event", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-07-01T00:00:00.000Z",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an invalid parasite type", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      parasiteType: "tapeworm",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores parasite fields for other event types", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "hoof_trim",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      parasiteType: "coccidia",
+      eggCount: 300,
+      treatmentRegimen: "should be dropped",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.parasiteType).toBeNull();
+    expect(res.body.eggCount).toBeNull();
+    expect(res.body.treatmentRegimen).toBeNull();
+  });
+
   it("rejects an invalid body", async () => {
     const goat = await createGoat();
     const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
@@ -344,6 +412,69 @@ describe("PUT /api/goats/:id/health-events/:eventId", () => {
     expect(res.status).toBe(200);
     expect(res.body.eventType).toBe("cidr");
     expect(res.body.treatmentDays).toBe(12);
+  });
+
+  it("updates a parasites event and switches the parasite kind", async () => {
+    const goat = await createGoat();
+    const created = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      parasiteType: "barber_pole",
+      eggCount: 800,
+    });
+    expect(created.status).toBe(201);
+    createdEventIds.push(created.body.id);
+
+    // Switching to coccidia clears the barber-pole egg count and takes a regimen.
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${created.body.id}`)
+      .send({ parasiteType: "coccidia", treatmentRegimen: "Corid 5-day course" });
+    expect(res.status).toBe(200);
+    expect(res.body.parasiteType).toBe("coccidia");
+    expect(res.body.eggCount).toBeNull();
+    expect(res.body.treatmentRegimen).toBe("Corid 5-day course");
+  });
+
+  it("clears parasite fields when the type changes away from parasites", async () => {
+    const goat = await createGoat();
+    const created = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "parasites",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      parasiteType: "barber_pole",
+      eggCount: 800,
+    });
+    expect(created.status).toBe(201);
+    createdEventIds.push(created.body.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${created.body.id}`)
+      .send({ eventType: "other" });
+    expect(res.status).toBe(200);
+    expect(res.body.eventType).toBe("other");
+    expect(res.body.parasiteType).toBeNull();
+    expect(res.body.eggCount).toBeNull();
+    expect(res.body.treatmentRegimen).toBeNull();
+  });
+
+  it("requires a parasite type when changing an event to parasites", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const missing = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ eventType: "parasites" });
+    expect(missing.status).toBe(400);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ eventType: "parasites", parasiteType: "barber_pole", eggCount: 250 });
+    expect(res.status).toBe(200);
+    expect(res.body.eventType).toBe("parasites");
+    expect(res.body.parasiteType).toBe("barber_pole");
+    expect(res.body.eggCount).toBe(250);
+    // Non-parasite extras from the original deworming event are cleared/kept
+    // per the standard invariants.
+    expect(res.body.famachaScore).toBeNull();
   });
 
   it("allows a farmhand to edit an event", async () => {
