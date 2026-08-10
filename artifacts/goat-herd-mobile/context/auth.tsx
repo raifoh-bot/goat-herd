@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const authUser: AuthUser = {
         id: res.id,
         username: res.username,
+        fullName: res.fullName ?? null,
         role: res.role,
         farmSlug: res.farmSlug ?? (trimmedSlug || null),
       };

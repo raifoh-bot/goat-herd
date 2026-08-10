@@ -3341,6 +3341,12 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   id: zod.number(),
   username: zod.string(),
+  fullName: zod
+    .string()
+    .nullish()
+    .describe(
+      "The user's optional full name, for friendly display. Null when not set.",
+    ),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   farmSlug: zod
     .string()

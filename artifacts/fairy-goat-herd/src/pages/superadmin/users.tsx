@@ -212,7 +212,7 @@ function EditEmailDialog({ user }: { user: User }) {
           });
           toast({
             title: "Email saved",
-            description: `${user.username} can now use password recovery.`,
+            description: `${user.fullName || user.username} can now use password recovery.`,
           });
           setOpen(false);
         },
@@ -244,7 +244,7 @@ function EditEmailDialog({ user }: { user: User }) {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {user.email ? "Edit email" : "Add email"} for {user.username}
+              {user.email ? "Edit email" : "Add email"} for {user.fullName || user.username}
             </DialogTitle>
             <DialogDescription>
               The contact email is used for password recovery and new-farm
@@ -295,7 +295,7 @@ function SuperadminUserRow({
           });
           toast({
             title: updated.active ? "Account activated" : "Account deactivated",
-            description: `${updated.username} ${updated.active ? "can sign in again." : "can no longer sign in."}`,
+            description: `${updated.fullName || updated.username} ${updated.active ? "can sign in again." : "can no longer sign in."}`,
           });
         },
         onError: () => {
@@ -312,7 +312,7 @@ function SuperadminUserRow({
   return (
     <TableRow>
       <TableCell className="font-medium">
-        {user.username}
+        {user.fullName || user.username}
         {isSelf && (
           <span className="ml-2 text-xs text-muted-foreground">(you)</span>
         )}

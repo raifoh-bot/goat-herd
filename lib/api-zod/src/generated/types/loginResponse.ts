@@ -10,6 +10,8 @@ import type { LoginResponseRole } from "./loginResponseRole";
 export interface LoginResponse {
   id: number;
   username: string;
+  /** The user's optional full name, for friendly display. Null when not set. */
+  fullName?: string | null;
   role: LoginResponseRole;
   /** The slug of the farm this user belongs to. Null for platform superadmins. */
   farmSlug?: string | null;

@@ -49,7 +49,14 @@ export default function AccountScreen() {
         <Text style={[styles.h1, { color: colors.foreground }]}>Account</Text>
 
         <Card style={styles.card}>
-          <Row icon="user" label="Username" value={user?.username ?? "—"} colors={colors} />
+          <Row
+            icon="user"
+            label="Name"
+            value={user?.fullName || (user?.username ?? "—")}
+            colors={colors}
+          />
+          <Divider colors={colors} />
+          <Row icon="at-sign" label="Username" value={user?.username ?? "—"} colors={colors} />
           <Divider colors={colors} />
           <Row
             icon="award"

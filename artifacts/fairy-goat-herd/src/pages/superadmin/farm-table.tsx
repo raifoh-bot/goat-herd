@@ -567,7 +567,7 @@ function ResetPasswordDialog({
         onSuccess: () => {
           toast({
             title: "Password reset",
-            description: `${user.username} can now sign in with the new password.`,
+            description: `${user.fullName || user.username} can now sign in with the new password.`,
           });
           setOpen(false);
           reset();
@@ -600,7 +600,7 @@ function ResetPasswordDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Reset password for {user.username}</DialogTitle>
+            <DialogTitle>Reset password for {user.fullName || user.username}</DialogTitle>
             <DialogDescription>
               The new password takes effect immediately. Share it with the user
               so they can sign in.

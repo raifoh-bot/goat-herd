@@ -6,6 +6,9 @@ packages:
 
 autoInstallPeers: false
 
+# @hookform/resolvers doesn't declare zod as a peer, so TypeScript can pick up
+# a hoisted transitive zod v4 (from orval) instead of the app's zod v3.
+# Declaring the peer forces pnpm to link the dependent package's own zod.
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
   '@replit/vite-plugin-dev-banner': ^0.1.1

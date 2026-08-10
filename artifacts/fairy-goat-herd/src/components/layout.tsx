@@ -84,7 +84,7 @@ export function Layout({ children }: LayoutProps) {
 
   const userCard = (
     <div className="rounded-xl bg-sidebar-accent/50 p-4 border border-sidebar-accent">
-      <p className="text-sm font-medium text-sidebar-foreground truncate">{user.username}</p>
+      <p className="text-sm font-medium text-sidebar-foreground truncate">{user.fullName || user.username}</p>
       <p className="text-xs text-sidebar-foreground/70">{ROLE_LABELS[user.role] ?? user.role}</p>
     </div>
   );

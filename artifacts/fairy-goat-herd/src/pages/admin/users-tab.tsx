@@ -159,7 +159,7 @@ export function UsersTab() {
       },
       {
         onSuccess: (created) => {
-          toast({ title: "User created", description: `${created.username} can now sign in.` });
+          toast({ title: "User created", description: `${created.fullName || created.username} can now sign in.` });
           setUsername("");
           setFullName("");
           setPassword("");
@@ -214,7 +214,7 @@ export function UsersTab() {
         onSuccess: () => {
           toast({
             title: "Details updated",
-            description: `Contact details saved for ${emailTarget.username}.`,
+            description: `Contact details saved for ${emailTarget.fullName || emailTarget.username}.`,
           });
           setEmailTarget(null);
           setEmailValue("");
@@ -249,7 +249,7 @@ export function UsersTab() {
         onSuccess: () => {
           toast({
             title: "Password reset",
-            description: `${resetTarget.username} can sign in with the new password.`,
+            description: `${resetTarget.fullName || resetTarget.username} can sign in with the new password.`,
           });
           setResetTarget(null);
           setResetPassword("");
@@ -488,7 +488,7 @@ export function UsersTab() {
               </DialogTitle>
               <DialogDescription>
                 Set a new password for{" "}
-                <span className="font-medium text-foreground">{resetTarget?.username}</span>. They
+                <span className="font-medium text-foreground">{resetTarget ? resetTarget.fullName || resetTarget.username : ""}</span>. They
                 will use it the next time they sign in.
               </DialogDescription>
             </DialogHeader>
@@ -540,7 +540,7 @@ export function UsersTab() {
               </DialogTitle>
               <DialogDescription>
                 Set the name and email for{" "}
-                <span className="font-medium text-foreground">{emailTarget?.username}</span>. The
+                <span className="font-medium text-foreground">{emailTarget ? emailTarget.fullName || emailTarget.username : ""}</span>. The
                 email is used to send password reset links.
               </DialogDescription>
             </DialogHeader>

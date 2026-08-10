@@ -4171,6 +4171,10 @@ components:
           type: integer
         username:
           type: string
+        fullName:
+          type: string
+          nullable: true
+          description: The user's optional full name, for friendly display. Null when not set.
         role:
           type: string
           enum: [admin, owner, farmhand, superadmin]
