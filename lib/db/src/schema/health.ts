@@ -9,9 +9,13 @@ export const healthEventsTable = pgTable("health_events", {
   farmId: integer("farm_id").notNull().references(() => farmsTable.id),
   goatId: integer("goat_id").notNull().references(() => goatsTable.id),
   eventType: text("event_type", {
-    enum: ["hoof_trim", "cdt_shot", "copper_bolus", "famacha", "deworming", "other"],
+    enum: ["hoof_trim", "cdt_shot", "copper_bolus", "famacha", "deworming", "cidr", "other"],
   }).notNull(),
   eventDate: timestamp("event_date").notNull(),
+  // CIDR-only fields: how many days the device stays in (removal date =
+  // eventDate + treatmentDays) and any co-treatments given at insertion.
+  treatmentDays: integer("treatment_days"),
+  coTreatments: text("co_treatments"),
   famachaScore: integer("famacha_score"),
   dosageMl: doublePrecision("dosage_ml"),
   bodyWeight: doublePrecision("body_weight"),

@@ -18,11 +18,17 @@ const SCHEDULE_TYPE_LABELS: Record<string, string> = {
   cdt_shot: "CD&T",
   copper_bolus: "Copper bolus",
   deworming: "Deworming",
+  cidr: "CIDR removal",
 };
 
-/** True when the farm has at least one routine health schedule configured. */
+/**
+ * True when the Health Work Due widget has something to show: at least one
+ * routine schedule configured, or any due items (CIDR removals appear even
+ * when no routine schedules are set).
+ */
 export function hasHealthSchedules(data: HealthDueResponse | undefined): boolean {
   if (!data) return false;
+  if ((data.goats ?? []).length > 0) return true;
   return Object.values(data.intervals ?? {}).some((v) => typeof v === "number");
 }
 

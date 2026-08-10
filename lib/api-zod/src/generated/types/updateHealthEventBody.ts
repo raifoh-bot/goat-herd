@@ -26,4 +26,15 @@ export interface UpdateHealthEventBody {
   productName?: string | null;
   /** @maxLength 2000 */
   notes?: string | null;
+  /**
+   * CIDR only — days of treatment.
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number | null;
+  /**
+   * CIDR only — co-treatments given at insertion.
+   * @maxLength 2000
+   */
+  coTreatments?: string | null;
 }

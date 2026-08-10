@@ -1034,6 +1034,8 @@ export const ListGoatHealthEventsParams = zod.object({
 
 export const listGoatHealthEventsResponseFamachaScoreMax = 5;
 
+export const listGoatHealthEventsResponseTreatmentDaysMax = 60;
+
 export const ListGoatHealthEventsResponseItem = zod.object({
   id: zod.number(),
   goatId: zod.number(),
@@ -1043,6 +1045,7 @@ export const ListGoatHealthEventsResponseItem = zod.object({
     "copper_bolus",
     "famacha",
     "deworming",
+    "cidr",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1052,6 +1055,18 @@ export const ListGoatHealthEventsResponseItem = zod.object({
     .max(listGoatHealthEventsResponseFamachaScoreMax)
     .nullish()
     .describe("FAMACHA anemia score (1 = healthy, 5 = severely anemic)."),
+  treatmentDays: zod
+    .number()
+    .min(1)
+    .max(listGoatHealthEventsResponseTreatmentDaysMax)
+    .nullish()
+    .describe(
+      "CIDR only — number of days the device stays in. The removal date is eventDate + treatmentDays.",
+    ),
+  coTreatments: zod
+    .string()
+    .nullish()
+    .describe("CIDR only — co-treatments given at insertion."),
   dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
   bodyWeight: zod
     .number()
@@ -1088,6 +1103,10 @@ export const createGoatHealthEventBodyProductNameMax = 200;
 
 export const createGoatHealthEventBodyNotesMax = 2000;
 
+export const createGoatHealthEventBodyTreatmentDaysMax = 60;
+
+export const createGoatHealthEventBodyCoTreatmentsMax = 2000;
+
 export const CreateGoatHealthEventBody = zod.object({
   eventType: zod.enum([
     "hoof_trim",
@@ -1095,6 +1114,7 @@ export const CreateGoatHealthEventBody = zod.object({
     "copper_bolus",
     "famacha",
     "deworming",
+    "cidr",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1113,6 +1133,17 @@ export const CreateGoatHealthEventBody = zod.object({
     .max(createGoatHealthEventBodyProductNameMax)
     .optional(),
   notes: zod.string().max(createGoatHealthEventBodyNotesMax).optional(),
+  treatmentDays: zod
+    .number()
+    .min(1)
+    .max(createGoatHealthEventBodyTreatmentDaysMax)
+    .optional()
+    .describe("CIDR only — days of treatment (defaults to 12 when omitted)."),
+  coTreatments: zod
+    .string()
+    .max(createGoatHealthEventBodyCoTreatmentsMax)
+    .optional()
+    .describe("CIDR only — co-treatments given at insertion."),
 });
 
 /**
@@ -1133,6 +1164,10 @@ export const updateGoatHealthEventBodyProductNameMax = 200;
 
 export const updateGoatHealthEventBodyNotesMax = 2000;
 
+export const updateGoatHealthEventBodyTreatmentDaysMax = 60;
+
+export const updateGoatHealthEventBodyCoTreatmentsMax = 2000;
+
 export const UpdateGoatHealthEventBody = zod
   .object({
     eventType: zod
@@ -1142,6 +1177,7 @@ export const UpdateGoatHealthEventBody = zod
         "copper_bolus",
         "famacha",
         "deworming",
+        "cidr",
         "other",
       ])
       .optional(),
@@ -1161,12 +1197,25 @@ export const UpdateGoatHealthEventBody = zod
       .max(updateGoatHealthEventBodyProductNameMax)
       .nullish(),
     notes: zod.string().max(updateGoatHealthEventBodyNotesMax).nullish(),
+    treatmentDays: zod
+      .number()
+      .min(1)
+      .max(updateGoatHealthEventBodyTreatmentDaysMax)
+      .nullish()
+      .describe("CIDR only — days of treatment."),
+    coTreatments: zod
+      .string()
+      .max(updateGoatHealthEventBodyCoTreatmentsMax)
+      .nullish()
+      .describe("CIDR only — co-treatments given at insertion."),
   })
   .describe(
     "Fields to change on a health event. Omitted fields are left as-is; nullable fields can be cleared by sending null.",
   );
 
 export const updateGoatHealthEventResponseFamachaScoreMax = 5;
+
+export const updateGoatHealthEventResponseTreatmentDaysMax = 60;
 
 export const UpdateGoatHealthEventResponse = zod.object({
   id: zod.number(),
@@ -1177,6 +1226,7 @@ export const UpdateGoatHealthEventResponse = zod.object({
     "copper_bolus",
     "famacha",
     "deworming",
+    "cidr",
     "other",
   ]),
   eventDate: zod.coerce.date(),
@@ -1186,6 +1236,18 @@ export const UpdateGoatHealthEventResponse = zod.object({
     .max(updateGoatHealthEventResponseFamachaScoreMax)
     .nullish()
     .describe("FAMACHA anemia score (1 = healthy, 5 = severely anemic)."),
+  treatmentDays: zod
+    .number()
+    .min(1)
+    .max(updateGoatHealthEventResponseTreatmentDaysMax)
+    .nullish()
+    .describe(
+      "CIDR only — number of days the device stays in. The removal date is eventDate + treatmentDays.",
+    ),
+  coTreatments: zod
+    .string()
+    .nullish()
+    .describe("CIDR only — co-treatments given at insertion."),
   dosageMl: zod.number().nullish().describe("Dose administered, in mL."),
   bodyWeight: zod
     .number()
@@ -1580,6 +1642,7 @@ export const GetHealthWorkDueResponse = zod.object({
               "cdt_shot",
               "copper_bolus",
               "deworming",
+              "cidr",
             ]),
             status: zod
               .enum(["overdue", "due-soon", "never"])

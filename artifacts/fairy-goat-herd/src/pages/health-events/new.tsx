@@ -42,7 +42,30 @@ const SCHEDULE_TYPE_LABELS: Record<string, string> = {
   cdt_shot: "CD&T",
   copper_bolus: "Copper bolus",
   deworming: "Deworming",
+  cidr: "CIDR removal",
 };
+
+/**
+ * Goats and task types to pre-tick when starting a work day: items that are
+ * overdue or have never been done. CIDR removals are reminder-only — they are
+ * badged on goat rows but never become a bulk work-day task (the bulk endpoint
+ * doesn't accept CIDR, and removal is a per-doe action, not herd work).
+ */
+export function deriveWorkDayPreselection(
+  dueData: { goats: { goat: { id: number }; items: DueHealthItem[] }[] } | undefined,
+): { dueGoatIds: Set<number>; dueTaskTypes: Set<HealthEventEventType> } {
+  const goatIds = new Set<number>();
+  const taskTypes = new Set<HealthEventEventType>();
+  for (const entry of dueData?.goats ?? []) {
+    const actionable = entry.items.filter(
+      (i) => (i.status === "overdue" || i.status === "never") && i.eventType !== "cidr",
+    );
+    if (actionable.length === 0) continue;
+    goatIds.add(entry.goat.id);
+    for (const item of actionable) taskTypes.add(item.eventType as HealthEventEventType);
+  }
+  return { dueGoatIds: goatIds, dueTaskTypes: taskTypes };
+}
 
 /** A compact human phrase for how overdue (or how new) a due item is. */
 function dueItemLabel(item: DueHealthItem): string {
@@ -113,17 +136,7 @@ export default function HerdWorkDay() {
   // Goats and task types that are due now (overdue) or have never been done.
   // These drive the one-time pre-selection so a farmer starts a work day with
   // the right goats and tasks already ticked.
-  const { dueGoatIds, dueTaskTypes } = useMemo(() => {
-    const goatIds = new Set<number>();
-    const taskTypes = new Set<HealthEventEventType>();
-    for (const entry of dueData?.goats ?? []) {
-      const actionable = entry.items.filter((i) => i.status === "overdue" || i.status === "never");
-      if (actionable.length === 0) continue;
-      goatIds.add(entry.goat.id);
-      for (const item of actionable) taskTypes.add(item.eventType as HealthEventEventType);
-    }
-    return { dueGoatIds: goatIds, dueTaskTypes: taskTypes };
-  }, [dueData]);
+  const { dueGoatIds, dueTaskTypes } = useMemo(() => deriveWorkDayPreselection(dueData), [dueData]);
 
   // Pre-select due goats and their tasks exactly once, after the due list
   // arrives. We never override the farmer's later manual edits.
@@ -196,7 +209,12 @@ export default function HerdWorkDay() {
       const weight = weightStr ? Number(weightStr) : null;
       const hasWeight = weight != null && weight > 0;
       for (const type of selectedTypes) {
-        const item: BulkHealthEventItem = { goatId: goat.id, eventType: type };
+        // CIDR is per-doe/protocol-driven and never offered in the herd work
+        // day wizard, so the wider event type narrows safely to the bulk enum.
+        const item: BulkHealthEventItem = {
+          goatId: goat.id,
+          eventType: type as BulkHealthEventItem["eventType"],
+        };
         if (type === "famacha" || type === "deworming") {
           const score = Number(famachaScores[goat.id]);
           if (score >= 1 && score <= 5) item.famachaScore = score;
@@ -452,7 +470,7 @@ export default function HerdWorkDay() {
               </div>
 
               <div className="space-y-2">
-                {HEALTH_EVENT_TYPES.map((t) => {
+                {HEALTH_EVENT_TYPES.filter((t) => t.value !== "cidr").map((t) => {
                   const Icon = t.icon;
                   const active = selectedTypes.has(t.value);
                   const showProductInputs =

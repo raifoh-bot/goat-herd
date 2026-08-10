@@ -3182,7 +3182,7 @@ components:
           type: integer
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
         eventDate:
           type: string
           format: date-time
@@ -3192,6 +3192,18 @@ components:
           minimum: 1
           maximum: 5
           description: FAMACHA anemia score (1 = healthy, 5 = severely anemic).
+        treatmentDays:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 60
+          description: >-
+            CIDR only — number of days the device stays in. The removal date is
+            eventDate + treatmentDays.
+        coTreatments:
+          type: string
+          nullable: true
+          description: CIDR only — co-treatments given at insertion.
         dosageMl:
           type: number
           nullable: true
@@ -3226,7 +3238,7 @@ components:
       properties:
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
         eventDate:
           type: string
           format: date-time
@@ -3246,6 +3258,15 @@ components:
         notes:
           type: string
           maxLength: 2000
+        treatmentDays:
+          type: integer
+          minimum: 1
+          maximum: 60
+          description: CIDR only — days of treatment (defaults to 12 when omitted).
+        coTreatments:
+          type: string
+          maxLength: 2000
+          description: CIDR only — co-treatments given at insertion.
       required:
         - eventType
         - eventDate
@@ -3258,7 +3279,7 @@ components:
       properties:
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, other]
+          enum: [hoof_trim, cdt_shot, copper_bolus, famacha, deworming, cidr, other]
         eventDate:
           type: string
           format: date-time
@@ -3283,6 +3304,17 @@ components:
           type: string
           nullable: true
           maxLength: 2000
+        treatmentDays:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 60
+          description: CIDR only — days of treatment.
+        coTreatments:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: CIDR only — co-treatments given at insertion.
 
     BulkHealthEventItem:
       type: object
@@ -4780,7 +4812,7 @@ components:
       properties:
         eventType:
           type: string
-          enum: [hoof_trim, cdt_shot, copper_bolus, deworming]
+          enum: [hoof_trim, cdt_shot, copper_bolus, deworming, cidr]
         status:
           type: string
           enum: [overdue, due-soon, never]

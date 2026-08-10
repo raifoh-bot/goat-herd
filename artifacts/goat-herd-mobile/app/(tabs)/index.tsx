@@ -24,6 +24,7 @@ import {
   breedLabel,
   dueItemLabel,
   isActionable,
+  isWorkDayActionable,
   sexLabel,
 } from "@/constants/domain";
 import { useColors } from "@/hooks/useColors";
@@ -49,7 +50,7 @@ export default function DueScreen() {
 
   const actionableCount = useMemo(
     () =>
-      (data?.goats ?? []).filter((g) => g.items.some(isActionable)).length,
+      (data?.goats ?? []).filter((g) => g.items.some(isWorkDayActionable)).length,
     [data],
   );
 

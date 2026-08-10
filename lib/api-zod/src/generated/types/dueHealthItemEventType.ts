@@ -14,4 +14,5 @@ export const DueHealthItemEventType = {
   cdt_shot: "cdt_shot",
   copper_bolus: "copper_bolus",
   deworming: "deworming",
+  cidr: "cidr",
 } as const;

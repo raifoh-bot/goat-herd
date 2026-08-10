@@ -37,6 +37,7 @@ import {
   formatLongDate,
   HEALTH_EVENT_TYPES,
   isActionable,
+  isWorkDayActionable,
   todayInputValue,
 } from "@/constants/domain";
 import { useColors } from "@/hooks/useColors";
@@ -93,7 +94,7 @@ export default function WorkDayScreen() {
     const goatIds = new Set<number>();
     const taskTypes = new Set<HealthEventEventType>();
     for (const entry of dueData?.goats ?? []) {
-      const actionable = entry.items.filter(isActionable);
+      const actionable = entry.items.filter(isWorkDayActionable);
       if (actionable.length === 0) continue;
       goatIds.add(entry.goat.id);
       for (const item of actionable)
@@ -159,7 +160,12 @@ export default function WorkDayScreen() {
       const weight = weightStr ? Number(weightStr) : null;
       const hasWeight = weight != null && weight > 0;
       for (const type of selectedTypes) {
-        const item: BulkHealthEventItem = { goatId: goat.id, eventType: type };
+        // CIDR is not a herd-work-day task (the wizard never offers it), so
+        // the wider HealthEventEventType narrows safely to the bulk enum here.
+        const item: BulkHealthEventItem = {
+          goatId: goat.id,
+          eventType: type as BulkHealthEventItem["eventType"],
+        };
         if (type === "famacha" || type === "deworming") {
           const score = Number(famachaScores[goat.id]);
           if (score >= 1 && score <= 5) item.famachaScore = score;

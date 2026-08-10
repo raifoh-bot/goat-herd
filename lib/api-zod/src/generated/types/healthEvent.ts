@@ -18,6 +18,14 @@ export interface HealthEvent {
    * @maximum 5
    */
   famachaScore?: number | null;
+  /**
+   * CIDR only — number of days the device stays in. The removal date is eventDate + treatmentDays.
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number | null;
+  /** CIDR only — co-treatments given at insertion. */
+  coTreatments?: string | null;
   /** Dose administered, in mL. */
   dosageMl?: number | null;
   /** The goat's body weight at the time of the event (farm weight unit). */

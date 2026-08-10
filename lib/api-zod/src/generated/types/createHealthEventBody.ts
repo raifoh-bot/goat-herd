@@ -23,4 +23,15 @@ export interface CreateHealthEventBody {
   productName?: string;
   /** @maxLength 2000 */
   notes?: string;
+  /**
+   * CIDR only — days of treatment (defaults to 12 when omitted).
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number;
+  /**
+   * CIDR only — co-treatments given at insertion.
+   * @maxLength 2000
+   */
+  coTreatments?: string;
 }

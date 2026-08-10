@@ -769,6 +769,7 @@ export const HealthEventEventType = {
   copper_bolus: "copper_bolus",
   famacha: "famacha",
   deworming: "deworming",
+  cidr: "cidr",
   other: "other",
 } as const;
 
@@ -783,6 +784,14 @@ export interface HealthEvent {
    * @maximum 5
    */
   famachaScore?: number | null;
+  /**
+   * CIDR only — number of days the device stays in. The removal date is eventDate + treatmentDays.
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number | null;
+  /** CIDR only — co-treatments given at insertion. */
+  coTreatments?: string | null;
   /** Dose administered, in mL. */
   dosageMl?: number | null;
   /** The goat's body weight at the time of the event (farm weight unit). */
@@ -803,6 +812,7 @@ export const CreateHealthEventBodyEventType = {
   copper_bolus: "copper_bolus",
   famacha: "famacha",
   deworming: "deworming",
+  cidr: "cidr",
   other: "other",
 } as const;
 
@@ -822,6 +832,17 @@ export interface CreateHealthEventBody {
   productName?: string;
   /** @maxLength 2000 */
   notes?: string;
+  /**
+   * CIDR only — days of treatment (defaults to 12 when omitted).
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number;
+  /**
+   * CIDR only — co-treatments given at insertion.
+   * @maxLength 2000
+   */
+  coTreatments?: string;
 }
 
 export type UpdateHealthEventBodyEventType =
@@ -833,6 +854,7 @@ export const UpdateHealthEventBodyEventType = {
   copper_bolus: "copper_bolus",
   famacha: "famacha",
   deworming: "deworming",
+  cidr: "cidr",
   other: "other",
 } as const;
 
@@ -855,6 +877,17 @@ export interface UpdateHealthEventBody {
   productName?: string | null;
   /** @maxLength 2000 */
   notes?: string | null;
+  /**
+   * CIDR only — days of treatment.
+   * @minimum 1
+   * @maximum 60
+   */
+  treatmentDays?: number | null;
+  /**
+   * CIDR only — co-treatments given at insertion.
+   * @maxLength 2000
+   */
+  coTreatments?: string | null;
 }
 
 export type BulkHealthEventItemEventType =
@@ -1984,6 +2017,7 @@ export const DueHealthItemEventType = {
   cdt_shot: "cdt_shot",
   copper_bolus: "copper_bolus",
   deworming: "deworming",
+  cidr: "cidr",
 } as const;
 
 /**

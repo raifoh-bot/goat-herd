@@ -20,3 +20,13 @@ export function isValidFamachaScore(score: number): boolean {
 export function famachaSuggestsDeworming(score: number, threshold: number): boolean {
   return isValidFamachaScore(score) && score >= threshold;
 }
+
+/** Standard CIDR protocol length in days, mirrored by the API default. */
+export const DEFAULT_CIDR_TREATMENT_DAYS = 12;
+
+/** The CIDR removal date: insertion date plus the treatment length in days. */
+export function cidrRemovalDate(insertionDate: Date, treatmentDays: number): Date {
+  const removal = new Date(insertionDate);
+  removal.setDate(removal.getDate() + treatmentDays);
+  return removal;
+}

@@ -35,6 +35,11 @@ minimumReleaseAgeExclude:
   - '@replit/*'
   - stripe-replit-sync
 
+packageExtensions:
+  '@hookform/resolvers@3':
+    peerDependencies:
+      zod: '*'
+
 onlyBuiltDependencies:
   - '@swc/core'
   - bcrypt

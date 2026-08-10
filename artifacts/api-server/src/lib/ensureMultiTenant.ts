@@ -216,6 +216,8 @@ export async function ensureMultiTenant(): Promise<void> {
         "body_weight" double precision,
         "product_name" text,
         "notes" text,
+        "treatment_days" integer,
+        "co_treatments" text,
         "created_at" timestamp DEFAULT now() NOT NULL,
         "updated_at" timestamp DEFAULT now() NOT NULL
       );
@@ -225,6 +227,14 @@ export async function ensureMultiTenant(): Promise<void> {
     );
     await pool.query(
       `CREATE INDEX IF NOT EXISTS "health_events_goat_id_idx" ON "health_events" ("goat_id");`,
+    );
+    // CIDR support: additive columns for existing databases (mirrors the
+    // Drizzle schema — never applied via db push).
+    await pool.query(
+      `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "treatment_days" integer;`,
+    );
+    await pool.query(
+      `ALTER TABLE "health_events" ADD COLUMN IF NOT EXISTS "co_treatments" text;`,
     );
   }
 

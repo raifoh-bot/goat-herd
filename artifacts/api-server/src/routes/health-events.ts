@@ -17,6 +17,14 @@ const router: IRouter = Router();
 // authenticated farm member. Deleting a record is Admin/Owner only.
 const requireManager = requireRole("admin", "owner");
 
+// Standard CIDR protocol length in days, used when a CIDR event is created
+// without an explicit treatment length.
+const DEFAULT_CIDR_TREATMENT_DAYS = 12;
+
+// How long an unremoved CIDR keeps showing as overdue in the due list before
+// the app assumes the record is stale and stops flagging it.
+const CIDR_OVERDUE_HORIZON_DAYS = 30;
+
 // Herd statuses that are never worked on a herd work day.
 const EXCLUDED_HERD_STATUSES = ["dead", "sold-registered", "sold-not-registered"] as const;
 
@@ -61,8 +69,17 @@ router.post("/goats/:id/health-events", async (req, res): Promise<void> => {
     return;
   }
 
-  const { eventType, eventDate, famachaScore, dosageMl, bodyWeight, productName, notes } =
-    parsed.data;
+  const {
+    eventType,
+    eventDate,
+    famachaScore,
+    dosageMl,
+    bodyWeight,
+    productName,
+    notes,
+    treatmentDays,
+    coTreatments,
+  } = parsed.data;
   const [created] = await db
     .insert(healthEventsTable)
     .values({
@@ -75,6 +92,10 @@ router.post("/goats/:id/health-events", async (req, res): Promise<void> => {
       bodyWeight: bodyWeight ?? null,
       productName: productName?.trim() || null,
       notes: notes?.trim() || null,
+      // CIDR-only fields: the treatment length defaults to the standard
+      // 12-day protocol; other event types never carry them.
+      treatmentDays: eventType === "cidr" ? treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS : null,
+      coTreatments: eventType === "cidr" ? coTreatments?.trim() || null : null,
     })
     .returning();
   res.status(201).json(created);
@@ -123,12 +144,27 @@ router.put("/goats/:id/health-events/:eventId", async (req, res): Promise<void> 
   if (body.bodyWeight !== undefined) set.bodyWeight = body.bodyWeight;
   if (body.productName !== undefined) set.productName = body.productName?.trim() || null;
   if (body.notes !== undefined) set.notes = body.notes?.trim() || null;
+  if (body.treatmentDays !== undefined) set.treatmentDays = body.treatmentDays;
+  if (body.coTreatments !== undefined) set.coTreatments = body.coTreatments?.trim() || null;
 
   // FAMACHA scores only make sense on famacha/deworming events — keep the
   // same invariant the create paths enforce, based on the resulting type.
   const nextType = set.eventType ?? existing.eventType;
   if (nextType !== "famacha" && nextType !== "deworming") {
     set.famachaScore = null;
+  }
+  // CIDR fields only make sense on CIDR events; a CIDR event always has a
+  // treatment length (falling back to the standard protocol).
+  if (nextType !== "cidr") {
+    set.treatmentDays = null;
+    set.coTreatments = null;
+  } else if (
+    set.treatmentDays === null ||
+    (set.treatmentDays === undefined && existing.treatmentDays == null)
+  ) {
+    // A CIDR event always has a treatment length: sending null (or changing
+    // the type to CIDR without one) falls back to the standard protocol.
+    set.treatmentDays = DEFAULT_CIDR_TREATMENT_DAYS;
   }
 
   if (Object.keys(set).length === 0) {
@@ -197,8 +233,8 @@ const DUE_SOON_WINDOW_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // GET /health-events/due — goats with routine health work due or overdue,
-// based on the farm's configured per-event-type intervals. Returns nothing
-// due when no intervals are set.
+// based on the farm's configured per-event-type intervals, plus upcoming or
+// recently missed CIDR removals (which don't depend on any interval setting).
 router.get("/health-events/due", async (req, res): Promise<void> => {
   const fid = farmId(req);
 
@@ -211,11 +247,6 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
   const activeTypes = SCHEDULABLE_EVENT_TYPES.filter(
     (type) => typeof intervals[type] === "number",
   );
-
-  if (activeTypes.length === 0) {
-    res.json({ intervals, goats: [] });
-    return;
-  }
 
   // Only on-farm goats appear in the Health Work Due widget — leased-out or
   // otherwise off-farm goats aren't the farmer's routine-care responsibility.
@@ -240,22 +271,38 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
     return;
   }
 
-  // Latest event date per (goat, event type), restricted to the scheduled types.
+  // Latest event date per (goat, event type), restricted to the scheduled
+  // types plus CIDR (whose removal is derived from the insertion event).
   const goatIds = goats.map((g) => g.id);
   const events = await db
     .select({
       goatId: healthEventsTable.goatId,
       eventType: healthEventsTable.eventType,
       eventDate: healthEventsTable.eventDate,
+      treatmentDays: healthEventsTable.treatmentDays,
     })
     .from(healthEventsTable)
     .where(
       and(
         eq(healthEventsTable.farmId, fid),
         inArray(healthEventsTable.goatId, goatIds),
-        inArray(healthEventsTable.eventType, [...activeTypes]),
+        inArray(healthEventsTable.eventType, [...activeTypes, "cidr"]),
       ),
     );
+
+  // goatId -> latest CIDR insertion (only the most recent insertion matters:
+  // an older device is assumed replaced/handled once a newer one is recorded).
+  const lastCidrByGoat = new Map<number, { eventDate: Date; treatmentDays: number }>();
+  for (const ev of events) {
+    if (ev.eventType !== "cidr") continue;
+    const prev = lastCidrByGoat.get(ev.goatId);
+    if (!prev || ev.eventDate > prev.eventDate) {
+      lastCidrByGoat.set(ev.goatId, {
+        eventDate: ev.eventDate,
+        treatmentDays: ev.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS,
+      });
+    }
+  }
 
   // goatId -> eventType -> most recent event date
   const lastByGoat = new Map<number, Map<string, Date>>();
@@ -279,7 +326,7 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
       const last = perType?.get(type) ?? null;
       if (!last) {
         items.push({
-          eventType: type as SchedulableEventType,
+          eventType: type as SchedulableEventType | "cidr",
           status: "never" as const,
           intervalDays,
           lastEventDate: null,
@@ -291,7 +338,7 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
       const dueMs = last.getTime() + intervalDays * DAY_MS;
       if (now >= dueMs) {
         items.push({
-          eventType: type as SchedulableEventType,
+          eventType: type as SchedulableEventType | "cidr",
           status: "overdue" as const,
           intervalDays,
           lastEventDate: last.toISOString(),
@@ -300,11 +347,38 @@ router.get("/health-events/due", async (req, res): Promise<void> => {
         });
       } else if (dueMs - now <= DUE_SOON_WINDOW_DAYS * DAY_MS) {
         items.push({
-          eventType: type as SchedulableEventType,
+          eventType: type as SchedulableEventType | "cidr",
           status: "due-soon" as const,
           intervalDays,
           lastEventDate: last.toISOString(),
           dueDate: new Date(dueMs).toISOString(),
+          daysOverdue: 0,
+        });
+      }
+    }
+
+    // CIDR removal: due on insertion + treatmentDays. Upcoming removals show
+    // as due-soon inside the lookahead window; missed removals stay overdue
+    // for a limited horizon (after which the record is assumed stale).
+    const cidr = lastCidrByGoat.get(goat.id);
+    if (cidr) {
+      const removalMs = cidr.eventDate.getTime() + cidr.treatmentDays * DAY_MS;
+      if (now >= removalMs && now - removalMs <= CIDR_OVERDUE_HORIZON_DAYS * DAY_MS) {
+        items.push({
+          eventType: "cidr" as const,
+          status: "overdue" as const,
+          intervalDays: cidr.treatmentDays,
+          lastEventDate: cidr.eventDate.toISOString(),
+          dueDate: new Date(removalMs).toISOString(),
+          daysOverdue: Math.floor((now - removalMs) / DAY_MS),
+        });
+      } else if (now < removalMs && removalMs - now <= DUE_SOON_WINDOW_DAYS * DAY_MS) {
+        items.push({
+          eventType: "cidr" as const,
+          status: "due-soon" as const,
+          intervalDays: cidr.treatmentDays,
+          lastEventDate: cidr.eventDate.toISOString(),
+          dueDate: new Date(removalMs).toISOString(),
           daysOverdue: 0,
         });
       }

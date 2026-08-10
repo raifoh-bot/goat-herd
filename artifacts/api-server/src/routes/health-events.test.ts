@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db, goatsTable, usersTable, farmsTable, healthEventsTable, farmSettingsTable } from "@workspace/db";
 import app from "../app";
+import { createFarm } from "../lib/createFarm";
 
 // Integration tests for the per-goat health event endpoints and the herd-work-day
 // bulk endpoints. They run against the live database; every created row is
@@ -160,6 +161,57 @@ describe("POST /api/goats/:id/health-events", () => {
     expect(res.body.famachaScore).toBeNull();
   });
 
+  it("records a CIDR insertion with the 12-day default and co-treatments", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      coTreatments: "  PG600 injection  ",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.eventType).toBe("cidr");
+    expect(res.body.treatmentDays).toBe(12);
+    expect(res.body.coTreatments).toBe("PG600 injection");
+  });
+
+  it("accepts an explicit CIDR treatment length", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      treatmentDays: 14,
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.treatmentDays).toBe(14);
+    expect(res.body.coTreatments).toBeNull();
+  });
+
+  it("rejects a non-positive CIDR treatment length", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      treatmentDays: 0,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores CIDR fields for other event types", async () => {
+    const goat = await createGoat();
+    const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "hoof_trim",
+      eventDate: "2026-07-01T00:00:00.000Z",
+      treatmentDays: 14,
+      coTreatments: "should be dropped",
+    });
+    expect(res.status).toBe(201);
+    createdEventIds.push(res.body.id);
+    expect(res.body.treatmentDays).toBeNull();
+    expect(res.body.coTreatments).toBeNull();
+  });
+
   it("rejects an invalid body", async () => {
     const goat = await createGoat();
     const res = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
@@ -228,6 +280,70 @@ describe("PUT /api/goats/:id/health-events/:eventId", () => {
     expect(res.status).toBe(200);
     expect(res.body.eventType).toBe("hoof_trim");
     expect(res.body.famachaScore).toBeNull();
+  });
+
+  it("adjusts a CIDR event's treatment length and co-treatments", async () => {
+    const goat = await createGoat();
+    const created = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      coTreatments: "PG600",
+    });
+    expect(created.status).toBe(201);
+    createdEventIds.push(created.body.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${created.body.id}`)
+      .send({ treatmentDays: 10, coTreatments: "PG600 + dewormer" });
+    expect(res.status).toBe(200);
+    expect(res.body.treatmentDays).toBe(10);
+    expect(res.body.coTreatments).toBe("PG600 + dewormer");
+  });
+
+  it("restores the default treatment length when a CIDR update sends null", async () => {
+    const goat = await createGoat();
+    const created = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      treatmentDays: 14,
+    });
+    createdEventIds.push(created.body.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${created.body.id}`)
+      .send({ treatmentDays: null });
+    expect(res.status).toBe(200);
+    expect(res.body.treatmentDays).toBe(12);
+  });
+
+  it("clears CIDR fields when the type changes away from CIDR", async () => {
+    const goat = await createGoat();
+    const created = await adminAgent.post(`/api/goats/${goat.id}/health-events`).send({
+      eventType: "cidr",
+      eventDate: "2026-06-01T00:00:00.000Z",
+      treatmentDays: 14,
+      coTreatments: "PG600",
+    });
+    createdEventIds.push(created.body.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${created.body.id}`)
+      .send({ eventType: "hoof_trim" });
+    expect(res.status).toBe(200);
+    expect(res.body.treatmentDays).toBeNull();
+    expect(res.body.coTreatments).toBeNull();
+  });
+
+  it("backfills the default treatment length when a type changes to CIDR", async () => {
+    const goat = await createGoat();
+    const event = await seedEvent(goat.id);
+
+    const res = await adminAgent
+      .put(`/api/goats/${goat.id}/health-events/${event.id}`)
+      .send({ eventType: "cidr" });
+    expect(res.status).toBe(200);
+    expect(res.body.eventType).toBe("cidr");
+    expect(res.body.treatmentDays).toBe(12);
   });
 
   it("allows a farmhand to edit an event", async () => {
@@ -320,6 +436,74 @@ describe("GET /api/health-events/bulk-session", () => {
 describe("GET /api/health-events/due", () => {
   const DAY_MS = 24 * 60 * 60 * 1000;
 
+  // The due calculations depend on farm-level schedule settings. Other test
+  // files run in parallel against the shared default farm and may touch its
+  // settings row, so this suite gets a farm of its own: nothing outside it can
+  // contaminate the intervals, and its cleanup can't disturb anyone else.
+  const DUE_FARM = {
+    slug: `test-due-${RUN_ID}`.slice(0, 32),
+    admin: `test-due-admin-${RUN_ID}`,
+  };
+  let dueFarmId: number;
+  let dueAgent: Agent;
+  const dueGoatIds: number[] = [];
+
+  beforeAll(async () => {
+    const created = await createFarm({
+      slug: DUE_FARM.slug,
+      name: "Due Test Farm",
+      adminUsername: DUE_FARM.admin,
+      adminPassword: TEST_PASSWORD,
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) throw new Error(created.error);
+    dueFarmId = created.farm.id;
+
+    dueAgent = request.agent(app);
+    const res = await dueAgent
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", DUE_FARM.slug)
+      .send({ username: DUE_FARM.admin, password: TEST_PASSWORD });
+    expect(res.status).toBe(200);
+  });
+
+  afterAll(async () => {
+    await db.delete(healthEventsTable).where(eq(healthEventsTable.farmId, dueFarmId));
+    await db.delete(goatsTable).where(eq(goatsTable.farmId, dueFarmId));
+    await db.delete(usersTable).where(eq(usersTable.farmId, dueFarmId));
+    await db.delete(farmSettingsTable).where(eq(farmSettingsTable.farmId, dueFarmId));
+    await db.delete(farmsTable).where(eq(farmsTable.id, dueFarmId));
+  });
+
+  afterEach(async () => {
+    // Reset this suite's own farm between tests; goats/events cascade-cleaned
+    // here rather than via the shared trackers (they belong to dueFarmId).
+    await db.delete(healthEventsTable).where(eq(healthEventsTable.farmId, dueFarmId));
+    for (const goatId of dueGoatIds) {
+      await db.delete(goatsTable).where(eq(goatsTable.id, goatId));
+    }
+    dueGoatIds.length = 0;
+    await db
+      .update(farmSettingsTable)
+      .set({ healthScheduleIntervals: null })
+      .where(eq(farmSettingsTable.farmId, dueFarmId));
+  });
+
+  async function createDueGoat(overrides: Partial<typeof goatsTable.$inferInsert> = {}) {
+    const [goat] = await db
+      .insert(goatsTable)
+      .values({
+        farmId: dueFarmId,
+        name: `Due Goat ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        sex: "doe",
+        breed: "alpine",
+        ...overrides,
+      })
+      .returning();
+    dueGoatIds.push(goat.id);
+    return goat;
+  }
+
   async function addEvent(
     goatId: number,
     eventType: "hoof_trim" | "cdt_shot" | "copper_bolus" | "deworming",
@@ -328,36 +512,42 @@ describe("GET /api/health-events/due", () => {
     const [ev] = await db
       .insert(healthEventsTable)
       .values({
-        farmId: testFarmId,
+        farmId: dueFarmId,
         goatId,
         eventType,
         eventDate: new Date(Date.now() - daysAgo * DAY_MS),
       })
       .returning();
-    createdEventIds.push(ev.id);
+    return ev;
+  }
+
+  async function addCidr(goatId: number, daysAgo: number, treatmentDays: number) {
+    const [ev] = await db
+      .insert(healthEventsTable)
+      .values({
+        farmId: dueFarmId,
+        goatId,
+        eventType: "cidr",
+        eventDate: new Date(Date.now() - daysAgo * DAY_MS),
+        treatmentDays,
+      })
+      .returning();
     return ev;
   }
 
   async function setIntervals(intervals: Record<string, number>) {
-    // A read lazily provisions the settings row for the default farm.
-    await adminAgent.get("/api/settings");
+    // A read lazily provisions the settings row for the farm.
+    await dueAgent.get("/api/settings");
     await db
       .update(farmSettingsTable)
       .set({ healthScheduleIntervals: intervals })
-      .where(eq(farmSettingsTable.farmId, testFarmId));
+      .where(eq(farmSettingsTable.farmId, dueFarmId));
   }
-
-  afterEach(async () => {
-    await db
-      .update(farmSettingsTable)
-      .set({ healthScheduleIntervals: null })
-      .where(eq(farmSettingsTable.farmId, testFarmId));
-  });
 
   it("returns nothing due when no intervals are configured", async () => {
     await setIntervals({});
-    await createGoat();
-    const res = await adminAgent.get("/api/health-events/due");
+    await createDueGoat();
+    const res = await dueAgent.get("/api/health-events/due");
     expect(res.status).toBe(200);
     expect(res.body.intervals).toEqual({});
     expect(res.body.goats).toEqual([]);
@@ -365,9 +555,9 @@ describe("GET /api/health-events/due", () => {
 
   it("flags a goat that has never had the scheduled work as 'never'", async () => {
     await setIntervals({ hoof_trim: 56 });
-    const goat = await createGoat();
+    const goat = await createDueGoat();
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     expect(res.status).toBe(200);
     const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
     expect(entry).toBeTruthy();
@@ -380,10 +570,10 @@ describe("GET /api/health-events/due", () => {
 
   it("flags a goat as overdue with the right day count", async () => {
     await setIntervals({ hoof_trim: 56 });
-    const goat = await createGoat();
+    const goat = await createDueGoat();
     await addEvent(goat.id, "hoof_trim", 70); // 14 days past the 56-day interval
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
     const item = entry.items.find((i: { eventType: string }) => i.eventType === "hoof_trim");
     expect(item.status).toBe("overdue");
@@ -394,10 +584,10 @@ describe("GET /api/health-events/due", () => {
 
   it("flags a goat inside the lookahead window as due-soon", async () => {
     await setIntervals({ hoof_trim: 56 });
-    const goat = await createGoat();
+    const goat = await createDueGoat();
     await addEvent(goat.id, "hoof_trim", 50); // due in 6 days → within 14-day window
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
     const item = entry.items.find((i: { eventType: string }) => i.eventType === "hoof_trim");
     expect(item.status).toBe("due-soon");
@@ -406,34 +596,34 @@ describe("GET /api/health-events/due", () => {
 
   it("does not flag a goat whose work is not yet due", async () => {
     await setIntervals({ hoof_trim: 56 });
-    const goat = await createGoat();
+    const goat = await createDueGoat();
     await addEvent(goat.id, "hoof_trim", 10); // due in 46 days → outside window
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
     expect(entry).toBeFalsy();
   });
 
   it("uses the most recent event for an interval", async () => {
     await setIntervals({ deworming: 30 });
-    const goat = await createGoat();
+    const goat = await createDueGoat();
     await addEvent(goat.id, "deworming", 90); // old
     await addEvent(goat.id, "deworming", 5); // most recent → not due yet
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
     expect(entry).toBeFalsy();
   });
 
   it("only includes on-farm goats (null herdStatus counts as on-farm)", async () => {
     await setIntervals({ hoof_trim: 56 });
-    const eligible = await createGoat({ herdStatus: "on-farm" });
-    const noStatus = await createGoat({ herdStatus: null });
-    const leased = await createGoat({ herdStatus: "leased" });
-    const dead = await createGoat({ herdStatus: "dead" });
-    const retired = await createGoat({ breedingStatus: "retired" });
+    const eligible = await createDueGoat({ herdStatus: "on-farm" });
+    const noStatus = await createDueGoat({ herdStatus: null });
+    const leased = await createDueGoat({ herdStatus: "leased" });
+    const dead = await createDueGoat({ herdStatus: "dead" });
+    const retired = await createDueGoat({ breedingStatus: "retired" });
 
-    const res = await adminAgent.get("/api/health-events/due");
+    const res = await dueAgent.get("/api/health-events/due");
     const ids = res.body.goats.map((g: { goat: { id: number } }) => g.goat.id);
     expect(ids).toContain(eligible.id);
     expect(ids).toContain(noStatus.id);
@@ -445,6 +635,79 @@ describe("GET /api/health-events/due", () => {
   it("requires authentication", async () => {
     const res = await request(app).get("/api/health-events/due");
     expect(res.status).toBe(401);
+  });
+
+  it("flags an upcoming CIDR removal as due-soon even with no intervals configured", async () => {
+    await setIntervals({});
+    const goat = await createDueGoat();
+    await addCidr(goat.id, 8, 12); // removal in 4 days
+
+    const res = await dueAgent.get("/api/health-events/due");
+    expect(res.status).toBe(200);
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    expect(entry).toBeTruthy();
+    const item = entry.items.find((i: { eventType: string }) => i.eventType === "cidr");
+    expect(item.status).toBe("due-soon");
+    expect(item.intervalDays).toBe(12);
+    expect(item.daysOverdue).toBe(0);
+    expect(new Date(item.dueDate).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("flags a missed CIDR removal as overdue with the right day count", async () => {
+    await setIntervals({});
+    const goat = await createDueGoat();
+    await addCidr(goat.id, 15, 12); // removal was 3 days ago
+
+    const res = await dueAgent.get("/api/health-events/due");
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    const item = entry.items.find((i: { eventType: string }) => i.eventType === "cidr");
+    expect(item.status).toBe("overdue");
+    expect(item.daysOverdue).toBe(3);
+  });
+
+  it("does not flag a CIDR whose removal is beyond the lookahead window", async () => {
+    await setIntervals({});
+    const goat = await createDueGoat();
+    await addCidr(goat.id, 2, 30); // removal in 28 days → outside 14-day window
+
+    const res = await dueAgent.get("/api/health-events/due");
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    expect(entry).toBeFalsy();
+  });
+
+  it("stops flagging a CIDR removal missed longer than the overdue horizon", async () => {
+    await setIntervals({});
+    const goat = await createDueGoat();
+    await addCidr(goat.id, 50, 12); // removal 38 days ago → past the 30-day horizon
+
+    const res = await dueAgent.get("/api/health-events/due");
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    expect(entry).toBeFalsy();
+  });
+
+  it("only considers the most recent CIDR insertion per goat", async () => {
+    await setIntervals({});
+    const goat = await createDueGoat();
+    await addCidr(goat.id, 20, 12); // old device, removal 8 days ago
+    await addCidr(goat.id, 1, 12); // current device, removal in 11 days
+
+    const res = await dueAgent.get("/api/health-events/due");
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    const items = entry.items.filter((i: { eventType: string }) => i.eventType === "cidr");
+    expect(items).toHaveLength(1);
+    expect(items[0].status).toBe("due-soon");
+  });
+
+  it("reports CIDR removals alongside routine schedule items", async () => {
+    await setIntervals({ hoof_trim: 56 });
+    const goat = await createDueGoat();
+    await addEvent(goat.id, "hoof_trim", 70); // overdue routine work
+    await addCidr(goat.id, 8, 12); // removal in 4 days
+
+    const res = await dueAgent.get("/api/health-events/due");
+    const entry = res.body.goats.find((g: { goat: { id: number } }) => g.goat.id === goat.id);
+    const types = entry.items.map((i: { eventType: string }) => i.eventType).sort();
+    expect(types).toEqual(["cidr", "hoof_trim"]);
   });
 });
 

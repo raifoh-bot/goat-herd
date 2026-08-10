@@ -34,6 +34,7 @@ export const SCHEDULE_TYPE_LABELS: Record<string, string> = {
   cdt_shot: "CD&T",
   copper_bolus: "Copper bolus",
   deworming: "Deworming",
+  cidr: "CIDR removal",
 };
 
 export function eventTypeLabel(t: HealthEventEventType): string {
@@ -54,6 +55,16 @@ export function dueItemLabel(item: DueHealthItem): string {
 /** True when a due item needs action now (overdue or never done). */
 export function isActionable(item: DueHealthItem): boolean {
   return item.status === "overdue" || item.status === "never";
+}
+
+/**
+ * True when a due item can be handled as a herd work-day task. CIDR removals
+ * are reminder-only: they stay visible as badges, but never count toward the
+ * "start a work day" summary or preselection, because the bulk endpoint does
+ * not accept CIDR and removal is a per-doe action.
+ */
+export function isWorkDayActionable(item: DueHealthItem): boolean {
+  return isActionable(item) && item.eventType !== "cidr";
 }
 
 /** The FAMACHA threshold at/above which deworming is suggested (farm default). */

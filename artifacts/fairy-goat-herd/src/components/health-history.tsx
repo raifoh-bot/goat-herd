@@ -11,7 +11,7 @@ import type {
   HealthEvent,
   HealthEventEventType,
 } from "@workspace/api-client-react/src/generated/api.schemas";
-import { AlertTriangle, Bug, ChevronDown, ChevronUp, Droplets, Eye, Footprints, HeartPulse, Loader2, Pencil, Plus, Scissors, Syringe, Trash2 } from "lucide-react";
+import { AlertTriangle, Bug, CalendarPlus, ChevronDown, ChevronUp, Download, Droplets, Eye, Footprints, HeartPulse, Loader2, Pencil, Plus, Scissors, Syringe, Timer, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, todayInputValue, dateInputToIso } from "@/lib/date";
-import { COPPER_BOLUS_DOSES_G, doseUnit, famachaSuggestsDeworming } from "@/lib/health";
+import { COPPER_BOLUS_DOSES_G, DEFAULT_CIDR_TREATMENT_DAYS, cidrRemovalDate, doseUnit, famachaSuggestsDeworming } from "@/lib/health";
+import { toGoogleCalendarUrl, toOutlookWebUrl, downloadIcs, type CalendarEvent } from "@/lib/calendarExport";
 import { useFarmSettings, weightUnitLabel } from "@/lib/settings";
 import { useIsManager } from "@/lib/auth";
 
@@ -43,12 +44,51 @@ export const HEALTH_EVENT_TYPES: {
   { value: "copper_bolus", label: "Copper Bolus", icon: Droplets },
   { value: "famacha", label: "FAMACHA Score", icon: Eye },
   { value: "deworming", label: "Deworming", icon: Bug },
+  { value: "cidr", label: "CIDR", icon: Timer },
   { value: "other", label: "Other", icon: HeartPulse },
 ];
 
 export const healthEventTypeConfig = Object.fromEntries(
   HEALTH_EVENT_TYPES.map((t) => [t.value, t]),
 ) as Record<HealthEventEventType, (typeof HEALTH_EVENT_TYPES)[number]>;
+
+/** Builds the calendar event for a CIDR removal reminder. */
+function buildCidrRemovalCalendarEvent(goatName: string, removalDate: Date, coTreatments?: string | null): CalendarEvent {
+  return {
+    title: `CIDR removal due: ${goatName}`,
+    startDate: removalDate,
+    description: [
+      `The CIDR inserted in ${goatName} is due for removal on this day.`,
+      coTreatments ? `Co-treatments at insertion: ${coTreatments}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
+
+/** The Google / Outlook / .ics "add removal reminder" action buttons. */
+function CidrReminderButtons({ goatName, removalDate, coTreatments }: { goatName: string; removalDate: Date; coTreatments?: string | null }) {
+  const event = buildCidrRemovalCalendarEvent(goatName, removalDate, coTreatments);
+  const linkClass =
+    "inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors";
+  return (
+    <div className="flex flex-wrap gap-2">
+      <a href={toGoogleCalendarUrl(event)} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <CalendarPlus className="h-3.5 w-3.5" /> Google
+      </a>
+      <a href={toOutlookWebUrl(event)} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <CalendarPlus className="h-3.5 w-3.5" /> Outlook
+      </a>
+      <button
+        type="button"
+        onClick={() => downloadIcs(event, `cidr-removal-${goatName.replace(/\s+/g, "-").toLowerCase()}.ics`)}
+        className={linkClass}
+      >
+        <Download className="h-3.5 w-3.5" /> .ics
+      </button>
+    </div>
+  );
+}
 
 interface AddHealthEventDialogProps {
   goatId: number;
@@ -74,12 +114,25 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
   const [bodyWeight, setBodyWeight] = useState("");
   const [productName, setProductName] = useState("");
   const [notes, setNotes] = useState("");
+  const [treatmentDays, setTreatmentDays] = useState(String(DEFAULT_CIDR_TREATMENT_DAYS));
+  const [coTreatments, setCoTreatments] = useState("");
+  // After a CIDR event is saved, the dialog shows a reminder step with
+  // add-to-calendar actions for the computed removal date.
+  const [savedRemovalDate, setSavedRemovalDate] = useState<Date | null>(null);
 
   const showFamacha = eventType === "famacha" || eventType === "deworming";
   const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
   const showDosage = showProduct;
+  const showCidr = eventType === "cidr";
   const scoreNum = famachaScore ? Number(famachaScore) : null;
   const needsDeworming = eventType === "famacha" && scoreNum != null && famachaSuggestsDeworming(scoreNum, famachaThreshold);
+  const treatmentDaysNum = Number(treatmentDays);
+  const validTreatmentDays = Number.isInteger(treatmentDaysNum) && treatmentDaysNum >= 1 && treatmentDaysNum <= 60;
+  const removalDate =
+    showCidr && eventDate && validTreatmentDays
+      ? cidrRemovalDate(new Date(dateInputToIso(eventDate)), treatmentDaysNum)
+      : null;
+  const savedCoTreatments = coTreatments.trim() || null;
 
   const reset = () => {
     setEventType("hoof_trim");
@@ -89,11 +142,22 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
     setBodyWeight("");
     setProductName("");
     setNotes("");
+    setTreatmentDays(String(DEFAULT_CIDR_TREATMENT_DAYS));
+    setCoTreatments("");
+    setSavedRemovalDate(null);
   };
 
   const submit = () => {
     if (!eventDate) {
       toast({ title: "Pick a date", description: "The event date is required.", variant: "destructive" });
+      return;
+    }
+    if (showCidr && !validTreatmentDays) {
+      toast({
+        title: "Check the treatment length",
+        description: "Days of treatment must be a whole number between 1 and 60.",
+        variant: "destructive",
+      });
       return;
     }
     createEvent.mutate(
@@ -107,6 +171,8 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
           ...(bodyWeight ? { bodyWeight: Number(bodyWeight) } : {}),
           ...(showProduct && productName.trim() ? { productName: productName.trim() } : {}),
           ...(notes.trim() ? { notes: notes.trim() } : {}),
+          ...(showCidr ? { treatmentDays: treatmentDaysNum } : {}),
+          ...(showCidr && coTreatments.trim() ? { coTreatments: coTreatments.trim() } : {}),
         },
       },
       {
@@ -116,6 +182,12 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
             title: "Health event recorded",
             description: `${healthEventTypeConfig[eventType].label} logged for ${goatName}.`,
           });
+          if (showCidr && removalDate) {
+            // Keep the dialog open on a reminder step so the removal date can
+            // be added to a calendar right away.
+            setSavedRemovalDate(removalDate);
+            return;
+          }
           reset();
           onOpenChange(false);
         },
@@ -128,6 +200,27 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
       },
     );
   };
+
+  if (savedRemovalDate) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">CIDR recorded</DialogTitle>
+            <DialogDescription>
+              {goatName}'s CIDR is due for removal on{" "}
+              {formatDate(savedRemovalDate, { month: "long", day: "numeric", year: "numeric" })}.
+              Add a reminder to your calendar so it isn't forgotten.
+            </DialogDescription>
+          </DialogHeader>
+          <CidrReminderButtons goatName={goatName} removalDate={savedRemovalDate} coTreatments={savedCoTreatments} />
+          <DialogFooter>
+            <Button onClick={() => { reset(); onOpenChange(false); }}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
@@ -213,6 +306,43 @@ export function AddHealthEventDialog({ goatId, goatName, open, onOpenChange }: A
             </div>
           )}
 
+          {showCidr && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-cidr-days">Days of treatment</Label>
+                  <Input
+                    id="he-cidr-days"
+                    type="number"
+                    min={1}
+                    max={60}
+                    step="1"
+                    value={treatmentDays}
+                    onChange={(e) => setTreatmentDays(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Removal date</Label>
+                  <p className="text-sm font-medium text-foreground pt-2" data-testid="cidr-removal-date">
+                    {removalDate
+                      ? formatDate(removalDate, { month: "short", day: "numeric", year: "numeric" })
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="he-cidr-co">Co-treatments (optional)</Label>
+                <Textarea
+                  id="he-cidr-co"
+                  rows={2}
+                  placeholder="e.g. PG600 injection, dewormer given at insertion"
+                  value={coTreatments}
+                  onChange={(e) => setCoTreatments(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="he-weight">Body weight in {weightUnitLabel(weightUnit)} (optional)</Label>
             <Input id="he-weight" type="number" min={0} step="0.1" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} />
@@ -270,6 +400,10 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
   const [bodyWeight, setBodyWeight] = useState(event.bodyWeight != null ? String(event.bodyWeight) : "");
   const [productName, setProductName] = useState(event.productName ?? "");
   const [notes, setNotes] = useState(event.notes ?? "");
+  const [treatmentDays, setTreatmentDays] = useState(
+    String(event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS),
+  );
+  const [coTreatments, setCoTreatments] = useState(event.coTreatments ?? "");
 
   // Re-prime the form whenever the dialog opens for a (possibly different) event.
   useEffect(() => {
@@ -281,15 +415,32 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
     setBodyWeight(event.bodyWeight != null ? String(event.bodyWeight) : "");
     setProductName(event.productName ?? "");
     setNotes(event.notes ?? "");
+    setTreatmentDays(String(event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS));
+    setCoTreatments(event.coTreatments ?? "");
   }, [open, event]);
 
   const showFamacha = eventType === "famacha" || eventType === "deworming";
   const showProduct = eventType === "cdt_shot" || eventType === "copper_bolus" || eventType === "deworming" || eventType === "other";
   const showDosage = showProduct;
+  const showCidr = eventType === "cidr";
+  const treatmentDaysNum = Number(treatmentDays);
+  const validTreatmentDays = Number.isInteger(treatmentDaysNum) && treatmentDaysNum >= 1 && treatmentDaysNum <= 60;
+  const removalDate =
+    showCidr && eventDate && validTreatmentDays
+      ? cidrRemovalDate(new Date(dateInputToIso(eventDate)), treatmentDaysNum)
+      : null;
 
   const submit = () => {
     if (!eventDate) {
       toast({ title: "Pick a date", description: "The event date is required.", variant: "destructive" });
+      return;
+    }
+    if (showCidr && !validTreatmentDays) {
+      toast({
+        title: "Check the treatment length",
+        description: "Days of treatment must be a whole number between 1 and 60.",
+        variant: "destructive",
+      });
       return;
     }
     const scoreNum = famachaScore ? Number(famachaScore) : null;
@@ -305,6 +456,8 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
           bodyWeight: bodyWeight ? Number(bodyWeight) : null,
           productName: showProduct && productName.trim() ? productName.trim() : null,
           notes: notes.trim() ? notes.trim() : null,
+          treatmentDays: showCidr ? treatmentDaysNum : null,
+          coTreatments: showCidr && coTreatments.trim() ? coTreatments.trim() : null,
         },
       },
       {
@@ -399,6 +552,43 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
             </div>
           )}
 
+          {showCidr && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="he-edit-cidr-days">Days of treatment</Label>
+                  <Input
+                    id="he-edit-cidr-days"
+                    type="number"
+                    min={1}
+                    max={60}
+                    step="1"
+                    value={treatmentDays}
+                    onChange={(e) => setTreatmentDays(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Removal date</Label>
+                  <p className="text-sm font-medium text-foreground pt-2" data-testid="cidr-edit-removal-date">
+                    {removalDate
+                      ? formatDate(removalDate, { month: "short", day: "numeric", year: "numeric" })
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="he-edit-cidr-co">Co-treatments (optional)</Label>
+                <Textarea
+                  id="he-edit-cidr-co"
+                  rows={2}
+                  placeholder="e.g. PG600 injection, dewormer given at insertion"
+                  value={coTreatments}
+                  onChange={(e) => setCoTreatments(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="he-edit-weight">Body weight in {weightUnitLabel(weightUnit)} (optional)</Label>
             <Input id="he-edit-weight" type="number" min={0} step="0.1" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} />
@@ -422,7 +612,7 @@ export function EditHealthEventDialog({ goatId, event, open, onOpenChange }: Edi
   );
 }
 
-function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: number; weightUnit: "kg" | "lb" }) {
+function EventRow({ event, goatId, goatName, weightUnit }: { event: HealthEvent; goatId: number; goatName: string; weightUnit: "kg" | "lb" }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isManager = useIsManager();
@@ -431,11 +621,25 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
   const config = healthEventTypeConfig[event.eventType];
   const Icon = config?.icon ?? HeartPulse;
 
+  const isCidr = event.eventType === "cidr";
+  const removalDate = isCidr
+    ? cidrRemovalDate(new Date(event.eventDate), event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS)
+    : null;
+
   const details: string[] = [];
   if (event.famachaScore != null) details.push(`FAMACHA ${event.famachaScore}`);
   if (event.productName) details.push(event.productName);
   if (event.dosageMl != null) details.push(`${event.dosageMl} ${doseUnit(event.eventType)}`);
   if (event.bodyWeight != null) details.push(`${event.bodyWeight} ${weightUnitLabel(weightUnit)}`);
+  if (isCidr) {
+    details.push(`${event.treatmentDays ?? DEFAULT_CIDR_TREATMENT_DAYS} days`);
+    if (removalDate) {
+      details.push(
+        `Remove ${formatDate(removalDate, { month: "short", day: "numeric", year: "numeric" })}`,
+      );
+    }
+    if (event.coTreatments) details.push(`Co-treatments: ${event.coTreatments}`);
+  }
 
   const remove = () => {
     deleteEvent.mutate(
@@ -464,6 +668,11 @@ function EventRow({ event, goatId, weightUnit }: { event: HealthEvent; goatId: n
           ))}
         </div>
         {event.notes && <p className="text-xs text-muted-foreground mt-0.5">{event.notes}</p>}
+        {isCidr && removalDate && (
+          <div className="mt-1.5">
+            <CidrReminderButtons goatName={goatName} removalDate={removalDate} coTreatments={event.coTreatments} />
+          </div>
+        )}
       </div>
       <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
         {formatDate(new Date(event.eventDate), { month: "short", day: "numeric", year: "numeric" })}
@@ -538,7 +747,7 @@ export function HealthHistoryCard({ goatId, goatName }: { goatId: number; goatNa
           <>
             <div className="divide-y divide-border/60">
               {visible.map((event) => (
-                <EventRow key={event.id} event={event} goatId={goatId} weightUnit={weightUnit} />
+                <EventRow key={event.id} event={event} goatId={goatId} goatName={goatName} weightUnit={weightUnit} />
               ))}
             </div>
             {hasMore && (
