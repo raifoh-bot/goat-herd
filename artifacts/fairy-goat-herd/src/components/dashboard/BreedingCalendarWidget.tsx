@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MiniCalendar, toDateKey } from "@/components/dashboard/MiniCalendar";
 import { useFarmSettings } from "@/lib/settings";
-import { getEffectiveDueDate } from "@/lib/breeding";
+import { getEffectiveDueDate, doeLeftHerd } from "@/lib/breeding";
 import {
   downloadIcs,
   toGoogleCalendarUrl,
@@ -55,6 +55,7 @@ export function BreedingCalendarWidget({
     const map = new Map<string, DueBreeding[]>();
     for (const b of breedings ?? []) {
       if (b.status !== "bred" && b.status !== "confirmed-pregnant") continue;
+      if (doeLeftHerd(b)) continue;
       const due = getEffectiveDueDate(b, gestationDays);
       if (!due) continue;
       const key = toDateKey(due);

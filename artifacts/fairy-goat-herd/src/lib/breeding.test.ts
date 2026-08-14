@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseDueDate, getEffectiveDueDate } from "@/lib/breeding";
+import { parseDueDate, getEffectiveDueDate, doeLeftHerd } from "@/lib/breeding";
 
 const key = (d: Date | null) =>
   d
@@ -59,5 +59,39 @@ describe("getEffectiveDueDate", () => {
     expect(
       getEffectiveDueDate({ expectedKiddingDate: null, breedingDate: "" }, 150),
     ).toBeNull();
+  });
+});
+
+describe("doeLeftHerd", () => {
+  it("returns true for sold-registered does", () => {
+    expect(doeLeftHerd({ doe: { id: 1, name: "Dot", herdStatus: "sold-registered" } })).toBe(true);
+  });
+
+  it("returns true for sold-not-registered does", () => {
+    expect(doeLeftHerd({ doe: { id: 2, name: "Pip", herdStatus: "sold-not-registered" } })).toBe(true);
+  });
+
+  it("returns true for dead does", () => {
+    expect(doeLeftHerd({ doe: { id: 3, name: "Mae", herdStatus: "dead" } })).toBe(true);
+  });
+
+  it("returns false for on-farm does", () => {
+    expect(doeLeftHerd({ doe: { id: 4, name: "Bea", herdStatus: "on-farm" } })).toBe(false);
+  });
+
+  it("returns false for does on boarding", () => {
+    expect(doeLeftHerd({ doe: { id: 5, name: "Flo", herdStatus: "on-farm-boarding" } })).toBe(false);
+  });
+
+  it("returns false when herd status is null (treats missing status as on-farm)", () => {
+    expect(doeLeftHerd({ doe: { id: 6, name: "Joy", herdStatus: null } })).toBe(false);
+  });
+
+  it("returns false when herd status is undefined (no status set)", () => {
+    expect(doeLeftHerd({ doe: { id: 7, name: "Eve" } })).toBe(false);
+  });
+
+  it("returns false when doe is undefined (breeding has no doe linked)", () => {
+    expect(doeLeftHerd({ doe: undefined })).toBe(false);
   });
 });

@@ -39,7 +39,7 @@ import { BreedingCalendarWidget } from "@/components/dashboard/BreedingCalendarW
 import { HealthDueWidget, hasHealthSchedules } from "@/components/dashboard/HealthDueWidget";
 import { OnboardingBanner } from "@/components/onboarding-banner";
 import { useFarmSettings } from "@/lib/settings";
-import { getEffectiveDueDate } from "@/lib/breeding";
+import { getEffectiveDueDate, doeLeftHerd } from "@/lib/breeding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -512,6 +512,7 @@ function UpcomingKiddingsCard({
   // no expected kidding date was recorded.
   const upcoming = (breedings ?? [])
     .filter((b) => b.status === "bred" || b.status === "confirmed-pregnant")
+    .filter((b) => !doeLeftHerd(b))
     .map((b) => ({ ...b, due: getEffectiveDueDate(b, gestationDays) }))
     .filter((b): b is BreedingWithDoe & { due: Date } => b.due != null)
     .sort((a, b) => a.due.getTime() - b.due.getTime())

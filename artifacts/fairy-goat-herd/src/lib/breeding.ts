@@ -1,5 +1,22 @@
 import { type BreedingWithDoe } from "@workspace/api-client-react";
 
+/** Herd-status values that mean the doe has left the farm. */
+const DEPARTED_STATUSES = new Set([
+  "sold-registered",
+  "sold-not-registered",
+  "dead",
+]);
+
+/**
+ * Returns `true` when the doe on a breeding has left the herd (sold or dead).
+ * A missing or null herd status is treated as "still on farm" so that does
+ * without an explicit status continue to appear in the kidding widgets.
+ */
+export function doeLeftHerd(b: Pick<BreedingWithDoe, "doe">): boolean {
+  const status = b.doe?.herdStatus ?? null;
+  return status !== null && DEPARTED_STATUSES.has(status);
+}
+
 /**
  * Parses a breeding date string into a local-midnight `Date`, or null when the
  * value is missing/unparseable.
