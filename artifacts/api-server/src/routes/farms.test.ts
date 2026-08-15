@@ -199,6 +199,36 @@ describe("POST /api/farms/register", () => {
     expect(await farmBySlug(slug)).toBeUndefined();
   });
 
+  it("persists the fullName on the first admin user", async () => {
+    const body = validBody({ slug: uniqueSlug("fname"), fullName: "  Alice Farmer  " });
+    const res = await request(app).post("/api/farms/register").send(body);
+    expect(res.status).toBe(201);
+    createdFarmIds.push(res.body.id);
+
+    const users = await db.select().from(usersTable).where(eq(usersTable.farmId, res.body.id));
+    expect(users).toHaveLength(1);
+    // The name is stored trimmed on the first admin user.
+    expect(users[0].fullName).toBe("Alice Farmer");
+  });
+
+  it("stores null when fullName is omitted or blank", async () => {
+    // Omitted entirely.
+    const omitted = validBody({ slug: uniqueSlug("noname1") });
+    const res1 = await request(app).post("/api/farms/register").send(omitted);
+    expect(res1.status).toBe(201);
+    createdFarmIds.push(res1.body.id);
+    const [u1] = await db.select().from(usersTable).where(eq(usersTable.farmId, res1.body.id));
+    expect(u1.fullName).toBeNull();
+
+    // Blank/whitespace collapses to null.
+    const blank = validBody({ slug: uniqueSlug("noname2"), fullName: "   " });
+    const res2 = await request(app).post("/api/farms/register").send(blank);
+    expect(res2.status).toBe(201);
+    createdFarmIds.push(res2.body.id);
+    const [u2] = await db.select().from(usersTable).where(eq(usersTable.farmId, res2.body.id));
+    expect(u2.fullName).toBeNull();
+  });
+
   it("rejects a missing farm name with 400", async () => {
     const slug = uniqueSlug("noname");
     const res = await request(app)
