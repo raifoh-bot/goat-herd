@@ -461,13 +461,24 @@ export default function GoatDetails() {
                       ? [goat.imageUrl]
                       : [];
                   const activeImage = images[Math.min(activePhoto, images.length - 1)] ?? null;
+                  const isUnregistered = !goat.adgaId;
+
+                  const NotRegisteredBanner = isUnregistered ? (
+                    <div className="absolute bottom-0 right-0 w-32 h-32 overflow-hidden pointer-events-none">
+                      <span className="absolute bottom-7 right-[-32px] w-40 text-center rotate-[-45deg] bg-amber-500/90 text-white text-[10px] font-bold uppercase tracking-wide py-1 shadow-md">
+                        Not Registered
+                      </span>
+                    </div>
+                  ) : null;
+
                   if (images.length === 0) {
                     return (
-                      <div className="aspect-square bg-muted/30 relative">
+                      <div className="aspect-square bg-muted/30 relative overflow-hidden">
                         <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
                           <Milk className="h-16 w-16 text-primary/40 mb-4" />
                           <span className="text-sm font-medium text-primary/50 uppercase tracking-widest">No Photo</span>
                         </div>
+                        {NotRegisteredBanner}
                       </div>
                     );
                   }
@@ -475,8 +486,9 @@ export default function GoatDetails() {
                   const showBadge = hasExplicitDefault(goat);
                   return (
                     <div>
-                      <div className="aspect-square bg-muted/30 relative">
+                      <div className="aspect-square bg-muted/30 relative overflow-hidden">
                         <img src={activeImage!} alt={goat.name} className="w-full h-full object-cover" />
+                        {NotRegisteredBanner}
                       </div>
                       {images.length > 1 && (
                         <div className="flex gap-3 p-3 overflow-x-auto no-print">
