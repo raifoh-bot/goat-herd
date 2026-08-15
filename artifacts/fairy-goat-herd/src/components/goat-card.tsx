@@ -55,6 +55,14 @@ export function GoatCard({ goat }: GoatCardProps) {
               </Badge>
             )}
           </div>
+
+          {!goat.adgaId && (
+            <div className="absolute top-3 right-3 pointer-events-none">
+              <Badge className="bg-amber-500/90 text-white border-0 text-[10px] shadow-sm backdrop-blur-sm px-1.5 py-0.5">
+                Unregistered
+              </Badge>
+            </div>
+          )}
         </div>
 
         <CardHeader className="pb-4 pt-4 px-4 flex-none">

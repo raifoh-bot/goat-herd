@@ -43,7 +43,14 @@ function GoatRow({ goat }: { goat: Goat }) {
         </div>
         <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-7 gap-x-4 items-center">
           <div className="md:col-span-2">
-            <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{goat.name}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{goat.name}</p>
+              {!goat.adgaId && (
+                <span className="shrink-0 inline-flex items-center rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                  Unreg.
+                </span>
+              )}
+            </div>
             {goat.registeredName && <p className="text-sm sm:text-xs text-muted-foreground/70 truncate italic">{goat.registeredName}</p>}
             {goat.adgaId && <p className="text-sm sm:text-xs text-muted-foreground/60 font-mono">#{goat.adgaId}</p>}
           </div>
@@ -84,7 +91,14 @@ function CompactCard({ goat }: { goat: Goat }) {
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">{goat.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">{goat.name}</p>
+            {!goat.adgaId && (
+              <span className="shrink-0 inline-flex items-center rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                Unreg.
+              </span>
+            )}
+          </div>
           <p className="text-sm sm:text-xs text-muted-foreground truncate">{breedLabels[goat.breed] ?? goat.breed} · {sexLabelWithSymbol(goat)}</p>
           <p className="text-sm sm:text-xs text-muted-foreground/70">{formatAge(goat.dateOfBirth)} old{goat.lactationStatus ? ` · ${LACTATION_LABELS[goat.lactationStatus] ?? goat.lactationStatus}` : ""}{goat.breedingStatus ? ` · ${BREEDING_LABELS[goat.breedingStatus] ?? goat.breedingStatus}` : ""}</p>
         </div>
