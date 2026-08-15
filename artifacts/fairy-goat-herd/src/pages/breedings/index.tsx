@@ -238,7 +238,7 @@ function BreedingCard({
                   <span
                     key={kid.id ?? i}
                     className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${
-                      kid.kidStatus === "doa"
+                      kid.kidStatus === "doa" || kid.kidStatus === "aborted"
                         ? "bg-destructive/10 border-destructive/20 text-destructive"
                         : kid.sex === "doe"
                         ? "bg-secondary/60 border-secondary text-secondary-foreground"
@@ -248,6 +248,7 @@ function BreedingCard({
                     {kid.name || (kid.sex === "doe" ? "Doe" : "Buck")}
                     <span className="opacity-60">{kid.sex === "doe" ? "♀" : "♂"}</span>
                     {kid.kidStatus === "doa" && <span className="opacity-70">· DOA</span>}
+                    {kid.kidStatus === "aborted" && <span className="opacity-70">· Aborted</span>}
                   </span>
                 ))}
               </div>

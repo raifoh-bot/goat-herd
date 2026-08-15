@@ -256,6 +256,30 @@ describe("POST /api/breedings/:id/kids doe status transition", () => {
       .where(eq(breedingsTable.id, breeding.id));
     expect(updatedBreeding.status).toBe("kidded");
   });
+
+  it("accepts 'aborted' as a kid outcome and stores it", async () => {
+    const doe = await createDoe("pregnant");
+    const breeding = await createBreeding(doe.id, "confirmed-pregnant");
+
+    const res = await agent
+      .post(`/api/breedings/${breeding.id}/kids`)
+      .send({
+        birthDate: new Date().toISOString(),
+        skipHerdAdd: true,
+        kids: [{ sex: "doe", kidStatus: "aborted" }],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].kidStatus).toBe("aborted");
+
+    const storedKids = await db
+      .select()
+      .from(kidsTable)
+      .where(eq(kidsTable.breedingId, breeding.id));
+    expect(storedKids).toHaveLength(1);
+    expect(storedKids[0].kidStatus).toBe("aborted");
+  });
 });
 
 describe("POST /api/breedings/:id/kids paternal pedigree inheritance", () => {

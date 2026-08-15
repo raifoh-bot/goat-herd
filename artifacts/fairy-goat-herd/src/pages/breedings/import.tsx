@@ -32,7 +32,7 @@ const KID_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: "breedingDate", label: "Breeding Date", required: true },
   { key: "name", label: "Kid Name" },
   { key: "sex", label: "Sex (doe/buck)", required: true },
-  { key: "kidStatus", label: "Status (alive/dead/DOA/sold)" },
+  { key: "kidStatus", label: "Status (alive/dead/DOA/sold/aborted)" },
   { key: "birthDate", label: "Birth Date" },
   { key: "birthWeight", label: "Birth Weight" },
   { key: "notes", label: "Notes" },
@@ -102,13 +102,14 @@ function normalizeKidSex(value: unknown): "doe" | "buck" | undefined {
   return undefined;
 }
 
-function normalizeKidStatus(value: unknown): "alive" | "dead" | "doa" | "sold" | undefined {
+function normalizeKidStatus(value: unknown): "alive" | "dead" | "doa" | "sold" | "aborted" | undefined {
   if (!value) return undefined;
   const v = String(value).toLowerCase().trim();
   if (v === "alive" || v === "live" || v === "living" || v === "ok") return "alive";
   if (v === "doa" || v === "stillborn" || v === "dead on arrival") return "doa";
   if (v === "dead" || v === "died" || v === "deceased") return "dead";
   if (v === "sold") return "sold";
+  if (v === "aborted" || v === "abort" || v === "aborted fetus" || v === "miscarried" || v === "miscarriage") return "aborted";
   return undefined;
 }
 

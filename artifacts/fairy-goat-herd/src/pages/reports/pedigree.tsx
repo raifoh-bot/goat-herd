@@ -175,7 +175,8 @@ function Certificate({
                     <span className="ml-1.5 font-normal text-sm text-muted-foreground">
                       ({kiddingRecord.doeKids} {kiddingRecord.doeKids === 1 ? "doe" : "does"},{" "}
                       {kiddingRecord.buckKids} {kiddingRecord.buckKids === 1 ? "buck" : "bucks"}
-                      {kiddingRecord.doaKids > 0 ? `, incl. ${kiddingRecord.doaKids} DOA` : ""})
+                      {kiddingRecord.doaKids > 0 ? `, incl. ${kiddingRecord.doaKids} DOA` : ""}
+                      {kiddingRecord.abortedKids > 0 ? `, incl. ${kiddingRecord.abortedKids} aborted` : ""})
                     </span>
                   )}
                 </div>

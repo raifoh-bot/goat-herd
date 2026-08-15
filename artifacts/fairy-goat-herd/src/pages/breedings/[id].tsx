@@ -58,7 +58,7 @@ const kiddingSchema = z.object({
   kids: z.array(z.object({
     name: z.string().optional(),
     sex: z.enum(["doe", "buck"]),
-    kidStatus: z.enum(["alive", "doa", "sold"]),
+    kidStatus: z.enum(["alive", "dead", "doa", "sold", "aborted"]),
     birthWeight: z.coerce.number().min(0).optional().or(z.literal("")),
     notes: z.string().optional(),
   })).min(1, "Add at least one kid"),
@@ -70,7 +70,7 @@ type KiddingValues = z.infer<typeof kiddingSchema>;
 const editKidSchema = z.object({
   name: z.string().optional(),
   sex: z.enum(["doe", "buck"]),
-  kidStatus: z.enum(["alive", "doa", "sold"]),
+  kidStatus: z.enum(["alive", "dead", "doa", "sold", "aborted"]),
   birthDate: z.string().optional(),
   birthWeight: z.union([z.string(), z.number()]).optional(),
   notes: z.string().optional(),
@@ -95,7 +95,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
     values: {
       name: kid.name ?? "",
       sex: kid.sex as "doe" | "buck",
-      kidStatus: (kid.kidStatus ?? "alive") as "alive" | "doa",
+      kidStatus: (kid.kidStatus ?? "alive") as "alive" | "dead" | "doa" | "sold" | "aborted",
       birthDate: kid.birthDate ? new Date(kid.birthDate).toISOString().slice(0, 10) : "",
       birthWeight: kid.birthWeight ?? "",
       notes: kid.notes ?? "",
@@ -157,6 +157,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
             {isDoa && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">DOA</Badge>}
             {kid.kidStatus === "dead" && <Badge className="bg-destructive/10 text-destructive/70 text-xs px-2 py-0">Dead</Badge>}
             {kid.kidStatus === "sold" && <Badge className="bg-muted text-muted-foreground text-xs px-2 py-0">Sold</Badge>}
+            {kid.kidStatus === "aborted" && <Badge className="bg-destructive/20 text-destructive text-xs px-2 py-0">Aborted</Badge>}
           </div>
           <div className="text-sm sm:text-xs text-muted-foreground">
             {kid.birthWeight ? `${kid.birthWeight} ${weightUnitLabel(weightUnit)}` : null}
@@ -217,6 +218,7 @@ function KidCard({ kid, breedingId }: { kid: Kid; breedingId: number }) {
                         <SelectItem value="sold">Sold</SelectItem>
                         <SelectItem value="dead">Dead</SelectItem>
                         <SelectItem value="doa">DOA</SelectItem>
+<SelectItem value="aborted">Aborted</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1587,6 +1589,7 @@ export default function BreedingDetail() {
                                       <SelectItem value="sold">Sold</SelectItem>
                                       <SelectItem value="dead">Dead</SelectItem>
                                       <SelectItem value="doa">DOA</SelectItem>
+<SelectItem value="aborted">Aborted</SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />

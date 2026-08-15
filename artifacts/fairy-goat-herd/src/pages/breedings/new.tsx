@@ -188,7 +188,7 @@ const historicalSchema = z.object({
   kids: z.array(z.object({
     name: z.string().optional(),
     sex: z.enum(["doe", "buck"]),
-    kidStatus: z.enum(["alive", "doa", "sold"]),
+    kidStatus: z.enum(["alive", "dead", "doa", "sold", "aborted"]),
     birthWeight: z.union([z.string(), z.number()]).optional(),
   })).min(1, "At least one kid is required"),
 });
@@ -731,6 +731,7 @@ export default function BreedingNew() {
                                 <SelectItem value="sold">Sold</SelectItem>
                                 <SelectItem value="dead">Dead</SelectItem>
                                 <SelectItem value="doa">DOA</SelectItem>
+                                <SelectItem value="aborted">Aborted</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormItem>

@@ -778,7 +778,7 @@ export default function GoatDetails() {
                                     <span
                                       key={i}
                                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                        kid.kidStatus === "doa"
+                                        kid.kidStatus === "doa" || kid.kidStatus === "aborted"
                                           ? "bg-destructive/10 text-destructive"
                                           : kid.sex === "doe"
                                           ? "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
@@ -787,6 +787,7 @@ export default function GoatDetails() {
                                     >
                                       {kid.name || (kid.sex === "doe" ? "Doe ♀" : "Buck ♂")}
                                       {kid.kidStatus === "doa" && " · DOA"}
+                                      {kid.kidStatus === "aborted" && " · Aborted"}
                                     </span>
                                   ))}
                                 </div>

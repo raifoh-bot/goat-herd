@@ -107,6 +107,25 @@ describe("deriveKiddingRecord", () => {
     expect(record.doaKids).toBe(1);
   });
 
+  it("counts aborted kids in the sex totals and the aborted subset", () => {
+    const breedings = [
+      breeding({
+        id: 1,
+        kids: [
+          kid("2024-03-15", { id: 1, sex: "doe", kidStatus: "alive" }),
+          kid("2024-03-15", { id: 2, sex: "buck", kidStatus: "aborted" }),
+          kid("2024-03-15", { id: 3, sex: "doe", kidStatus: "doa" }),
+        ],
+      }),
+    ];
+    const record = deriveKiddingRecord(10, breedings);
+    expect(record.totalKids).toBe(3);
+    expect(record.doeKids).toBe(2);
+    expect(record.buckKids).toBe(1);
+    expect(record.doaKids).toBe(1);
+    expect(record.abortedKids).toBe(1);
+  });
+
   it("excludes kids from other does and non-kidded breedings from the counts", () => {
     const breedings = [
       breeding({ id: 1, doeId: 10, status: "kidded", kids: [kid("2025-06-01", { id: 1, sex: "buck" })] }),
@@ -144,6 +163,21 @@ describe("summarizeKids", () => {
   it("returns 'Not recorded' when there are no kids", () => {
     expect(summarizeKids([])).toBe("Not recorded");
     expect(summarizeKids(undefined)).toBe("Not recorded");
+  });
+
+  it("flags aborted kids in the summary, alongside DOA when both occur", () => {
+    expect(
+      summarizeKids([
+        kid("2025-06-01", { id: 1, sex: "doe", kidStatus: "alive" }),
+        kid("2025-06-01", { id: 2, sex: "buck", kidStatus: "aborted" }),
+      ]),
+    ).toBe("1 doe, 1 buck (1 aborted)");
+    expect(
+      summarizeKids([
+        kid("2025-06-01", { id: 1, sex: "doe", kidStatus: "doa" }),
+        kid("2025-06-01", { id: 2, sex: "buck", kidStatus: "aborted" }),
+      ]),
+    ).toBe("1 doe, 1 buck (1 DOA, 1 aborted)");
   });
 });
 

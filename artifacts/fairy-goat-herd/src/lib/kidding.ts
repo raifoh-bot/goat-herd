@@ -7,6 +7,7 @@ export interface KiddingRecord {
   doeKids: number;
   buckKids: number;
   doaKids: number;
+  abortedKids: number;
 }
 
 /** Derive a doe's kidding record from the farm's breeding records. */
@@ -17,6 +18,7 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
   let doeKids = 0;
   let buckKids = 0;
   let doaKids = 0;
+  let abortedKids = 0;
   for (const b of kiddings) {
     // Prefer the actual kid birth dates; fall back to the expected kidding
     // date, then the breeding date, so every kidding contributes a date.
@@ -30,6 +32,7 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
       if (kid.sex === "doe") doeKids += 1;
       else if (kid.sex === "buck") buckKids += 1;
       if (kid.kidStatus === "doa") doaKids += 1;
+      if (kid.kidStatus === "aborted") abortedKids += 1;
     }
   }
 
@@ -40,6 +43,7 @@ export function deriveKiddingRecord(goatId: number, breedings: BreedingWithDoe[]
     doeKids,
     buckKids,
     doaKids,
+    abortedKids,
   };
 }
 
@@ -66,13 +70,17 @@ export function summarizeKids(kids: BreedingWithDoe["kids"]): string {
   const does = list.filter((k) => k.sex === "doe").length;
   const bucks = list.filter((k) => k.sex === "buck").length;
   const doa = list.filter((k) => k.kidStatus === "doa").length;
+  const aborted = list.filter((k) => k.kidStatus === "aborted").length;
 
   const parts: string[] = [];
   if (does > 0) parts.push(`${does} ${does === 1 ? "doe" : "does"}`);
   if (bucks > 0) parts.push(`${bucks} ${bucks === 1 ? "buck" : "bucks"}`);
 
   let summary = parts.length > 0 ? parts.join(", ") : `${list.length} kids`;
-  if (doa > 0) summary += ` (${doa} DOA)`;
+  const flags: string[] = [];
+  if (doa > 0) flags.push(`${doa} DOA`);
+  if (aborted > 0) flags.push(`${aborted} aborted`);
+  if (flags.length > 0) summary += ` (${flags.join(", ")})`;
   return summary;
 }
 

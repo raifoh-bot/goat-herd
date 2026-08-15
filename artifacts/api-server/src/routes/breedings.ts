@@ -593,7 +593,7 @@ router.post("/breedings/:id/kids", async (req, res): Promise<void> => {
     breedingId,
     name: kid.name,
     sex: kid.sex,
-    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "dead" | "doa" | "sold",
+    kidStatus: (kid.kidStatus ?? "alive") as "alive" | "dead" | "doa" | "sold" | "aborted",
     birthDate: kid.birthDate ? new Date(kid.birthDate) : birthDate,
     birthWeight: kid.birthWeight,
     notes: kid.notes,
@@ -682,7 +682,7 @@ router.put("/breedings/:id/kids/:kidId", async (req, res): Promise<void> => {
   const updateData: Partial<typeof existing> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name || null;
   if (parsed.data.sex !== undefined) updateData.sex = parsed.data.sex;
-  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "dead" | "doa" | "sold";
+  if (parsed.data.kidStatus !== undefined) updateData.kidStatus = parsed.data.kidStatus as "alive" | "dead" | "doa" | "sold" | "aborted";
   if (parsed.data.birthDate !== undefined) updateData.birthDate = new Date(parsed.data.birthDate);
   if (parsed.data.birthWeight !== undefined) updateData.birthWeight = parsed.data.birthWeight ?? null;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes || null;

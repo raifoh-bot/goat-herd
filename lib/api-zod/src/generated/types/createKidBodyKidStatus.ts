@@ -14,4 +14,5 @@ export const CreateKidBodyKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;

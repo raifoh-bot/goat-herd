@@ -2308,7 +2308,9 @@ export const ListBreedingsResponseItem = zod
             goatId: zod.number().optional(),
             name: zod.string().optional(),
             sex: zod.enum(["doe", "buck"]),
-            kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+            kidStatus: zod
+              .enum(["alive", "dead", "doa", "sold", "aborted"])
+              .optional(),
             birthDate: zod.coerce.date().optional(),
             birthWeight: zod.number().optional(),
             notes: zod.string().optional(),
@@ -2416,7 +2418,9 @@ export const ImportKidsBody = zod.object({
           ),
         name: zod.string().optional(),
         sex: zod.enum(["doe", "buck"]),
-        kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+        kidStatus: zod
+          .enum(["alive", "dead", "doa", "sold", "aborted"])
+          .optional(),
         birthDate: zod.coerce.date().optional(),
         birthWeight: zod.number().optional(),
         notes: zod.string().optional(),
@@ -2606,7 +2610,9 @@ export const GetBreedingResponse = zod
             goatId: zod.number().optional(),
             name: zod.string().optional(),
             sex: zod.enum(["doe", "buck"]),
-            kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+            kidStatus: zod
+              .enum(["alive", "dead", "doa", "sold", "aborted"])
+              .optional(),
             birthDate: zod.coerce.date().optional(),
             birthWeight: zod.number().optional(),
             notes: zod.string().optional(),
@@ -2716,7 +2722,9 @@ export const AddKidsBody = zod.object({
     zod.object({
       name: zod.string().optional(),
       sex: zod.enum(["doe", "buck"]),
-      kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+      kidStatus: zod
+        .enum(["alive", "dead", "doa", "sold", "aborted"])
+        .optional(),
       birthDate: zod.coerce.date().optional(),
       birthWeight: zod.number().optional(),
       notes: zod.string().optional(),
@@ -2853,7 +2861,7 @@ export const UpdateKidParams = zod.object({
 export const UpdateKidBody = zod.object({
   name: zod.string().optional(),
   sex: zod.enum(["doe", "buck"]).optional(),
-  kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+  kidStatus: zod.enum(["alive", "dead", "doa", "sold", "aborted"]).optional(),
   birthDate: zod.coerce.date().optional(),
   birthWeight: zod.number().optional(),
   notes: zod.string().optional(),
@@ -2865,7 +2873,7 @@ export const UpdateKidResponse = zod.object({
   goatId: zod.number().optional(),
   name: zod.string().optional(),
   sex: zod.enum(["doe", "buck"]),
-  kidStatus: zod.enum(["alive", "dead", "doa", "sold"]).optional(),
+  kidStatus: zod.enum(["alive", "dead", "doa", "sold", "aborted"]).optional(),
   birthDate: zod.coerce.date().optional(),
   birthWeight: zod.number().optional(),
   notes: zod.string().optional(),

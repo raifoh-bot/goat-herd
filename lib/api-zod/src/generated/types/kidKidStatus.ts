@@ -13,4 +13,5 @@ export const KidKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;

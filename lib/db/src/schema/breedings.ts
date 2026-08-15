@@ -39,7 +39,7 @@ export const kidsTable = pgTable("kids", {
   goatId: integer("goat_id").references(() => goatsTable.id),
   name: text("name"),
   sex: text("sex", { enum: ["doe", "buck"] }).notNull(),
-  kidStatus: text("kid_status", { enum: ["alive", "dead", "doa", "sold"] }).notNull().default("alive"),
+  kidStatus: text("kid_status", { enum: ["alive", "dead", "doa", "sold", "aborted"] }).notNull().default("alive"),
   birthDate: timestamp("birth_date"),
   birthWeight: doublePrecision("birth_weight"),
   notes: text("notes"),

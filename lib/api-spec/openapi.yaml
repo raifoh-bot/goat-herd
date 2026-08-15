@@ -3788,7 +3788,7 @@ components:
           enum: [doe, buck]
         kidStatus:
           type: string
-          enum: [alive, dead, doa, sold]
+          enum: [alive, dead, doa, sold, aborted]
         birthDate:
           type: string
           format: date-time
@@ -3819,7 +3819,7 @@ components:
           enum: [doe, buck]
         kidStatus:
           type: string
-          enum: [alive, dead, doa, sold]
+          enum: [alive, dead, doa, sold, aborted]
         birthDate:
           type: string
           format: date-time
@@ -3856,7 +3856,7 @@ components:
           enum: [doe, buck]
         kidStatus:
           type: string
-          enum: [alive, dead, doa, sold]
+          enum: [alive, dead, doa, sold, aborted]
         birthDate:
           type: string
           format: date-time
@@ -4117,7 +4117,7 @@ components:
           enum: [doe, buck]
         kidStatus:
           type: string
-          enum: [alive, dead, doa, sold]
+          enum: [alive, dead, doa, sold, aborted]
         birthDate:
           type: string
           format: date-time

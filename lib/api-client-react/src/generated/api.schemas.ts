@@ -477,6 +477,7 @@ export const KidKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;
 
 export interface Kid {
@@ -1241,6 +1242,7 @@ export const CreateKidBodyKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;
 
 export interface CreateKidBody {
@@ -1275,6 +1277,7 @@ export const UpdateKidBodyKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;
 
 export interface UpdateKidBody {
@@ -1477,6 +1480,7 @@ export const ImportKidRowKidStatus = {
   dead: "dead",
   doa: "doa",
   sold: "sold",
+  aborted: "aborted",
 } as const;
 
 /**
