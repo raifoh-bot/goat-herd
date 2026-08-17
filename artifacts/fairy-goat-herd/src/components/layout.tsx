@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { storeAuthToken } from "@/lib/token";
 import { useFarmSettings } from "@/lib/settings";
 import { QuickPhotoCapture } from "@/components/quick-photo-capture";
+import { InstallBanner, InstallMenuItem } from "@/components/install-banner";
 
 interface LayoutProps {
   children: ReactNode;
@@ -146,6 +147,7 @@ export function Layout({ children }: LayoutProps) {
                 </Link>
               );
             })}
+            <InstallMenuItem />
           </nav>
 
           <QuickPhotoCapture />
@@ -184,7 +186,10 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         <div className="no-print absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="flex-1 overflow-auto p-4 pb-24 md:p-8 md:pb-8 lg:p-12 lg:pb-12 relative z-0 print:overflow-visible print:p-0 print:pb-0">
-          <div className="max-w-6xl mx-auto">{children}</div>
+          <div className="max-w-6xl mx-auto">
+            <InstallBanner />
+            {children}
+          </div>
         </div>
       </main>
 
@@ -259,6 +264,7 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
+              <InstallMenuItem onClick={() => setDrawerOpen(false)} />
             </nav>
 
             <QuickPhotoCapture />
