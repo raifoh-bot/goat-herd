@@ -13,13 +13,17 @@ import type { InstallPromptState } from "@/hooks/use-install-prompt";
 // Mock the hook — must come before importing the components
 // ---------------------------------------------------------------------------
 
-const mockUseInstallPrompt = vi.fn<[], InstallPromptState>();
+const mockUseInstallPrompt = vi.fn<() => InstallPromptState>();
 
 vi.mock("@/hooks/use-install-prompt", () => ({
   useInstallPrompt: () => mockUseInstallPrompt(),
 }));
 
-import { InstallBanner, InstallMenuItem } from "./install-banner";
+import {
+  InstallBanner,
+  InstallMenuItem,
+  IosInstallSettingsCard,
+} from "./install-banner";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -317,5 +321,58 @@ describe("InstallMenuItem", () => {
 
       expect(onClick).toHaveBeenCalledOnce();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IosInstallSettingsCard
+// ---------------------------------------------------------------------------
+
+describe("IosInstallSettingsCard", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows an Install App entry for iOS Safari after the banner was dismissed", () => {
+    mockUseInstallPrompt.mockReturnValue(
+      makeState({ isIos: true, isDismissed: true }),
+    );
+
+    render(<IosInstallSettingsCard />);
+
+    expect(
+      screen.getByRole("button", { name: /install app/i }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["the banner has not been dismissed", makeState({ isIos: true })],
+    ["the browser is not iOS Safari", makeState({ isDismissed: true })],
+    [
+      "the app is already installed",
+      makeState({ isIos: true, isDismissed: true, isInstalled: true }),
+    ],
+  ])("is hidden when %s", (_reason, installState) => {
+    mockUseInstallPrompt.mockReturnValue(installState);
+
+    const { container } = render(<IosInstallSettingsCard />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("reopens the iOS instruction sheet without clearing the dismissal", async () => {
+    const clearDismissal = vi.fn();
+    mockUseInstallPrompt.mockReturnValue(
+      makeState({ isIos: true, isDismissed: true, clearDismissal }),
+    );
+    const user = userEvent.setup();
+    render(<IosInstallSettingsCard />);
+
+    await user.click(screen.getByRole("button", { name: /install app/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /add to home screen/i }),
+    ).toBeInTheDocument();
+    expect(clearDismissal).not.toHaveBeenCalled();
   });
 });

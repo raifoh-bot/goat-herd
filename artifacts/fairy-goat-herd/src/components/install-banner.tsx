@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { IosInstallSheet } from "@/components/ios-install-sheet";
 
@@ -99,6 +106,39 @@ export function InstallMenuItem({ onClick }: { onClick?: () => void }) {
         <Download className="h-4 w-4" />
         Install App
       </button>
+
+      <IosInstallSheet open={iosSheetOpen} onOpenChange={setIosSheetOpen} />
+    </>
+  );
+}
+
+/**
+ * A settings-page entry that lets iOS Safari users revisit the manual
+ * Add-to-Home-Screen instructions after dismissing the install banner.
+ */
+export function IosInstallSettingsCard() {
+  const { isDismissed, isInstalled, isIos } = useInstallPrompt();
+  const [iosSheetOpen, setIosSheetOpen] = useState(false);
+
+  if (!isIos || !isDismissed || isInstalled) return null;
+
+  return (
+    <>
+      <Card className="border-primary/10 shadow-lg">
+        <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Download className="h-4 w-4 text-primary" /> Install App
+          </CardTitle>
+          <CardDescription>
+            Add MyGoatHerd to your iPhone home screen for quick, full-screen access.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button type="button" onClick={() => setIosSheetOpen(true)}>
+            Install App
+          </Button>
+        </CardContent>
+      </Card>
 
       <IosInstallSheet open={iosSheetOpen} onOpenChange={setIosSheetOpen} />
     </>

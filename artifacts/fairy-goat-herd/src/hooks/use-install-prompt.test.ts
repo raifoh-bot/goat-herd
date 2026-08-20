@@ -225,6 +225,17 @@ describe("useInstallPrompt", () => {
       const { result } = renderHook(() => useInstallPrompt());
       expect(result.current.isDismissed).toBe(true);
     });
+
+    it("updates other mounted install prompt consumers immediately", () => {
+      const { result: bannerPrompt } = renderHook(() => useInstallPrompt());
+      const { result: settingsPrompt } = renderHook(() => useInstallPrompt());
+
+      act(() => {
+        bannerPrompt.current.dismiss();
+      });
+
+      expect(settingsPrompt.current.isDismissed).toBe(true);
+    });
   });
 
   describe("clearDismissal", () => {

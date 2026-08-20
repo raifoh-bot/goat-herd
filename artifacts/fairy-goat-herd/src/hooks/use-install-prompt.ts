@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 const DISMISSED_KEY = "pwa-install-dismissed";
+const DISMISSAL_CHANGED_EVENT = "pwa-install-dismissal-changed";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -76,6 +77,18 @@ export function useInstallPrompt(): InstallPromptState {
     return () => window.removeEventListener("appinstalled", handler);
   }, []);
 
+  useEffect(() => {
+    const syncDismissal = () => {
+      setIsDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
+    };
+    window.addEventListener("storage", syncDismissal);
+    window.addEventListener(DISMISSAL_CHANGED_EVENT, syncDismissal);
+    return () => {
+      window.removeEventListener("storage", syncDismissal);
+      window.removeEventListener(DISMISSAL_CHANGED_EVENT, syncDismissal);
+    };
+  }, []);
+
   const triggerInstall = useCallback(async () => {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
@@ -89,11 +102,13 @@ export function useInstallPrompt(): InstallPromptState {
   const dismiss = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, "1");
     setIsDismissed(true);
+    window.dispatchEvent(new Event(DISMISSAL_CHANGED_EVENT));
   }, []);
 
   const clearDismissal = useCallback(() => {
     localStorage.removeItem(DISMISSED_KEY);
     setIsDismissed(false);
+    window.dispatchEvent(new Event(DISMISSAL_CHANGED_EVENT));
   }, []);
 
   const canPrompt = deferredPrompt !== null;

@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { IosInstallSettingsCard } from "@/components/install-banner";
 
 function NameCard() {
   const { user } = useAuth();
@@ -281,6 +282,7 @@ function PasswordCard() {
 export function AccountTab() {
   return (
     <div className="space-y-8">
+      <IosInstallSettingsCard />
       <NameCard />
       <EmailCard />
       <PasswordCard />
