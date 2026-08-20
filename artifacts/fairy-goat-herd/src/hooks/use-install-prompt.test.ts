@@ -83,6 +83,7 @@ beforeEach(() => {
   stubMatchMedia(false);
   stubIosStandalone(undefined);
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -195,6 +196,7 @@ describe("useInstallPrompt", () => {
       });
 
       expect(localStorage.getItem("pwa-install-dismissed")).toBe("1");
+      expect(localStorage.getItem("pwa-install-dismissal-count")).toBe("1");
     });
 
     it("sets isDismissed to true immediately", () => {
@@ -235,6 +237,61 @@ describe("useInstallPrompt", () => {
       });
 
       expect(settingsPrompt.current.isDismissed).toBe(true);
+    });
+  });
+
+  describe("return-visit install nudge", () => {
+    it("increments the persisted visit count once per browser session", () => {
+      renderHook(() => useInstallPrompt());
+      expect(localStorage.getItem("pwa-install-visit-count")).toBe("1");
+
+      renderHook(() => useInstallPrompt());
+      expect(localStorage.getItem("pwa-install-visit-count")).toBe("1");
+
+      sessionStorage.clear();
+      renderHook(() => useInstallPrompt());
+      expect(localStorage.getItem("pwa-install-visit-count")).toBe("2");
+    });
+
+    it("shows the nudge after the threshold for a visitor who dismissed the banner once", () => {
+      stubUserAgent(IOS_SAFARI_UA);
+      localStorage.setItem("pwa-install-visit-count", "3");
+      sessionStorage.setItem("pwa-install-visit-recorded", "1");
+      const { result } = renderHook(() => useInstallPrompt());
+
+      act(() => {
+        result.current.dismiss();
+      });
+
+      expect(result.current.shouldShowNudge).toBe(true);
+    });
+
+    it("suppresses the nudge after its second explicit dismissal", () => {
+      stubUserAgent(IOS_SAFARI_UA);
+      localStorage.setItem("pwa-install-visit-count", "3");
+      localStorage.setItem("pwa-install-dismissal-count", "1");
+      localStorage.setItem("pwa-install-dismissed", "1");
+      sessionStorage.setItem("pwa-install-visit-recorded", "1");
+      const { result } = renderHook(() => useInstallPrompt());
+      expect(result.current.shouldShowNudge).toBe(true);
+
+      act(() => {
+        result.current.dismissNudge();
+      });
+
+      expect(result.current.dismissalCount).toBe(2);
+      expect(result.current.shouldShowNudge).toBe(false);
+    });
+
+    it("never shows the nudge once the app is installed", () => {
+      stubUserAgent(IOS_SAFARI_UA);
+      stubIosStandalone(true);
+      localStorage.setItem("pwa-install-visit-count", "3");
+      localStorage.setItem("pwa-install-dismissed", "1");
+      sessionStorage.setItem("pwa-install-visit-recorded", "1");
+
+      const { result } = renderHook(() => useInstallPrompt());
+      expect(result.current.shouldShowNudge).toBe(false);
     });
   });
 

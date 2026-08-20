@@ -38,8 +38,12 @@ function makeState(
     isInstalled: false,
     isDismissed: false,
     shouldShowBanner: false,
+    visitCount: 0,
+    dismissalCount: 0,
+    shouldShowNudge: false,
     triggerInstall: vi.fn().mockResolvedValue(undefined),
     dismiss: vi.fn(),
+    dismissNudge: vi.fn(),
     clearDismissal: vi.fn(),
     ...overrides,
   };

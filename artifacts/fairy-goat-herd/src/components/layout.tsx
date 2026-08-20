@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ClipboardList, FileText, Heart, HeartPulse, List, LogOut, Menu, Milk, MoreHorizontal, Settings, Snowflake } from "lucide-react";
+import { ClipboardList, Download, FileText, Heart, HeartPulse, List, LogOut, Menu, Milk, MoreHorizontal, Settings, Snowflake, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLogout, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { storeAuthToken } from "@/lib/token";
 import { useFarmSettings } from "@/lib/settings";
 import { QuickPhotoCapture } from "@/components/quick-photo-capture";
 import { InstallBanner, InstallMenuItem } from "@/components/install-banner";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 interface LayoutProps {
   children: ReactNode;
@@ -47,6 +48,8 @@ export function Layout({ children }: LayoutProps) {
   const queryClient = useQueryClient();
   const logout = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { shouldShowNudge: shouldShowInstallNudge, dismissNudge } =
+    useInstallPrompt();
 
   const isManager = user.role === "admin" || user.role === "owner";
   const { usesAi, farmName, logoUrl } = useFarmSettings();
@@ -147,7 +150,28 @@ export function Layout({ children }: LayoutProps) {
                 </Link>
               );
             })}
-            <InstallMenuItem />
+            <div className="relative">
+              {shouldShowInstallNudge && (
+                <div
+                  role="status"
+                  className="mx-1 my-2 flex items-start gap-2 rounded-lg border border-sidebar-primary/30 bg-sidebar-primary/10 px-3 py-2 text-xs text-sidebar-foreground"
+                >
+                  <Download className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-sidebar-primary" />
+                  <p className="flex-1 leading-5">
+                    Install for quicker access from the option below.
+                  </p>
+                  <button
+                    type="button"
+                    aria-label="Dismiss install reminder"
+                    onClick={dismissNudge}
+                    className="rounded p-0.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+              <InstallMenuItem />
+            </div>
           </nav>
 
           <QuickPhotoCapture />
@@ -224,7 +248,15 @@ export function Layout({ children }: LayoutProps) {
               : "text-sidebar-foreground/70 hover:text-sidebar-accent-foreground"
           )}
         >
-          <MoreHorizontal className="h-5 w-5" />
+          <span className="relative">
+            <MoreHorizontal className="h-5 w-5" />
+            {shouldShowInstallNudge && (
+              <span
+                aria-label="Install app reminder"
+                className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary animate-pulse ring-2 ring-sidebar"
+              />
+            )}
+          </span>
           More
         </button>
       </nav>
@@ -264,6 +296,25 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
+              {shouldShowInstallNudge && (
+                <div
+                  role="status"
+                  className="mx-1 my-2 flex items-start gap-2 rounded-lg border border-sidebar-primary/30 bg-sidebar-primary/10 px-3 py-2 text-xs text-sidebar-foreground"
+                >
+                  <Download className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-sidebar-primary" />
+                  <p className="flex-1 leading-5">
+                    Take MyGoatHerd with you—install it from the option below.
+                  </p>
+                  <button
+                    type="button"
+                    aria-label="Dismiss install reminder"
+                    onClick={dismissNudge}
+                    className="rounded p-0.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
               <InstallMenuItem onClick={() => setDrawerOpen(false)} />
             </nav>
 
