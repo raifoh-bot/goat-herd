@@ -1,8 +1,21 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "6CTFleGZ48oEEAOTNhBx8"
 uri = "file://artifacts/goat-herd-mobile/assets/images/icon.png"
 type = "image"
 title = "goat herd app icon"
+
+[[outputs]]
+id = "uSsE4AS0hkh17aGJ-U_3H"
+uri = "file://attached_assets/mygoatherd-logo-2048.png"
+type = "image"
+title = "MyGoatHerd logo — high resolution PNG"
+description = "The official MyGoatHerd goat-mark logo exported at 2048 × 2048 pixels."
+
+[[outputs]]
+id = "2wMORBRylHeRoWkpgJhiP"
+uri = "file://attached_assets/mygoatherd-logo.svg"
+type = "image"
+title = "MyGoatHerd logo — vector SVG"
+description = "The original scalable vector logo used by the app; suitable for print and any size."
