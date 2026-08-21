@@ -155,6 +155,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     id: user.id,
     username: user.username,
     fullName: user.fullName ?? null,
+    email: user.email ?? null,
     role: user.role,
     farmSlug: loginFarm?.slug ?? null,
     firstLogin,

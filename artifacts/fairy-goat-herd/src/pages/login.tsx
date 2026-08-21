@@ -68,7 +68,8 @@ export default function Login() {
         onSuccess: (user) => {
           // Persist the bearer token used when the session cookie is blocked (iframe).
           storeAuthToken(user.token ?? null);
-          queryClient.setQueryData(getGetCurrentUserQueryKey(), user);
+          const currentUserQueryKey = getGetCurrentUserQueryKey();
+          queryClient.setQueryData(currentUserQueryKey, user);
 
           const isManager = user.role === "admin" || user.role === "owner";
           // Return the user to the page they were headed to before being bounced
@@ -82,12 +83,16 @@ export default function Login() {
           if (user.role === "superadmin") {
             // Superadmins live at the root, not under a farm prefix.
             storeFarmSlug(null);
+            // The login result is complete enough to render immediately, while
+            // this refresh keeps the shared auth cache aligned with /auth/me.
+            void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
             setLocation("/superadmin/farms");
             return;
           }
 
           // Farm member: persist the server-confirmed slug.
           storeFarmSlug(user.farmSlug ?? null);
+          void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
 
           if (isFarmContext) {
             // Already under /<slug>; navigate within the farm router.

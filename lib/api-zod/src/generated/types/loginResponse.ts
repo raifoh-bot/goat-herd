@@ -12,6 +12,8 @@ export interface LoginResponse {
   username: string;
   /** The user's optional full name, for friendly display. Null when not set. */
   fullName?: string | null;
+  /** The user's contact email, used by the forgot-password flow. Null for accounts created before email became required. */
+  email: string | null;
   role: LoginResponseRole;
   /** The slug of the farm this user belongs to. Null for platform superadmins. */
   farmSlug?: string | null;

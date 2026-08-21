@@ -108,6 +108,42 @@ describe("authentication", () => {
     expect(after.status).toBe(401);
   });
 
+  it("includes a saved email in both the login and current-user responses", async () => {
+    const username = `auth-login-email-${suffix}`;
+    const password = "login-email-password-1";
+    const email = `${username}@example.com`;
+    const user = await seedUser(username, password, "farmhand");
+    await db
+      .update(usersTable)
+      .set({ email })
+      .where(eq(usersTable.id, user.id));
+
+    const agent = request.agent(app);
+    const loginRes = await agent
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ username, password });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.email).toBe(email);
+
+    const me = await agent.get("/api/auth/me");
+    expect(me.status).toBe(200);
+    expect(me.body.email).toBe(email);
+  });
+
+  it("includes a null email at login for a legacy account without one", async () => {
+    const username = `auth-login-noemail-${suffix}`;
+    const password = "login-noemail-password-1";
+    await seedUser(username, password, "farmhand");
+
+    const res = await request(app)
+      .post("/api/auth/login")
+      .set("X-Farm-Slug", FARM_SLUG)
+      .send({ username, password });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("email", null);
+  });
+
   it("logs in a superadmin even when a farm context is present", async () => {
     const SA = { username: `auth-sa-${suffix}`, password: "superadmin-pass-123" };
     const passwordHash = await bcrypt.hash(SA.password, 10);

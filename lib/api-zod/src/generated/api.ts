@@ -3443,6 +3443,12 @@ export const LoginResponse = zod.object({
     .describe(
       "The user's optional full name, for friendly display. Null when not set.",
     ),
+  email: zod
+    .string()
+    .nullable()
+    .describe(
+      "The user's contact email, used by the forgot-password flow. Null for accounts created before email became required.",
+    ),
   role: zod.enum(["admin", "owner", "farmhand", "superadmin"]),
   farmSlug: zod
     .string()

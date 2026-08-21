@@ -63,15 +63,17 @@ function renderWithClient(node: ReactNode) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>{node}</QueryClientProvider>,
   );
+  return { client, ...result };
 }
 
 function makeLoginResponse(overrides: Partial<LoginResponse> = {}): LoginResponse {
   return {
     id: 1,
     username: "owner",
+    email: "owner@example.com",
     role: "owner",
     farmSlug: "smithfarm",
     firstLogin: false,
@@ -147,6 +149,27 @@ describe("Login page — farm sign-in routing", () => {
 
     expect(setLocationMock).toHaveBeenCalledWith("/");
     expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the login email in the shared current-user cache", async () => {
+    setUrl("/smithfarm/login");
+    loginMutateMock.mockImplementation((_vars, opts) =>
+      opts.onSuccess(
+        makeLoginResponse({
+          role: "owner",
+          farmSlug: "smithfarm",
+          email: "saved@example.com",
+        }),
+      ),
+    );
+
+    const { client } = renderWithClient(<Login />);
+    await submitLogin();
+
+    expect(client.getQueryData(["/api/auth/me"])).toMatchObject({
+      username: "owner",
+      email: "saved@example.com",
+    });
   });
 
   it("returns the user to the ?next= path within the farm router after login", async () => {
